@@ -157,7 +157,7 @@ class BitcoinMiner(Thread):
 			print '%s,' % datetime.now().strftime(TIME_FORMAT), format % args
 		else:
 			sys.stdout.write('\r                                                            \r' + format % args)
-			sys.stdout.flush()
+		sys.stdout.flush()
 
 	def sayLine(self, format, args=()):
 		if not self.verbose:
