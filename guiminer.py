@@ -4,7 +4,7 @@ import json
 
 from wx.lib.agw import flatnotebook as fnb
 
-USE_MOCK = True
+USE_MOCK = False
 
 def strip_whitespace(s):
     s = re.sub(r"( +)|\t+", " ", s)
@@ -18,6 +18,12 @@ def get_opencl_devices():
         raise IOError
     return ['[%d] %s' % (i, strip_whitespace(device.name)[:25])
                          for (i, device) in enumerate(devices)]
+
+def get_module_path():
+    if hasattr(sys, 'frozen'):
+        return os.path.dirname(sys.executable)
+    else:
+        return os.path.dirname(__file__)
     
 def _mkdir_p(path):
     try:
@@ -143,12 +149,14 @@ class ProfilePanel(wx.Panel):
         if 'flags' in data: self.txt_flags.SetValue(data['flags'])
 
     def start_mining(self):
-        folder = os.path.dirname(__file__)
-        if USE_MOCK:
-            
+        folder = get_module_path()
+        if USE_MOCK:            
             executable = "python mockBitcoinMiner.py"
         else:
-            executable = "python poclbm.py"
+            if hasattr(sys, 'frozen'):
+                executable = "poclbm.exe"
+            else:
+                executable = "python poclbm.py"
         cmd = "%s --user=%s --pass=%s -o %s -p %s -d%d --verbose %s" % (
                 executable,
                 self.txt_username.GetValue(),
