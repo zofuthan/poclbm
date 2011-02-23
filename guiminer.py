@@ -43,7 +43,7 @@ def _mkdir_p(path):
 
 (UpdateHashRateEvent, EVT_UPDATE_HASHRATE) = NewEvent()
 (UpdateAcceptedEvent, EVT_UPDATE_ACCEPTED) = NewEvent()
-(UpdateStatusdEvent, EVT_UPDATE_STATUS) = NewEvent()
+(UpdateStatusEvent, EVT_UPDATE_STATUS) = NewEvent()
 
 class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     TBMENU_RESTORE = wx.NewId()
@@ -241,7 +241,9 @@ class ProfilePanel(wx.Panel):
         
     def stop_mining(self):
         if self.miner is not None:
-            self.miner.terminate()
+            if self.miner.returncode is not None:
+                # Terminate the child process if it's still running.
+                self.miner.terminate()                
             self.miner = None
         if self.miner_listener is not None:
             self.miner_listener.shutdown_event.set()
@@ -411,7 +413,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         print 'Saving:', data
         with open(config_filename, 'w') as f:
             json.dump(data, f)
-        dlg = wx.MessageDialog(self, "Profiles saved successfully!",
+        dlg = wx.MessageDialog(self, "Profiles saved OK to %s." % config_filename,
                                "Save successful", wx.OK|wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
