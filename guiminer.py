@@ -245,7 +245,6 @@ class ProfilePanel(wx.Panel):
             self.miner_listener.shutdown_event.set()
             self.miner_listener = None            
         self.is_mining = False
-        # TODO: stop all miners on program shutdown
         self.set_status("Stopped", 1)
 
     def on_update_khash(self, event):
@@ -289,7 +288,10 @@ class ProfilePanel(wx.Panel):
     def on_focus(self):
         """When we receive focus, update our status."""
         self.set_shares_statusbar_text()
-        self.update_khash(self.last_rate)
+        if self.is_mining:
+            self.update_khash(self.last_rate)
+        else:
+            self.set_status("Stopped", 1)
 
     def get_tooltip_text(self):
         if self.is_mining:
