@@ -474,10 +474,11 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             dlg.Destroy()
             if do_stop:
                 event.Veto()
-            else:
-                p = self.profile_objects.pop(event.GetSelection())
-                p.stop_mining()
-                event.Skip()
+                return
+            
+        p = self.profile_objects.pop(event.GetSelection())
+        p.stop_mining()
+        event.Skip()
 
     def on_page_changed(self, event):
         try:
