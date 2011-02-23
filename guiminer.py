@@ -3,8 +3,7 @@ import wx
 import json
 
 from wx.lib.agw import flatnotebook as fnb
-
-USE_MOCK = False
+from wx.lib.newevent import NewEvent
 
 def strip_whitespace(s):
     s = re.sub(r"( +)|\t+", " ", s)
@@ -24,6 +23,13 @@ def get_module_path():
         return os.path.dirname(sys.executable)
     else:
         return os.path.dirname(__file__)
+
+def get_icon():
+    image_path = os.path.join(get_module_path(), 'logo.png')
+    image = wx.Image(image_path, wx.BITMAP_TYPE_PNG).ConvertToBitmap()
+    icon = wx.EmptyIcon()
+    icon.CopyFromBitmap(image)
+    return icon
     
 def _mkdir_p(path):
     try:
@@ -32,6 +38,53 @@ def _mkdir_p(path):
         if exc.errno == errno.EEXIST:
             pass
         else: raise
+
+(UpdateHashRateEvent, EVT_UPDATE_HASHRATE) = NewEvent()
+(UpdateAcceptedEvent, EVT_UPDATE_ACCEPTED) = NewEvent()
+(UpdateStatusdEvent, EVT_UPDATE_STATUS) = NewEvent()
+
+class GUIMinerTaskBarIcon(wx.TaskBarIcon):
+    TBMENU_RESTORE = wx.NewId()
+    TBMENU_CLOSE   = wx.NewId()
+    TBMENU_CHANGE  = wx.NewId()
+    TBMENU_REMOVE  = wx.NewId()
+    
+    def __init__(self, frame):
+        wx.TaskBarIcon.__init__(self)
+        self.frame = frame
+        self.icon = get_icon()
+        self.timer = wx.Timer(self)
+        self.timer.Start(1000)
+
+        self.SetIcon(self.icon, "poclbm-gui")
+        self.imgidx = 1
+        self.Bind(wx.EVT_TASKBAR_LEFT_DCLICK, self.on_taskbar_activate)
+        self.Bind(wx.EVT_MENU, self.on_taskbar_activate, id=self.TBMENU_RESTORE)
+        self.Bind(wx.EVT_MENU, self.on_taskbar_close, id=self.TBMENU_CLOSE)
+        self.Bind(wx.EVT_TIMER, self.on_update_tooltip)
+
+    def create_popup_menu(self):
+        menu = wx.Menu()
+        menu.Append(self.TBMENU_RESTORE, "Restore")
+        menu.Append(self.TBMENU_CLOSE,   "Close")
+        return menu
+   
+    def on_taskbar_activate(self, evt):
+        if self.frame.IsIconized():
+            self.frame.Iconize(False)
+        if not self.frame.IsShown():
+            self.frame.Show(True)
+        self.frame.Raise()
+
+    def on_taskbar_close(self, evt):
+        wx.CallAfter(self.frame.Close)
+
+    def on_update_tooltip(self, event):
+        """Refresh the taskbar icon's status message."""
+        objs = self.frame.profile_objects
+        if objs:
+            text = '\n'.join(p.get_tooltip_text() for p in objs)
+            self.SetIcon(self.icon, text)    
 
 class MinerListenerThread(threading.Thread):
     def __init__(self, parent, miner):
@@ -47,18 +100,22 @@ class MinerListenerThread(threading.Thread):
             if not line: continue
             match = re.search(r"accepted", line, flags=re.I)
             if match is not None:
-                wx.CallAfter(self.parent.update_shares, True)
+                event = UpdateAcceptedEvent(accepted=True)
+                wx.PostEvent(self.parent, event)
                 continue
             match = re.search(r"invalid|stale", line, flags=re.I)
             if match is not None:
-                wx.CallAfter(self.parent.update_shares, False)
+                event = UpdateAcceptedEvent(accepted=False)
+                wx.PostEvent(self.parent, event)
                 continue
             match = re.search(r"(\d+) khash/s", line, flags=re.I)
             if match is not None:
-                wx.CallAfter(self.parent.update_khash, int(match.group(1)))
+                event = UpdateHashRateEvent(rate=int(match.group(1)))
+                wx.PostEvent(self.parent, event)
                 continue            
             # Possible error or new message, just pipe it through
-            wx.CallAfter(self.parent.update_status, line)
+            event = UpdateStatusEvent(text=line)
+            wx.PostEvent(self.parent, event)
         print 'Listener shutting down'
         
         
@@ -94,7 +151,10 @@ class ProfilePanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.start.Bind(wx.EVT_BUTTON, self.toggle_mining)        
+        self.start.Bind(wx.EVT_BUTTON, self.toggle_mining)
+        self.Bind(EVT_UPDATE_HASHRATE, self.on_update_khash)
+        self.Bind(EVT_UPDATE_ACCEPTED, lambda event: self.update_shares(event.accepted))
+        self.Bind(EVT_UPDATE_STATUS, lambda event: self.update_status(event.text))
         self.set_shares_statusbar_text()
 
     def __set_properties(self):
@@ -177,7 +237,6 @@ class ProfilePanel(wx.Panel):
         self.is_mining = True
         self.set_status("Starting...", 1)
         
-
     def stop_mining(self):
         if self.miner is not None:
             self.miner.terminate()
@@ -189,13 +248,19 @@ class ProfilePanel(wx.Panel):
         # TODO: stop all miners on program shutdown
         self.set_status("Stopped", 1)
 
+    def on_update_khash(self, event):
+        self.update_khash(event.rate)
+        event.Skip()
+
+    def format_khash(self, rate):
+        if rate > 1000:
+            return"%.1f Mhash/s" % (rate/1000.)
+        else:
+            return "%d khash/s" % rate        
+    
     def update_khash(self, rate):
         self.last_rate = rate
-        if rate > 1000:
-            text = "%.1f Mhash/s" % (rate/1000.)
-        else:
-            text = "%d khash/s" % rate
-        self.set_status(text, ProfilePanel.KHASH_INDEX)
+        self.set_status(self.format_khash(rate), ProfilePanel.KHASH_INDEX)
         if self.is_possible_error:
             self.set_shares_statusbar_text()
             self.is_possible_error = False
@@ -226,6 +291,12 @@ class ProfilePanel(wx.Panel):
         self.set_shares_statusbar_text()
         self.update_khash(self.last_rate)
 
+    def get_tooltip_text(self):
+        if self.is_mining:
+            return "%s: %s" % (self.name, self.format_khash(self.last_rate))
+        else:
+            return "%s: Stopped" % self.name
+
 class MyFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         wx.Frame.__init__(self, *args, **kwds)
@@ -249,6 +320,16 @@ class MyFrame(wx.Frame):
         self.menubar.Append(wxglade_tmp_menu, _("&Help"))
         self.SetMenuBar(self.menubar)  
         self.statusbar = self.CreateStatusBar(2, 0)
+
+
+        try:
+            self.tbicon = GUIMinerTaskBarIcon(self)
+        except:
+            self.tbicon = None
+            raise
+        
+        self.SetIcon(get_icon())
+        
          
         self.__set_properties()
 
@@ -271,19 +352,19 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.Bind(wx.EVT_MENU, self.set_paths, id=self.ID_PATHS)
         self.Bind(wx.EVT_MENU, self.help_about, id=wx.ID_ABOUT)
         self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.Bind(wx.EVT_ICONIZE, self.on_minimize)
 
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CLOSING, self.on_page_closing)
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
         any_loaded = self.load_profile() 
         if not any_loaded: # Create a default one for them to use 
-            p = self._add_profile()
-            p.set_data(dict(name="slush's pool"))
+            p = self._add_profile(name="slush's pool")
 
         self.__do_layout()
     
     def __set_properties(self):
-        self.SetTitle(_("poclbm"))
+        self.SetTitle(_("poclbm-gui"))
         self.statusbar.SetStatusWidths([-1, 125])
         statusbar_fields = [_(""), _("Not started")]
         for i in range(len(statusbar_fields)):  
@@ -335,6 +416,9 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         """On closing, stop any miners that are currently working."""
         for p in self.profile_objects:
             p.stop_mining()
+        if self.tbicon is not None:
+            self.tbicon.RemoveIcon()
+            self.tbicon.Destroy()
         event.Skip()
     
     def load_profile(self, event=None):
@@ -400,9 +484,15 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             return # TODO
         p.on_focus()
 
+    def on_minimize(self, event):
+        self.Hide()
+
 if __name__ == "__main__":
     import gettext
     gettext.install("app") # replace with the appropriate catalog name
+
+    global USE_MOCK
+    USE_MOCK = '--mock' in sys.argv
 
     app = wx.PySimpleApp(0)
     wx.InitAllImageHandlers()
