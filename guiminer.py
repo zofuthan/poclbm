@@ -5,6 +5,8 @@ import json
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.newevent import NewEvent
 
+__version__ = '2011-02-23'
+
 def strip_whitespace(s):
     s = re.sub(r"( +)|\t+", " ", s)
     return s.strip()
@@ -309,9 +311,9 @@ class MyFrame(wx.Frame):
         # Menu Bar
         self.menubar = wx.MenuBar()
         wxglade_tmp_menu = wx.Menu()
-        wxglade_tmp_menu.Append(wx.ID_NEW, _("&New profiles..."), "", wx.ITEM_NORMAL) # TODO
-        wxglade_tmp_menu.Append(wx.ID_SAVE, _("&Save profiles"), "", wx.ITEM_NORMAL)
-        wxglade_tmp_menu.Append(wx.ID_OPEN, _("&Load profiles"), "", wx.ITEM_NORMAL)
+        wxglade_tmp_menu.Append(wx.ID_NEW, _("&New miner..."), "", wx.ITEM_NORMAL) # TODO
+        wxglade_tmp_menu.Append(wx.ID_SAVE, _("&Save miners"), "", wx.ITEM_NORMAL)
+        wxglade_tmp_menu.Append(wx.ID_OPEN, _("&Load miners"), "", wx.ITEM_NORMAL)
         self.menubar.Append(wxglade_tmp_menu, _("&File"))
         #wxglade_tmp_menu = wx.Menu()
         self.ID_PATHS = wx.NewId()
@@ -455,11 +457,9 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         event.Skip()
 
     def help_about(self, event):
-        info = wx.AboutDialogInfo()
-        info.Name = "Python OpenCL Bitcoin Miner GUI"
-        info.Website = ("https://github.com/Kiv/poclbm", "poclbm at Github")
-        info.Developers = ['Chris "Kiv" MacLeod', 'm0mchil']
-        wx.AboutBox(info)
+        dialog = AboutGuiminer(self, -1, 'About')
+        dialog.ShowModal()
+        dialog.Destroy()
         
     def on_page_closing(self, event):
         try:
@@ -488,6 +488,46 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
 
     def on_minimize(self, event):
         self.Hide()
+
+
+class AboutGuiminer(wx.Dialog):
+    donation_address = "1MDDh2h4cAZDafgc94mr9q95dhRYcJbNQo"
+    def __init__(self, parent, id, title):
+        wx.Dialog.__init__(self, parent, id, title)
+        panel = wx.Panel(self, -1)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        text=\
+"""Python OpenCL Bitcoin Miner GUI
+
+Version: %s
+
+GUI by Chris 'Kiv' MacLeod
+Original poclbm miner by m0mchil
+
+Get the source code or file issues at GitHub:
+    https://github.com/Kiv/poclbm
+
+If you enjoyed this software, support its development
+by donating to:
+
+%s
+""" % (__version__, AboutGuiminer.donation_address)
+        self.about_text = wx.StaticText(self, -1, text)
+        self.copy_btn = wx.Button(self, -1, "Copy address to clipboard")                            
+        vbox.Add(self.about_text)
+        vbox.Add(self.copy_btn, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.SetSizer(vbox)
+
+        self.copy_btn.Bind(wx.EVT_BUTTON, self.on_copy)        
+
+    def on_copy(self, event):
+        if wx.TheClipboard.Open():
+            data = wx.TextDataObject()
+            data.SetText(AboutGuiminer.donation_address)
+            wx.TheClipboard.SetData(data)
+        wx.TheClipboard.Close()
+        
 
 if __name__ == "__main__":
     import gettext
