@@ -39,7 +39,10 @@ class MockBitcoinMiner(threading.Thread):
         self.say('%s khash/s', rate)
 
     def blockFound(self, hash, accepted):
-        self.sayLine('%s, %s', (hash, if_else(accepted, 'accepted', 'invalid or stale')))
+        if random.randint(0,1):
+                self.sayLine('%s, %s', (hash, if_else(accepted, 'accepted', 'invalid or stale')))
+        else:
+                self.sayLine('checking %d' % random.randint(10000,100000))
 
     def mine(self):
         self.start()

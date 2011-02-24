@@ -43,6 +43,7 @@ def _mkdir_p(path):
 
 (UpdateHashRateEvent, EVT_UPDATE_HASHRATE) = NewEvent()
 (UpdateAcceptedEvent, EVT_UPDATE_ACCEPTED) = NewEvent()
+(UpdateSoloCheckEvent, EVT_UPDATE_SOLOCHECK) = NewEvent()
 (UpdateStatusEvent, EVT_UPDATE_STATUS) = NewEvent()
 
 class GUIMinerTaskBarIcon(wx.TaskBarIcon):
@@ -114,7 +115,12 @@ class MinerListenerThread(threading.Thread):
             if match is not None:
                 event = UpdateHashRateEvent(rate=int(match.group(1)))
                 wx.PostEvent(self.parent, event)
-                continue            
+                continue
+            match = re.search(r"checking (\d+)", line, flags=re.I)
+            if match is not None:
+                event = UpdateSoloCheckEvent()
+                wx.PostEvent(self.parent, event)
+                continue
             # Possible error or new message, just pipe it through
             event = UpdateStatusEvent(text=line)
             wx.PostEvent(self.parent, event)
@@ -123,11 +129,13 @@ class MinerListenerThread(threading.Thread):
         
 class ProfilePanel(wx.Panel):
     SHARES_INDEX = 0 # Indexes into the status bar
-    KHASH_INDEX = 1    
-    def __init__(self, parent, id, name, devices, statusbar):
+    KHASH_INDEX = 1
+    SOLO = 0
+    POOL = 1
+    def __init__(self, parent, id, devices, statusbar):
         wx.Panel.__init__(self, parent, id)
         self.parent = parent
-        self.name = name
+        self.name = "Miner"
         self.statusbar = statusbar
         self.is_mining = False
         self.is_possible_error = False
@@ -136,6 +144,8 @@ class ProfilePanel(wx.Panel):
         self.accepted_shares = 0
         self.invalid_shares = 0
         self.last_rate = 0
+        self.last_update_type = ProfilePanel.POOL
+        self.diff1_hashes = 0
         self.server_lbl = wx.StaticText(self, -1, _("Server:"))
         self.txt_server = wx.TextCtrl(self, -1, _("mining.bitcoin.cz"))
         self.port_lbl = wx.StaticText(self, -1, _("Port:"))
@@ -157,6 +167,7 @@ class ProfilePanel(wx.Panel):
         self.Bind(EVT_UPDATE_HASHRATE, self.on_update_khash)
         self.Bind(EVT_UPDATE_ACCEPTED, lambda event: self.update_shares(event.accepted))
         self.Bind(EVT_UPDATE_STATUS, lambda event: self.update_status(event.text))
+        self.Bind(EVT_UPDATE_SOLOCHECK, lambda event: self.update_solo())
         self.set_shares_statusbar_text()
 
     def __set_properties(self):
@@ -180,7 +191,7 @@ class ProfilePanel(wx.Panel):
         grid_sizer_1.Add(self.txt_flags, 0, wx.EXPAND, 0)
         grid_sizer_1.AddGrowableCol(1)
         grid_sizer_1.AddGrowableCol(3)
-        sizer_2.Add(grid_sizer_1, 1, wx.EXPAND, 0)
+        sizer_2.Add(grid_sizer_1, 1, wx.EXPAND|wx.ALL, 10)
         sizer_2.Add(self.start, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.SetSizerAndFit(sizer_2)
 
@@ -241,7 +252,7 @@ class ProfilePanel(wx.Panel):
         
     def stop_mining(self):
         if self.miner is not None:
-            if self.miner.returncode is not None:
+            if self.miner.returncode is None:
                 # Terminate the child process if it's still running.
                 self.miner.terminate()                
             self.miner = None
@@ -274,6 +285,7 @@ class ProfilePanel(wx.Panel):
         self.set_status(text, ProfilePanel.SHARES_INDEX)
 
     def update_shares(self, accepted):
+        self.last_update_type = ProfilePanel.POOL
         if accepted:
             self.accepted_shares += 1
         else:
@@ -302,6 +314,15 @@ class ProfilePanel(wx.Panel):
             return "%s: %s" % (self.name, self.format_khash(self.last_rate))
         else:
             return "%s: Stopped" % self.name
+
+    def update_solo_status(self):
+        text = "Difficulty 1 hashes: %d" % self.diff1_hashes
+        self.set_status(text, 0)
+
+    def update_solo(self):
+        self.last_update_type = ProfilePanel.SOLO
+        self.diff1_hashes += 1
+        self.update_solo_status()
 
 class MyFrame(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -365,7 +386,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
 
         any_loaded = self.load_profile() 
         if not any_loaded: # Create a default one for them to use 
-            p = self._add_profile(name="slush's pool")
+            p = self._add_profile(dict(name="slush's pool"))
 
         self.__do_layout()
     
@@ -378,13 +399,14 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
 
     def __do_layout(self):
         self.vertical_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.vertical_sizer.Add(self.profiles, 1, wx.EXPAND, 0)
+        self.vertical_sizer.Add(self.profiles, 1, wx.EXPAND, 20)
         self.SetSizer(self.vertical_sizer)
         self.vertical_sizer.SetSizeHints(self)
         self.SetSizerAndFit(self.vertical_sizer)
 
-    def _add_profile(self, name="Default miner"):
-        panel = ProfilePanel(self.profiles, -1, name, self.devices, self.statusbar)
+    def _add_profile(self, data):
+        panel = ProfilePanel(self.profiles, -1, self.devices, self.statusbar)
+        panel.set_data(data)
         self.profile_objects.append(panel)
         self.profiles.AddPage(panel, panel.name)
         # Select new profile which is the last one.
@@ -395,7 +417,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
     def new_profile(self, event):
         dialog = wx.TextEntryDialog(self, "Name this miner:", "New miner")
         if dialog.ShowModal() == wx.ID_OK:
-            self._add_profile(dialog.GetValue())
+            self._add_profile(dict(name=dialog.GetValue()))
 
     def _get_storage_location(self):
         if sys.platform == 'win32':
@@ -450,8 +472,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             self.profiles.DeletePage(i)            
         # Create new miners
         for d in data:
-            panel = self._add_profile()
-            panel.set_data(d)
+            panel = self._add_profile(d)
         return any(data)
             
     def set_paths(self, event):
