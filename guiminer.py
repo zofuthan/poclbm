@@ -5,7 +5,7 @@ import json
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-02-23'
+__version__ = '2011-02-25'
 
 ABOUT_TEXT = \
 """Python OpenCL Bitcoin Miner GUI
@@ -295,7 +295,10 @@ class ProfilePanel(wx.Panel):
         if self.miner is not None:
             if self.miner.returncode is None:
                 # It didn't return yet so it's still running.
-                self.miner.terminate()                
+                try:
+                    self.miner.terminate()
+                except OSError:
+                    pass # TODO: Guess it wasn't still running?
             self.miner = None
         if self.miner_listener is not None:
             self.miner_listener.shutdown_event.set()
@@ -511,6 +514,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             p.stop_mining()
         if self.tbicon is not None:
             self.tbicon.RemoveIcon()
+            self.tbicon.timer.Stop()
             self.tbicon.Destroy()
         event.Skip()
 
