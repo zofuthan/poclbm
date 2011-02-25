@@ -444,12 +444,12 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.save_profiles, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.load_profiles, id=wx.ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.set_paths, id=ID_PATHS)
-        self.Bind(wx.EVT_MENU, self.help_about, id=wx.ID_ABOUT)
+        self.Bind(wx.EVT_MENU, self.set_official_client_path, id=ID_PATHS)
+        self.Bind(wx.EVT_MENU, self.show_about_dialog, id=wx.ID_ABOUT)
         self.Bind(wx.EVT_MENU, self.create_solo_password, id=ID_SOLO)
         self.Bind(wx.EVT_MENU, self.launch_solo_server, id=ID_LAUNCH)
         self.Bind(wx.EVT_CLOSE, self.on_close)
-        self.Bind(wx.EVT_ICONIZE, self.on_minimize)
+        self.Bind(wx.EVT_ICONIZE, lambda event: self.Hide())
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CLOSING, self.on_page_closing)
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
@@ -564,7 +564,8 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             panel = self.add_profile(d)
         return any(data)
             
-    def set_paths(self, event):
+    def set_official_client_path(self, event):
+        """Set the path to the official Bitcoin client."""
         dialog = wx.FileDialog(self,
                                "Select path to Bitcoin.exe",
                                defaultFile="bitcoin.exe",
@@ -576,13 +577,18 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
                 self.bitcoin_executable = path
         dialog.Destroy()
             
-
-    def help_about(self, event):
+    def show_about_dialog(self, event):
+        """Show the 'about' dialog."""
         dialog = AboutGuiminer(self, -1, 'About')
         dialog.ShowModal()
         dialog.Destroy()
         
     def on_page_closing(self, event):
+        """Handle a tab closing event.
+
+        If the tab has a miner running in it, we have to stop the miner
+        before letting the tab be removed.
+        """
         try:
             p = self.profile_objects[event.GetSelection()]
         except IndexError:
@@ -593,23 +599,27 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
                 wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION)
             if result == wx.ID_NO:
                 event.Veto()
-                return
-            
+                return            
         p = self.profile_objects.pop(event.GetSelection())
         p.stop_mining()
-        event.Skip()
+        event.Skip() # OK to close the tab now
 
     def on_page_changed(self, event):
+        """Handle a tab change event.
+
+        Ensures the status bar shows the status of the tab that has focus.
+        """
         try:
             p = self.profile_objects[event.GetSelection()]
         except IndexError:
             return # TODO
         p.on_focus()
 
-    def on_minimize(self, event):
-        self.Hide()
-
     def launch_solo_server(self, event):
+        """Launch the official bitcoin client in server mode.
+
+        This allows poclbm to connect to it for mining solo.
+        """
         try:
             subprocess.Popen(self.bitcoin_executable + " -server")
         except OSError:
@@ -618,11 +628,16 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
                 "Launch failed", wx.ICON_ERROR|wx.OK)
             return
         self.message(
-            "Server launched ok. You can start the miner now.",
+            "Client launched ok. You can start the miner now.",
             "Launched ok.",
             wx.OK)
         
     def create_solo_password(self, event):
+        """Prompt the user for login credentials to the bitcoin client.
+
+        These are required to connect to the client over JSON-RPC and are
+        stored in 'bitcoin.conf'.
+        """
         filename = os.path.join(os.getenv("APPDATA"), "Bitcoin", "bitcoin.conf")
         if os.path.exists(filename):
             result = self.message("%s already exists. Overwrite?" % filename,
@@ -645,6 +660,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
                                   
 
 class SoloPasswordRequest(wx.Dialog):
+    """Dialog prompting user for login credentials for solo mining."""
     def __init__(self, parent, title):
         style = wx.DEFAULT_DIALOG_STYLE
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -664,9 +680,11 @@ class SoloPasswordRequest(wx.Dialog):
         self.SetSizerAndFit(vbox)
 
     def get_value(self):
+        """Return the (username, password) supplied by the user."""
         return self.txt_username.GetValue(), self.txt_pass.GetValue()
 
 class AboutGuiminer(wx.Dialog):
+    """About dialog for the app with a donation address."""
     donation_address = "1MDDh2h4cAZDafgc94mr9q95dhRYcJbNQo"
     def __init__(self, parent, id, title):
         wx.Dialog.__init__(self, parent, id, title)
@@ -683,6 +701,7 @@ class AboutGuiminer(wx.Dialog):
         self.copy_btn.Bind(wx.EVT_BUTTON, self.on_copy)        
 
     def on_copy(self, event):
+        """Copy the donation address to the clipboard."""
         if wx.TheClipboard.Open():
             data = wx.TextDataObject()
             data.SetText(AboutGuiminer.donation_address)
