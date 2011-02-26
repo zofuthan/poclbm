@@ -395,7 +395,7 @@ class ProfilePanel(wx.Panel):
 class MyFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         wx.Frame.__init__(self, *args, **kwds)
-        style = fnb.FNB_X_ON_TAB | fnb.FNB_FF2 | fnb.FNB_NO_NAV_BUTTONS
+        style = fnb.FNB_X_ON_TAB | fnb.FNB_FF2 | fnb.FNB_NO_NAV_BUTTONS | fnb.FNB_HIDE_ON_SINGLE_TAB
         self.profiles = fnb.FlatNotebook(self, -1, style=style)
         self.profile_objects = [] # List of ProfilePanel. # TODO: can we just get this from self.profiles?
                
