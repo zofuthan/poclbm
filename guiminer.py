@@ -1,4 +1,4 @@
-import sys, os, subprocess, errno, re, threading
+import sys, os, subprocess, errno, re, threading, logging
 import wx
 import json
 
@@ -68,6 +68,10 @@ def mkdir_p(path):
         if exc.errno != errno.EEXIST:
             raise
 
+logging.basicConfig(filename=os.path.join(get_module_path(), 'guiminer.log'),
+                    filemode='w',
+                    level=logging.DEBUG)
+
 class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     """Taskbar icon for the GUI.
 
@@ -125,7 +129,7 @@ class MinerListenerThread(threading.Thread):
         self.miner = miner
 
     def run(self):
-        print 'Listener started'
+        logging.debug('Listener started')
         while not self.shutdown_event.is_set():            
             line = self.miner.stdout.readline().strip()
             if not line: continue
@@ -152,7 +156,7 @@ class MinerListenerThread(threading.Thread):
             # Possible error or new message, just pipe it through
             event = UpdateStatusEvent(text=line)
             wx.PostEvent(self.parent, event)
-        print 'Listener shutting down'
+        logging.debug('Listener shutting down')
         
         
 class ProfilePanel(wx.Panel):
@@ -222,9 +226,8 @@ class ProfilePanel(wx.Panel):
         grid_sizer_1.Add(self.txt_flags, 0, wx.EXPAND, 0)
         grid_sizer_1.AddGrowableCol(1)
         grid_sizer_1.AddGrowableCol(3)
-        TAB_PADDING = 10
-        sizer_2.Add(grid_sizer_1, 1, wx.EXPAND|wx.ALL, TAB_PADDING)
-        sizer_2.Add(self.start, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sizer_2.Add(grid_sizer_1, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 10)
+        sizer_2.Add(self.start, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL|wx.BOTTOM, 5)
         self.SetSizerAndFit(sizer_2)
 
     def toggle_mining(self, event):
@@ -280,7 +283,7 @@ class ProfilePanel(wx.Panel):
                 self.txt_flags.GetValue()
         )
         try:
-            print 'Running command: ', cmd
+            logging.debug('Running command: '+ cmd)
             self.miner = subprocess.Popen(cmd, cwd=folder, stdout=subprocess.PIPE)
         except OSError:
             raise #TODO
@@ -525,7 +528,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         profile_data = [p.get_data() for p in self.profile_objects]
         config_data = dict(profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable)
-        print 'Saving:', config_data
+        logging.debug('Saving: '+ str(config_data))
         with open(config_filename, 'w') as f:
             json.dump(config_data, f)
             self.message("Profiles saved OK to %s." % config_filename,
@@ -539,7 +542,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             return # Nothing to load yet
         with open(config_filename) as f:
             config_data = json.load(f)
-        print 'Loaded:', config_data
+        logging.debug('Loaded: ' + str(config_data))
         # TODO: handle load failed or corrupted data
         
         executable = config_data.get('bitcoin_executable', None)
@@ -716,9 +719,13 @@ if __name__ == "__main__":
     global USE_MOCK
     USE_MOCK = '--mock' in sys.argv
 
-    app = wx.PySimpleApp(0)
-    wx.InitAllImageHandlers()
-    frame_1 = MyFrame(None, -1, "")
-    app.SetTopWindow(frame_1)
-    frame_1.Show()
-    app.MainLoop()
+    try:
+        app = wx.PySimpleApp(0)
+        wx.InitAllImageHandlers()
+        frame_1 = MyFrame(None, -1, "")
+        app.SetTopWindow(frame_1)
+        frame_1.Show()
+        app.MainLoop()
+    except:
+        logging.exception("Exception:")
+        raise
