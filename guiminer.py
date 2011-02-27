@@ -257,6 +257,8 @@ class ProfilePanel(wx.Panel):
         self.Bind(EVT_UPDATE_SOLOCHECK, lambda event: self.update_solo())
         self.update_shares_on_statusbar()
         
+        add_tooltip(self.device_listbox,
+            "Available OpenCL devices on your system.")
         add_tooltip(self.txt_server,
             "Server address, without http:// prefix.\nPooled mining example: mining.bitcoin.cz\nSolo mining example: localhost")
         add_tooltip(self.txt_port,
