@@ -660,6 +660,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         console_index = self.nb.GetPageIndex(self.console_panel)
         if event.GetSelection() == console_index:
             self.console_panel.on_close()
+            self.console_panel = None
             event.Skip()
             return
         
