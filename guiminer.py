@@ -73,6 +73,11 @@ def mkdir_p(path):
     except OSError as exc:
         if exc.errno != errno.EEXIST:
             raise
+        
+def add_tooltip(widget, text):
+    """Add a tooltip to widget with the specified text."""
+    tooltip = wx.ToolTip(_(text))
+    widget.SetToolTip(tooltip)
 
 def init_logger():
     """Set up and return the logging object and custom formatter."""
@@ -250,7 +255,18 @@ class ProfilePanel(wx.Panel):
         self.Bind(EVT_UPDATE_ACCEPTED, lambda event: self.update_shares(event.accepted))
         self.Bind(EVT_UPDATE_STATUS, lambda event: self.update_status(event.text))
         self.Bind(EVT_UPDATE_SOLOCHECK, lambda event: self.update_solo())
-        self.update_shares_on_statusbar()      
+        self.update_shares_on_statusbar()
+        
+        add_tooltip(self.txt_server,
+            "Server address, without http:// prefix.\nPooled mining example: mining.bitcoin.cz\nSolo mining example: localhost")
+        add_tooltip(self.txt_port,
+            "Server port. This is usually 8332.")
+        add_tooltip(self.txt_username,
+            "For pooled mining, the miner username (not your account username).\nExample: Kiv.GPU")
+        add_tooltip(self.txt_pass,
+            "For pooled mining, the miner password (not your account password).")
+        add_tooltip(self.txt_flags,
+            "Extra flags to pass to the miner.\nFor Radeon HD 5xxx use -v -w128 for best results.")
 
     def __do_layout(self):
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
@@ -326,9 +342,16 @@ class ProfilePanel(wx.Panel):
                 self.device_listbox.GetSelection(),
                 self.txt_flags.GetValue()
         )
+        # Avoid showing a console window when frozen
+        try: import win32process
+        except ImportError: flags = 0
+        else: flags = win32process.CREATE_NO_WINDOW
+                
         try:
             logger.debug('Running command: ' + cmd)
-            self.miner = subprocess.Popen(cmd, cwd=folder, stdout=subprocess.PIPE)
+            self.miner = subprocess.Popen(cmd, cwd=folder, 
+                                          stdout=subprocess.PIPE,
+                                          creationflags=flags)
         except OSError:
             raise #TODO
         self.miner_listener = MinerListenerThread(self, self.miner)
