@@ -11,7 +11,7 @@ import json
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-02-25'
+__version__ = '2011-02-27'
 
 ABOUT_TEXT = \
 """Python OpenCL Bitcoin Miner GUI
@@ -74,9 +74,46 @@ def mkdir_p(path):
         if exc.errno != errno.EEXIST:
             raise
 
-logging.basicConfig(filename=os.path.join(get_module_path(), 'guiminer.log'),
-                    filemode='w',
-                    level=logging.DEBUG)
+def init_logger():
+    """Set up and return the logging object and custom formatter."""
+    logger = logging.getLogger("poclbm-gui")
+    logger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler(
+        os.path.join(get_module_path(), 'guiminer.log'), 'w')
+    formatter = logging.Formatter("%(asctime)s: %(message)s", 
+                                  "%Y-%m-%d %H:%M:%S")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    return logger, formatter
+
+logger, formatter = init_logger()
+
+class ConsolePanel(wx.Panel):
+    """Panel that displays logging events.
+    
+    Uses with a StreamHandler to log events to a TextCtrl. Thread-safe.
+    """
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent, -1)
+        self.parent = parent
+        
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL
+        self.text = wx.TextCtrl(self, -1, "", style=style)
+        vbox.Add(self.text, 1, wx.EXPAND)        
+        self.SetSizer(vbox)
+        
+        self.handler = logging.StreamHandler(self)
+        logger.addHandler(self.handler)
+    
+    def on_close(self):
+        """On closing, stop handling logging events."""
+        logger.removeHandler(self.handler)
+
+    def write(self, text):
+        """Forward logging events to our TextCtrl."""
+        wx.CallAfter(self.text.WriteText, text)
+
 
 class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     """Taskbar icon for the GUI.
@@ -118,7 +155,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
         self.frame.Raise()
 
     def on_taskbar_close(self, evt):
-        wx.CallAfter(self.frame.Close)
+        wx.CallAfter(self.frame.Close, force=True)
 
     def on_update_tooltip(self, event):
         """Refresh the taskbar icon's status message."""
@@ -135,7 +172,7 @@ class MinerListenerThread(threading.Thread):
         self.miner = miner
 
     def run(self):
-        logging.debug('Listener started')
+        logger.debug('Listener for "%s" started' % self.parent.name)
         while not self.shutdown_event.is_set():            
             line = self.miner.stdout.readline().strip()
             if not line: continue
@@ -161,8 +198,9 @@ class MinerListenerThread(threading.Thread):
                 continue
             # Possible error or new message, just pipe it through
             event = UpdateStatusEvent(text=line)
+            logger.info('Listener for "%s": %s', self.parent.name, line)
             wx.PostEvent(self.parent, event)
-        logging.debug('Listener shutting down')
+        logger.debug('Listener for "%s" shutting down' % self.parent.name)
         
         
 class ProfilePanel(wx.Panel):
@@ -289,7 +327,7 @@ class ProfilePanel(wx.Panel):
                 self.txt_flags.GetValue()
         )
         try:
-            logging.debug('Running command: '+ cmd)
+            logger.debug('Running command: ' + cmd)
             self.miner = subprocess.Popen(cmd, cwd=folder, stdout=subprocess.PIPE)
         except OSError:
             raise #TODO
@@ -401,18 +439,20 @@ class ProfilePanel(wx.Panel):
         self.diff1_hashes += 1
         self.update_solo_status()
 
-class MyFrame(wx.Frame):
+class PoclbmFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         wx.Frame.__init__(self, *args, **kwds)
         style = fnb.FNB_X_ON_TAB | fnb.FNB_FF2 | fnb.FNB_NO_NAV_BUTTONS | fnb.FNB_HIDE_ON_SINGLE_TAB
-        self.profiles = fnb.FlatNotebook(self, -1, style=style)
-        self.profile_objects = [] # List of ProfilePanel. # TODO: can we just get this from self.profiles?
+        self.nb = fnb.FlatNotebook(self, -1, style=style)
+        self.profile_objects = [] # List of ProfilePanel. # TODO: can we just get this from self.nb?
+        self.console_panel = None
                
         self.menubar = wx.MenuBar()
         file_menu = wx.Menu()
         file_menu.Append(wx.ID_NEW, _("&New miner..."), _("Create a new miner profile"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_SAVE, _("&Save settings"), _("Save your settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_OPEN, _("&Load settings"), _("Load stored settings"), wx.ITEM_NORMAL)
+        file_menu.Append(wx.ID_EXIT, "", "", wx.ITEM_NORMAL)
         self.menubar.Append(file_menu, _("&File"))
 
         ID_SOLO, ID_PATHS, ID_LAUNCH = wx.NewId(), wx.NewId(), wx.NewId()
@@ -422,8 +462,10 @@ class MyFrame(wx.Frame):
         solo_menu.Append(ID_LAUNCH, "&Launch Bitcoin client", _("Launch the official Bitcoin client for solo mining"), wx.ITEM_NORMAL)
         self.menubar.Append(solo_menu, _("&Solo utilities"))
         
+        ID_CONSOLE = wx.NewId()
         help_menu = wx.Menu()
-        help_menu.Append(wx.ID_ABOUT, _("&About..."), "", wx.ITEM_NORMAL)
+        help_menu.Append(wx.ID_ABOUT, _("&About/Donate..."), "", wx.ITEM_NORMAL)
+        help_menu.Append(ID_CONSOLE, _("Show console"), "Show console logs", wx.ITEM_NORMAL)
         self.menubar.Append(help_menu, _("&Help"))
         self.SetMenuBar(self.menubar)  
         self.statusbar = self.CreateStatusBar(2, 0)
@@ -451,9 +493,11 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             sys.exit(1)        
 
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
-        self.Bind(wx.EVT_MENU, self.save_profiles, id=wx.ID_SAVE)
-        self.Bind(wx.EVT_MENU, self.load_profiles, id=wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.save_config, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.load_config, id=wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.on_menu_exit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.set_official_client_path, id=ID_PATHS)
+        self.Bind(wx.EVT_MENU, self.show_console, id=ID_CONSOLE)
         self.Bind(wx.EVT_MENU, self.show_about_dialog, id=wx.ID_ABOUT)
         self.Bind(wx.EVT_MENU, self.create_solo_password, id=ID_SOLO)
         self.Bind(wx.EVT_MENU, self.launch_solo_server, id=ID_LAUNCH)
@@ -462,10 +506,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CLOSING, self.on_page_closing)
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
-        any_loaded = self.load_profiles() 
-        if not any_loaded: # Create a default one for them to use 
-            p = self.add_profile(dict(name="slush's pool"))
-
+        self.load_config()           
         self.__do_layout()
     
     def __set_properties(self):
@@ -478,19 +519,19 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
 
     def __do_layout(self):
         self.vertical_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.vertical_sizer.Add(self.profiles, 1, wx.EXPAND, 20)
+        self.vertical_sizer.Add(self.nb, 1, wx.EXPAND, 20)
         self.SetSizer(self.vertical_sizer)
         self.vertical_sizer.SetSizeHints(self)
         self.SetSizerAndFit(self.vertical_sizer)
 
     def add_profile(self, data):
         """Add a new ProfilePanel to the list of tabs."""
-        panel = ProfilePanel(self.profiles, -1, self.devices, self.statusbar)
+        panel = ProfilePanel(self.nb, -1, self.devices, self.statusbar)
         panel.set_data(data)
         self.profile_objects.append(panel)
-        self.profiles.AddPage(panel, panel.name)
+        self.nb.AddPage(panel, panel.name)
         # The newly created profile should have focus.
-        self.profiles.EnsureVisible(self.profiles.GetPageCount()-1)
+        self.nb.EnsureVisible(self.nb.GetPageCount()-1)
         self.__do_layout()
         return panel
 
@@ -505,7 +546,9 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         """Prompt for the new miner's name."""
         dialog = wx.TextEntryDialog(self, "Name this miner:", "New miner")
         if dialog.ShowModal() == wx.ID_OK:
-            self.add_profile(dict(name=dialog.GetValue()))
+            name = dialog.GetValue().strip()
+            if not name: name = "Untitled"
+            self.add_profile(dict(name=name))
 
     def get_storage_location(self):
         """Get the folder and filename to store our JSON config."""
@@ -518,43 +561,53 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         return folder, config_filename
 
     def on_close(self, event):
-        """On closing, stop any miners that are currently working."""
-        for p in self.profile_objects:
-            p.stop_mining()
-        if self.tbicon is not None:
-            self.tbicon.RemoveIcon()
-            self.tbicon.timer.Stop()
-            self.tbicon.Destroy()
-        event.Skip()
+        """Minimize to tray if they click "close" but exit otherwise.
+        
+        On closing, stop any miners that are currently working.
+        """
+        if event.CanVeto():
+            self.Hide()
+            event.Veto()
+        else:
+            if self.console_panel is not None:
+                self.console_panel.on_close()
+            for p in self.profile_objects:
+                p.stop_mining()
+            if self.tbicon is not None:
+                self.tbicon.RemoveIcon()
+                self.tbicon.timer.Stop()
+                self.tbicon.Destroy()
+            event.Skip()
 
-    def save_profiles(self, event):
+    def save_config(self, event):
         """Save the current miner profiles to our config file in JSON format."""
         folder, config_filename = self.get_storage_location()
         mkdir_p(folder)
         profile_data = [p.get_data() for p in self.profile_objects]
-        config_data = dict(profiles=profile_data,
+        config_data = dict(show_console=self.is_console_visible(),
+                           profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable)
-        logging.debug('Saving: '+ str(config_data))
+        logger.debug('Saving: '+ json.dumps(config_data))
         with open(config_filename, 'w') as f:
             json.dump(config_data, f)
             self.message("Profiles saved OK to %s." % config_filename,
                           "Save successful", wx.OK|wx.ICON_INFORMATION)
         # TODO: handle save failed
     
-    def load_profiles(self, event=None):
+    def load_config(self, event=None):
         """Load JSON profile info from the config file."""
-        folder, config_filename = self.get_storage_location()
+        _, config_filename = self.get_storage_location()
         if not os.path.exists(config_filename):
             return # Nothing to load yet
         with open(config_filename) as f:
             config_data = json.load(f)
-        logging.debug('Loaded: ' + str(config_data))
+        logger.debug('Loaded: ' + json.dumps(config_data))
         # TODO: handle load failed or corrupted data
         
         executable = config_data.get('bitcoin_executable', None)
         if executable is not None:
             self.bitcoin_executable = executable
-
+            
         # Shut down any existing miners before they get clobbered
         if(any(p.is_mining for p in self.profile_objects)):
             result = self.message(
@@ -565,14 +618,19 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         while self.profile_objects:
             p = self.profile_objects.pop()
             p.stop_mining()
-        for i in reversed(range(self.profiles.GetPageCount())):
-            self.profiles.DeletePage(i)            
+        for i in reversed(range(self.nb.GetPageCount())):
+            self.nb.DeletePage(i)            
         # Create new miners
         data = config_data.get('profiles', [])
         for d in data:
-            panel = self.add_profile(d)
-        return any(data)
+            self.add_profile(d)
             
+        if not any(data): # Create a default one for them to use 
+            self.add_profile(dict(name="slush's pool"))  
+            
+        if config_data.get('show_console', False):
+            self.show_console()
+                                    
     def set_official_client_path(self, event):
         """Set the path to the official Bitcoin client."""
         dialog = wx.FileDialog(self,
@@ -594,10 +652,17 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         
     def on_page_closing(self, event):
         """Handle a tab closing event.
-
+        
+        If they are closing the console, we have to shut down the logger.
         If the tab has a miner running in it, we have to stop the miner
         before letting the tab be removed.
         """
+        console_index = self.nb.GetPageIndex(self.console_panel)
+        if event.GetSelection() == console_index:
+            self.console_panel.on_close()
+            event.Skip()
+            return
+        
         try:
             p = self.profile_objects[event.GetSelection()]
         except IndexError:
@@ -666,7 +731,21 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             f.close()
 
         self.message("Wrote bitcoin.conf ok.", "Success", wx.OK)
+
+    def is_console_visible(self):
+        """Return True if the console is visible."""
+        return self.nb.GetPageIndex(self.console_panel) != -1
                                   
+    def show_console(self, event=None):
+        """Show the console log in its own tab."""
+        if self.is_console_visible():
+            return # Console already shown
+        self.console_panel = ConsolePanel(self)
+        self.nb.AddPage(self.console_panel, "Console")
+        
+    def on_menu_exit(self, event):
+        self.Close(force=True)
+                                       
 
 class SoloPasswordRequest(wx.Dialog):
     """Dialog prompting user for login credentials for solo mining."""
@@ -692,12 +771,12 @@ class SoloPasswordRequest(wx.Dialog):
         """Return the (username, password) supplied by the user."""
         return self.txt_username.GetValue(), self.txt_pass.GetValue()
 
+
 class AboutGuiminer(wx.Dialog):
     """About dialog for the app with a donation address."""
     donation_address = "1MDDh2h4cAZDafgc94mr9q95dhRYcJbNQo"
     def __init__(self, parent, id, title):
         wx.Dialog.__init__(self, parent, id, title)
-        panel = wx.Panel(self, -1)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
         text = ABOUT_TEXT % (__version__, AboutGuiminer.donation_address)
@@ -728,7 +807,7 @@ if __name__ == "__main__":
     try:
         app = wx.PySimpleApp(0)
         wx.InitAllImageHandlers()
-        frame_1 = MyFrame(None, -1, "")
+        frame_1 = PoclbmFrame(None, -1, "")
         app.SetTopWindow(frame_1)
         frame_1.Show()
         app.MainLoop()
