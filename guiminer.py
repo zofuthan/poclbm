@@ -80,7 +80,7 @@ def init_logger():
     logger.setLevel(logging.DEBUG)
     file_handler = logging.FileHandler(
         os.path.join(get_module_path(), 'guiminer.log'), 'w')
-    formatter = logging.Formatter("%(asctime)s: %(message)s", 
+    formatter = logging.Formatter("%(asctime)s: %(message)s",
                                   "%Y-%m-%d %H:%M:%S")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -98,7 +98,7 @@ class ConsolePanel(wx.Panel):
         self.parent = parent
         
         vbox = wx.BoxSizer(wx.VERTICAL)
-        style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL
+        style = wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL
         self.text = wx.TextCtrl(self, -1, "", style=style)
         vbox.Add(self.text, 1, wx.EXPAND)        
         self.SetSizer(vbox)
@@ -122,9 +122,9 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     TODO: right click on taskbar icon to open menu with some stuff in it.
     """
     TBMENU_RESTORE = wx.NewId()
-    TBMENU_CLOSE   = wx.NewId()
-    TBMENU_CHANGE  = wx.NewId()
-    TBMENU_REMOVE  = wx.NewId()
+    TBMENU_CLOSE = wx.NewId()
+    TBMENU_CHANGE = wx.NewId()
+    TBMENU_REMOVE = wx.NewId()
     
     def __init__(self, frame):
         wx.TaskBarIcon.__init__(self)
@@ -144,7 +144,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
         """Override from wx.TaskBarIcon. Creates the right-click menu."""
         menu = wx.Menu()
         menu.Append(self.TBMENU_RESTORE, "Restore")
-        menu.Append(self.TBMENU_CLOSE,   "Close")
+        menu.Append(self.TBMENU_CLOSE, "Close")
         return menu
    
     def on_taskbar_activate(self, evt):
@@ -256,22 +256,22 @@ class ProfilePanel(wx.Panel):
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
         grid_sizer_1 = wx.FlexGridSizer(3, 4, 5, 5)
         sizer_2.Add((20, 10), 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.server_lbl, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1.Add(self.server_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_server, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.port_lbl, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1.Add(self.port_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_port, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.user_lbl, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1.Add(self.user_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_username, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.pass_lbl, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1.Add(self.pass_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_pass, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.device_lbl, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1.Add(self.device_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.device_listbox, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.flags_lbl, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1.Add(self.flags_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_flags, 0, wx.EXPAND, 0)
         grid_sizer_1.AddGrowableCol(1)
         grid_sizer_1.AddGrowableCol(3)
-        sizer_2.Add(grid_sizer_1, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 10)
-        sizer_2.Add(self.start, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL|wx.BOTTOM, 5)
+        sizer_2.Add(grid_sizer_1, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        sizer_2.Add(self.start, 0, wx.ALIGN_BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM, 5)
         self.SetSizerAndFit(sizer_2)
 
     def toggle_mining(self, event):
@@ -356,7 +356,7 @@ class ProfilePanel(wx.Panel):
     def format_khash(self, rate):
         """Format rate for display. A rate of 0 means just connected."""
         if rate > 1000:
-            return "%.1f Mhash/s" % (rate/1000.)
+            return "%.1f Mhash/s" % (rate / 1000.)
         elif rate == 0:
             return "Connected."
         else:
@@ -531,7 +531,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.profile_objects.append(panel)
         self.nb.AddPage(panel, panel.name)
         # The newly created profile should have focus.
-        self.nb.EnsureVisible(self.nb.GetPageCount()-1)
+        self.nb.EnsureVisible(self.nb.GetPageCount() - 1)
         self.__do_layout()
         return panel
 
@@ -587,11 +587,11 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         config_data = dict(show_console=self.is_console_visible(),
                            profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable)
-        logger.debug('Saving: '+ json.dumps(config_data))
+        logger.debug('Saving: ' + json.dumps(config_data))
         with open(config_filename, 'w') as f:
             json.dump(config_data, f)
             self.message("Profiles saved OK to %s." % config_filename,
-                          "Save successful", wx.OK|wx.ICON_INFORMATION)
+                          "Save successful", wx.OK | wx.ICON_INFORMATION)
         # TODO: handle save failed
     
     def load_config(self, event=None):
@@ -699,7 +699,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         except OSError:
             self.message(
                 "Couldn't find Bitcoin at %s. Is your path set correctly?" % self.bitcoin_executable,
-                "Launch failed", wx.ICON_ERROR|wx.OK)
+                "Launch failed", wx.ICON_ERROR | wx.OK)
             return
         self.message(
             "Client launched ok. You can start the miner now.",
@@ -758,12 +758,12 @@ class SoloPasswordRequest(wx.Dialog):
         self.pass_lbl = wx.StaticText(self, -1, _("Password:"))
         self.txt_pass = wx.TextCtrl(self, -1, _(""), style=wx.TE_PASSWORD)
         grid_sizer_1 = wx.FlexGridSizer(2, 2, 5, 5)
-        grid_sizer_1.Add(self.user_lbl, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1.Add(self.user_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_username, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.pass_lbl, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
+        grid_sizer_1.Add(self.pass_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_pass, 0, wx.EXPAND, 0)
-        buttons = self.CreateButtonSizer(wx.OK|wx.CANCEL)
-        vbox.Add(grid_sizer_1, wx.EXPAND|wx.ALL, 10)
+        buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+        vbox.Add(grid_sizer_1, wx.EXPAND | wx.ALL, 10)
         vbox.Add(buttons)
         self.SetSizerAndFit(vbox)
 
@@ -783,7 +783,7 @@ class AboutGuiminer(wx.Dialog):
         self.about_text = wx.StaticText(self, -1, text)
         self.copy_btn = wx.Button(self, -1, "Copy address to clipboard")                            
         vbox.Add(self.about_text)
-        vbox.Add(self.copy_btn, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vbox.Add(self.copy_btn, 0, wx.ALIGN_BOTTOM | wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.SetSizer(vbox)
 
         self.copy_btn.Bind(wx.EVT_BUTTON, self.on_copy)        
