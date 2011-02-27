@@ -10,4 +10,4 @@ setup(windows=['guiminer.py'],
           compressed=True,
           optimize=2
       )), 
-      data_files = ['msvcp90.dll', 'BitcoinMiner.cl', 'logo.png'])
+      data_files = ['msvcp90.dll', 'BitcoinMiner.cl', 'logo.png', 'LICENSE.txt'])
