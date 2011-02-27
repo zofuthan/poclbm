@@ -1,3 +1,9 @@
+"""poclbm-gui - GUI miner for poclbm
+
+Copyright 2011 Chris MacLeod
+This program is released until the GNU GPL. See LICENSE.txt for details.
+"""
+
 import sys, os, subprocess, errno, re, threading, logging
 import wx
 import json
