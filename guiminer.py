@@ -148,7 +148,7 @@ class SummaryPanel(wx.Panel):
         self.Bind(wx.EVT_TIMER, self.on_update_tooltip)
         
         flags = wx.ALIGN_CENTER_HORIZONTAL | wx.ALL
-        border = 5        
+        border = 5
         self.column_headers = [
             (wx.StaticText(self, -1, _("Miner")), 0, flags, border),
             (wx.StaticText(self, -1, _("Speed")), 0, flags, border),
@@ -157,6 +157,10 @@ class SummaryPanel(wx.Panel):
             (wx.StaticText(self, -1, _("Start/Stop")), 0, flags, border),
             (wx.StaticText(self, -1, _("Autostart")), 0, flags, border),   
         ]
+        font = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font.SetUnderlined(True)
+        for st in self.column_headers:
+            st[0].SetFont(font) 
         
         self.grid = wx.FlexGridSizer(0, len(self.column_headers), 2, 2)
 
@@ -178,7 +182,6 @@ class SummaryPanel(wx.Panel):
             self.grid.Remove(i)
                 
         for p in self.parent.profile_panels:
-            print p.name
             p.clear_summary_widgets()                    
             self.grid.AddMany(p.get_summary_widgets(self))
             
@@ -187,7 +190,7 @@ class SummaryPanel(wx.Panel):
     def on_close(self):
         self.timer.Stop()
     
-    def on_update_tooltip(self, event=None):
+    def on_update_tooltip(self, event=None):       
         self.parent.statusbar.SetStatusText("", 0) # TODO: show something
         total_rate = sum(p.last_rate for p in self.parent.profile_panels
                          if p.is_mining)                
@@ -371,8 +374,8 @@ class ProfilePanel(wx.Panel):
     
     def update_summary(self):
         """Update our summary fields if possible."""
-        if not self.summary_name:
-            return # Assume none of the other fields are there either
+        if not self.summary_panel:
+            return
         
         self.summary_name.SetLabel(self.name)
         if not self.is_mining:
@@ -391,10 +394,13 @@ class ProfilePanel(wx.Panel):
             self.summary_shares_invalid.SetLabel(str(self.invalid_shares))            
 
         self.summary_start.SetLabel(self.get_start_stop_state())
-        self.summary_autostart.SetValue(self.autostart)     
+        self.summary_autostart.SetValue(self.autostart)
+        
+        self.summary_panel.grid.Layout() 
     
     def get_summary_widgets(self, summary_panel):
         """Return a list of summary widgets suitable for sizer.AddMany."""
+        self.summary_panel = summary_panel
         self.summary_name = wx.StaticText(summary_panel, -1, self.name)
         self.summary_status = wx.StaticText(summary_panel, -1, "Stopped")
         self.summary_shares_accepted = wx.StaticText(summary_panel, -1, "0")
@@ -406,10 +412,10 @@ class ProfilePanel(wx.Panel):
         self.summary_autostart.SetValue(self.autostart)
         return [
             (self.summary_name, 0, wx.ALIGN_CENTER_HORIZONTAL),
-            (self.summary_status, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 0),
+            (self.summary_status, 0, wx.ALIGN_CENTER_HORIZONTAL, 0),
             (self.summary_shares_accepted, 0, wx.ALIGN_CENTER_HORIZONTAL, 0),
             (self.summary_shares_invalid, 0, wx.ALIGN_CENTER_HORIZONTAL, 0),            
-            (self.summary_start, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.LEFT|wx.RIGHT, 0),
+            (self.summary_start, 0, wx.ALIGN_CENTER, 0),
             (self.summary_autostart, 0, wx.ALIGN_CENTER, 0)
         ]
 
@@ -889,7 +895,6 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         event.Skip() # OK to close the tab now
     
     def on_page_closed(self, event):
-        print 'page closed'
         if self.summary_panel is not None:
             self.summary_panel.add_miners_to_grid() # Remove miner summary
 
