@@ -164,7 +164,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
 
     def on_update_tooltip(self, event):
         """Refresh the taskbar icon's status message."""
-        objs = self.frame.profile_objects
+        objs = self.frame.profile_panels
         if objs:
             text = '\n'.join(p.get_taskbar_text() for p in objs)
             self.SetIcon(self.icon, text)    
@@ -487,8 +487,7 @@ class PoclbmFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         wx.Frame.__init__(self, *args, **kwds)
         style = fnb.FNB_X_ON_TAB | fnb.FNB_FF2 | fnb.FNB_NO_NAV_BUTTONS | fnb.FNB_HIDE_ON_SINGLE_TAB
-        self.nb = fnb.FlatNotebook(self, -1, style=style)
-        self.profile_objects = [] # List of ProfilePanel. # TODO: can we just get this from self.nb?
+        self.nb = fnb.FlatNotebook(self, -1, style=style)        
         self.console_panel = None
                
         self.menubar = wx.MenuBar()
@@ -568,11 +567,16 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.vertical_sizer.SetSizeHints(self)
         self.SetSizerAndFit(self.vertical_sizer)
 
+    @property
+    def profile_panels(self):
+        """Return a list of currently available ProfilePanel."""
+        pages = [self.nb.GetPage(i) for i in range(self.nb.GetPageCount())]
+        return [p for p in pages if p != self.console_panel]
+    
     def add_profile(self, data):
         """Add a new ProfilePanel to the list of tabs."""
         panel = ProfilePanel(self.nb, -1, self.devices, self.statusbar)
         panel.set_data(data)
-        self.profile_objects.append(panel)
         self.nb.AddPage(panel, panel.name)
         # The newly created profile should have focus.
         self.nb.EnsureVisible(self.nb.GetPageCount() - 1)
@@ -615,7 +619,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         else:
             if self.console_panel is not None:
                 self.console_panel.on_close()
-            for p in self.profile_objects:
+            for p in self.profile_panels:
                 p.stop_mining()
             if self.tbicon is not None:
                 self.tbicon.RemoveIcon()
@@ -627,7 +631,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         """Save the current miner profiles to our config file in JSON format."""
         folder, config_filename = self.get_storage_location()
         mkdir_p(folder)
-        profile_data = [p.get_data() for p in self.profile_objects]
+        profile_data = [p.get_data() for p in self.profile_panels]
         config_data = dict(show_console=self.is_console_visible(),
                            profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable)
@@ -653,17 +657,15 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             self.bitcoin_executable = executable
             
         # Shut down any existing miners before they get clobbered
-        if(any(p.is_mining for p in self.profile_objects)):
+        if(any(p.is_mining for p in self.profile_panels)):
             result = self.message(
                 "Loading profiles will stop any currently running miners. Continue?",
                 "Load profile", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION)
             if result == wx.ID_NO:
                 return                      
-        while self.profile_objects:
-            p = self.profile_objects.pop()
+        for p in reversed(self.profile_panels):            
             p.stop_mining()
-        for i in reversed(range(self.nb.GetPageCount())):
-            self.nb.DeletePage(i)            
+            self.nb.DeletePage(self.nb.GetPageIndex(p))
         # Create new miners
         data = config_data.get('profiles', [])
         for d in data:
@@ -707,11 +709,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             self.console_panel = None
             event.Skip()
             return
-        
-        try:
-            p = self.profile_objects[event.GetSelection()]
-        except IndexError:
-            return # TODO
+        p = self.nb.GetPage(event.GetSelection())
         if p.is_mining:
             result = self.message(
                 "Closing this miner will stop it. Continue?", "Close miner",
@@ -719,7 +717,6 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             if result == wx.ID_NO:
                 event.Veto()
                 return            
-        p = self.profile_objects.pop(event.GetSelection())
         p.stop_mining()
         event.Skip() # OK to close the tab now
 
@@ -728,11 +725,12 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
 
         Ensures the status bar shows the status of the tab that has focus.
         """
-        try:
-            p = self.profile_objects[event.GetSelection()]
-        except IndexError:
-            return # TODO
-        p.on_focus()
+        p = self.nb.GetPage(event.GetSelection())
+        if p == self.console_panel:              
+            self.statusbar.SetStatusText("", 0)
+            self.statusbar.SetStatusText("", 1)  
+        else:
+            p.on_focus()
 
     def launch_solo_server(self, event):
         """Launch the official bitcoin client in server mode.
