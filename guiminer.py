@@ -11,7 +11,7 @@ import json
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-02-27'
+__version__ = '2011-03-06'
 
 ABOUT_TEXT = \
 """Python OpenCL Bitcoin Miner GUI
