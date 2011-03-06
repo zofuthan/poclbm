@@ -4,7 +4,7 @@ Copyright 2011 Chris MacLeod
 This program is released until the GNU GPL. See LICENSE.txt for details.
 """
 
-import sys, os, subprocess, errno, re, threading, logging
+import sys, os, subprocess, errno, re, threading, logging, time
 import wx
 import json
 
@@ -233,6 +233,7 @@ class ProfilePanel(wx.Panel):
         self.diff1_hashes = 0 # SOLO mode only
         self.last_rate = 0 # units of khash/s
         self.last_update_type = ProfilePanel.POOL
+        self.last_update_time = None
         self.server_lbl = wx.StaticText(self, -1, _("Server:"))
         self.txt_server = wx.TextCtrl(self, -1, "mining.bitcoin.cz")
         self.port_lbl = wx.StaticText(self, -1, _("Port:"))
@@ -245,6 +246,8 @@ class ProfilePanel(wx.Panel):
         self.device_listbox = wx.ComboBox(self, -1, choices=devices, style=wx.CB_DROPDOWN)
         self.flags_lbl = wx.StaticText(self, -1, _("Extra flags:"))
         self.txt_flags = wx.TextCtrl(self, -1, "")
+        
+        #self.chk_autostart = wx.CheckBox(self, -1, "Start this miner when the GUI starts")
         self.start = wx.Button(self, -1, _("Start mining!"))        
 
         self.device_listbox.SetSelection(0)
@@ -272,7 +275,7 @@ class ProfilePanel(wx.Panel):
 
     def __do_layout(self):
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        grid_sizer_1 = wx.FlexGridSizer(3, 4, 5, 5)
+        grid_sizer_1 = wx.FlexGridSizer(4, 4, 5, 5)
         sizer_2.Add((20, 10), 0, wx.EXPAND, 0)
         grid_sizer_1.Add(self.server_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_server, 0, wx.EXPAND, 0)
@@ -289,6 +292,7 @@ class ProfilePanel(wx.Panel):
         grid_sizer_1.AddGrowableCol(1)
         grid_sizer_1.AddGrowableCol(3)
         sizer_2.Add(grid_sizer_1, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        #sizer_2.Add(self.chk_autostart, 0, wx.EXPAND, 0) # TODO
         sizer_2.Add(self.start, 0, wx.ALIGN_BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM, 5)
         self.SetSizerAndFit(sizer_2)
 
@@ -401,9 +405,21 @@ class ProfilePanel(wx.Panel):
 
     def update_shares_on_statusbar(self):
         """For pooled mining, show the shares on the statusbar."""
-        text = "Shares: %d accepted, %d stale/invalid" % \
-               (self.accepted_shares, self.invalid_shares)
+        text = "Shares: %d accepted, %d stale/invalid %s " % \
+               (self.accepted_shares, self.invalid_shares, 
+                self.format_last_update_time())
         self.set_status(text, 0) 
+
+    def update_last_time(self):
+        """Set the last update time to now (in local time)."""
+        self.last_update_time = time.localtime()
+        
+    def format_last_update_time(self):
+        """Format last update time for display."""
+        time_fmt = '%I:%M:%S%p'
+        if self.last_update_time is None:
+            return ""
+        return "(last at %s)" % time.strftime(time_fmt, self.last_update_time)
 
     def update_shares(self, accepted):
         """Update our shares with a report from the listener thread."""
@@ -412,6 +428,7 @@ class ProfilePanel(wx.Panel):
             self.accepted_shares += 1
         else:
             self.invalid_shares += 1
+        self.update_last_time()
         self.update_shares_on_statusbar()
 
     def update_status(self, msg):
@@ -455,13 +472,15 @@ class ProfilePanel(wx.Panel):
         since some small fraction of easy hashes are also valid solutions
         to the block.
         """
-        text = "Difficulty 1 hashes: %d" % self.diff1_hashes
+        text = "Difficulty 1 hashes: %d %s" % \
+            (self.diff1_hashes, self.format_last_update_time())
         self.set_status(text, 0)
 
     def update_solo(self):
         """Update our easy hashes with a report from the listener thread."""
         self.last_update_type = ProfilePanel.SOLO
         self.diff1_hashes += 1
+        self.update_last_time()
         self.update_solo_status()
 
 class PoclbmFrame(wx.Frame):

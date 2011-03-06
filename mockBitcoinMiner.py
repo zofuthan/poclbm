@@ -48,7 +48,7 @@ class MockBitcoinMiner(threading.Thread):
         self.start()
         try:
             while True:
-                time.sleep(random.randint(3, 10))
+                time.sleep(random.randint(3, 5))
                 hash = random.randint(0, 0xffffffff)
                 accepted = (random.random() < 0.9)
                 self.blockFound(struct.pack('I', long(hash)).encode('hex'), accepted)
