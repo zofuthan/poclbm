@@ -8,6 +8,7 @@ setup(windows=['guiminer.py'],
           dll_excludes=['OpenCL.dll'],
           #bundle_files=1,
           compressed=True,
-          optimize=2
+          optimize=2,
+          excludes = ["Tkconstants", "Tkinter", "tcl"],
       )), 
       data_files = ['msvcp90.dll', 'BitcoinMiner.cl', 'logo.png', 'LICENSE.txt'])
