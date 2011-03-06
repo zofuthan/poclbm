@@ -14,7 +14,7 @@ from datetime import datetime
 from Queue import Queue, Empty
 from struct import pack, unpack
 
-VERSION = '20110222'
+VERSION = '201103.beta'
 
 USER_AGENT = 'poclbm/' + VERSION
 
@@ -110,16 +110,17 @@ class BitcoinMiner(Thread):
 		kernelFile.close()
 		m = md5(); m.update(''.join([device.platform.name, device.platform.version, device.name, defines, kernel]))
 		cacheName = '%s.elf' % m.hexdigest()
-		binaryFile = None
+		binary = None
 		try:
-			binaryFile = open(cacheName, 'rb')
-			self.miner = cl.Program(self.context, [device], [binaryFile.read()]).build(defines)
-			binaryFile.close()
-		except IOError:
+			binary = open(cacheName, 'rb')
+			self.miner = cl.Program(self.context, [device], [binary.read()]).build(defines)
+		except (IOError, cl.LogicError):
 			self.miner = cl.Program(self.context, kernel).build(defines)
-			binaryFile = open(cacheName, 'wb')
-			binaryFile.write(self.miner.binaries[0])
-			binaryFile.close()
+			binaryW = open(cacheName, 'wb')
+			binaryW.write(self.miner.binaries[0])
+			binaryW.close()
+		finally:
+			if binary: binary.close()
 
 		if (self.worksize == -1):
 			self.worksize = self.miner.search.get_work_group_info(cl.kernel_work_group_info.WORK_GROUP_SIZE, self.context.devices[0])
@@ -149,14 +150,13 @@ class BitcoinMiner(Thread):
 	def exit(self):
 		self.workQueue.put('stop')
 		sleep(1.1)
-		sys.exit()
 
 	def hashrate(self, rate):
 		self.say('%s khash/s', rate)
 
 	def failure(self, message):
 		print '\n%s' % message
-		self.exit()
+		sys.exit()
 
 	def diff1Found(self, hash, target):
 		if self.verbose and target < 0xfffff000L:
@@ -222,9 +222,6 @@ class BitcoinMiner(Thread):
 										if accepted != None:
 											self.blockFound(pack('I', long(G)).encode('hex'), accepted)
 						result = None
-			except KeyboardInterrupt:
-				print '\nbye'
-				self.exit()
 			except Exception:
 				self.sayLine("Unexpected error:")
 				traceback.print_exc()
@@ -261,7 +258,7 @@ class BitcoinMiner(Thread):
 					data   = np.array(unpack('IIIIIIIIIIIIIIII', work['data'][128:].decode('hex')), dtype=np.uint32)
 					state  = np.array(unpack('IIIIIIII',         work['midstate'].decode('hex')),   dtype=np.uint32)
 					target = np.array(unpack('IIIIIIII',         work['target'].decode('hex')),     dtype=np.uint32)
-					(target[0], target[1]) = (uint32(0xFFFF0000), 0)
+					(target[0], target[1]) = (uint32(0xFFFFFFFF), 0)
 					state2 = np.array(state)
 					for i in xrange(3):
 						(state2[~(i-4)&7], state2[~(i-8)&7]) = sharound(state2[(~(i-1)&7)],state2[~(i-2)&7],state2[~(i-3)&7],state2[~(i-4)&7],state2[~(i-5)&7],state2[~(i-6)&7],state2[~(i-7)&7],state2[~(i-8)&7],data[i],K[i])
