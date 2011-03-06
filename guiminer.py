@@ -144,7 +144,7 @@ class SummaryPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
         self.parent = parent
         self.timer = wx.Timer(self)
-        self.timer.Start(1000)
+        self.timer.Start(2000)
         self.Bind(wx.EVT_TIMER, self.on_update_tooltip)
         
         flags = wx.ALIGN_CENTER_HORIZONTAL | wx.ALL
@@ -190,7 +190,13 @@ class SummaryPanel(wx.Panel):
     def on_close(self):
         self.timer.Stop()
     
-    def on_update_tooltip(self, event=None):       
+    def on_update_tooltip(self, event=None):
+        if self.parent.nb.GetSelection() != self.parent.nb.GetPageIndex(self):
+            return 
+        
+        for p in self.parent.profile_panels:
+            p.update_summary()
+        
         self.parent.statusbar.SetStatusText("", 0) # TODO: show something
         total_rate = sum(p.last_rate for p in self.parent.profile_panels
                          if p.is_mining)                
@@ -395,7 +401,6 @@ class ProfilePanel(wx.Panel):
 
         self.summary_start.SetLabel(self.get_start_stop_state())
         self.summary_autostart.SetValue(self.autostart)
-        
         self.summary_panel.grid.Layout() 
     
     def get_summary_widgets(self, summary_panel):
@@ -453,6 +458,7 @@ class ProfilePanel(wx.Panel):
             self.start_mining()
         self.start.SetLabel("%s mining!" % self.get_start_stop_state())
         self.update_summary()
+        
 
     def get_data(self):
         """Return a dict of our profile data."""        
@@ -544,7 +550,6 @@ class ProfilePanel(wx.Panel):
         if self.is_possible_error:
             self.update_shares_on_statusbar()
             self.is_possible_error = False
-        self.update_summary()
 
     def update_shares_on_statusbar(self):
         """For pooled mining, show the shares on the statusbar."""
@@ -562,7 +567,7 @@ class ProfilePanel(wx.Panel):
         time_fmt = '%I:%M:%S%p'
         if self.last_update_time is None:
             return ""
-        return "(last at %s)" % time.strftime(time_fmt, self.last_update_time)
+        return "- last at %s" % time.strftime(time_fmt, self.last_update_time)
 
     def update_shares(self, accepted):
         """Update our shares with a report from the listener thread."""
@@ -573,7 +578,6 @@ class ProfilePanel(wx.Panel):
             self.invalid_shares += 1
         self.update_last_time()
         self.update_shares_on_statusbar()
-        self.update_summary()
 
     def update_status(self, msg):
         """Update our status with a report from the listener thread.
@@ -584,7 +588,6 @@ class ProfilePanel(wx.Panel):
         """
         self.set_status(msg)
         self.is_possible_error = True
-        self.update_summary()
 
     def set_status(self, msg, index=0):
         """Set the current statusbar text, but only if we have focus."""
@@ -627,7 +630,6 @@ class ProfilePanel(wx.Panel):
         self.diff1_hashes += 1
         self.update_last_time()
         self.update_solo_status()
-        self.update_summary()
 
 class PoclbmFrame(wx.Frame):
     def __init__(self, *args, **kwds):
