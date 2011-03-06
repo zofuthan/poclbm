@@ -143,7 +143,10 @@ class SummaryPanel(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, -1)
         self.parent = parent
-
+        self.timer = wx.Timer(self)
+        self.timer.Start(1000)
+        self.Bind(wx.EVT_TIMER, self.on_update_tooltip)
+        
         flags = wx.ALIGN_CENTER_HORIZONTAL | wx.ALL
         border = 5        
         self.column_headers = [
@@ -182,17 +185,20 @@ class SummaryPanel(wx.Panel):
         self.grid.Layout()
         
     def on_close(self):
-        pass
+        self.timer.Stop()
     
-    def on_focus(self):
-        """On focus, show the statusbar text."""
+    def on_update_tooltip(self, event=None):
         self.parent.statusbar.SetStatusText("", 0) # TODO: show something
         total_rate = sum(p.last_rate for p in self.parent.profile_panels
                          if p.is_mining)                
         if any(p.is_mining for p in self.parent.profile_panels):
             self.parent.statusbar.SetStatusText(format_khash(total_rate), 1)
         else:
-            self.parent.statusbar.SetStatusText("", 0)
+            self.parent.statusbar.SetStatusText("", 0)       
+    
+    def on_focus(self):
+        """On focus, show the statusbar text."""
+        self.on_update_tooltip()
 
 class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     """Taskbar icon for the GUI.
