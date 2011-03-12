@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
 import pyopencl as cl
-from optparse import OptionParser
+from time import sleep
 from BitcoinMiner import *
+from optparse import OptionParser
 
 parser = OptionParser(version=USER_AGENT)
 parser.add_option('-u', '--user',     dest='user',     default='bitcoin',   help='user name')
@@ -58,7 +59,6 @@ try:
 	miner.mine()
 except KeyboardInterrupt:
 	print '\nbye'
-except SystemExit:
-	pass
 finally:
 	if miner: miner.exit()
+sleep(1.1)
