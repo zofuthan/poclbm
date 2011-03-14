@@ -388,8 +388,7 @@ class ProfilePanel(wx.Panel):
         """Set our profile data to the information in data. See get_data()."""
         default_server = self.get_server_by_field(
                             self.defaults['default_server'], 'name')
-        self.name = (data.get('name') or
-                     default_server.get('name', 'Miner'))
+        self.name = (data.get('name') or 'Default')
                 
         # Backwards compatibility: hostname key used to be called server.
         # We only save out hostname now but accept server from old INI files.
@@ -699,8 +698,17 @@ class ProfilePanel(wx.Panel):
         elif name == "bitpenny": self.layout_bitpenny()
         elif name == "deepbit": self.layout_deepbit()        
         else: self.layout_default()
-        
-        self.Layout()
+               
+        self.Layout()        
+    
+    def set_name(self, name):
+        """Set the label on this miner's tab to name."""
+        self.name = name
+        if self.summary_name:
+            self.summary_name.SetLabel(self.name)
+        page = self.parent.GetPageIndex(self)
+        if page != -1:
+            self.parent.SetPageText(page, name)
     
     def layout_init(self):
         """Create the sizers for this frame."""
@@ -811,7 +819,15 @@ class PoclbmFrame(wx.Frame):
     def __init__(self, *args, **kwds):
         wx.Frame.__init__(self, *args, **kwds)
         style = fnb.FNB_X_ON_TAB | fnb.FNB_FF2 | fnb.FNB_HIDE_ON_SINGLE_TAB
-        self.nb = fnb.FlatNotebook(self, -1, style=style)        
+        self.nb = fnb.FlatNotebook(self, -1, style=style)
+        
+        # Set up notebook context menu
+        notebook_menu = wx.Menu()
+        ID_RENAME = wx.NewId()
+        notebook_menu.Append(ID_RENAME, "&Rename...", _("Rename this miner"))
+        self.nb.SetRightClickMenu(notebook_menu)
+        self.Bind(wx.EVT_MENU, self.rename_miner, id=ID_RENAME)
+               
         self.console_panel = None
         self.summary_panel = None
         
@@ -927,8 +943,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.nb.EnsureVisible(self.nb.GetPageCount() - 1)
         
         if self.summary_panel is not None:
-            self.summary_panel.add_miners_to_grid() # Show new entry on summary
-        
+            self.summary_panel.add_miners_to_grid() # Show new entry on summary    
         return panel
 
     def message(self, *args, **kwargs):
@@ -1167,7 +1182,16 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
     
     def on_menu_exit(self, event):
         self.Close(force=True)
-                                       
+        
+    def rename_miner(self, event):
+        """Change the name of a miner as displayed on the tab."""
+        p = self.nb.GetPage(self.nb.GetSelection())
+        if p not in self.profile_panels:
+            return
+        
+        dialog = wx.TextEntryDialog(self, "Rename to:", "Rename miner")
+        if dialog.ShowModal() == wx.ID_OK:                        
+            p.set_name(dialog.GetValue().strip())                                                  
 
 class SoloPasswordRequest(wx.Dialog):
     """Dialog prompting user for login credentials for solo mining."""
