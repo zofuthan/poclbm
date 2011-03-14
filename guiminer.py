@@ -386,7 +386,8 @@ class ProfilePanel(wx.Panel):
 
     def set_data(self, data):
         """Set our profile data to the information in data. See get_data()."""
-        default_server = self.get_server_by_field(self.defaults['default_server'], 'name')
+        default_server = self.get_server_by_field(
+                            self.defaults['default_server'], 'name')
         self.name = (data.get('name') or
                      default_server.get('name', 'Miner'))
                 
@@ -397,8 +398,9 @@ class ProfilePanel(wx.Panel):
                     default_server['host'])
         self.txt_host.SetValue(hostname)
         server = self.get_server_by_field(hostname, 'host')
-        self.server.SetStringSelection(server['name'])
-                            
+                                    
+        self.server.SetStringSelection(server.get('name', "Other"))
+                                            
         self.txt_username.SetValue(
             data.get('username') or 
             self.defaults.get('default_username', ''))
@@ -418,7 +420,7 @@ class ProfilePanel(wx.Panel):
         device_index = data.get('device', None)
         if device_index is not None and device_index < self.device_listbox.GetCount():
             self.device_listbox.SetSelection(device_index)
-            
+                    
         self.change_server(server)            
         
     def clear_summary_widgets(self):
@@ -651,10 +653,11 @@ class ProfilePanel(wx.Panel):
         self.change_server(new_server)
     
     def get_server_by_field(self, target_val, field):
-        """Return the first server dict with the specified name."""
+        """Return the first server dict with the specified val, or {}."""
         for s in self.servers:
             if s.get(field) == target_val:
                 return s
+        return {}
 
     def set_widgets_visible(self, widgets, show=False):
         """Show or hide each widget in widgets according to the show flag."""
@@ -681,13 +684,17 @@ class ProfilePanel(wx.Panel):
         self.set_tooltips()
         self.set_widgets_visible(self.all_widgets, True)        
                
-        self.website.SetLabel(new_server['url'])
-        self.website.SetURL(new_server['url'])
-        self.txt_host.SetValue(new_server['host'])
-        self.txt_port.SetValue(str(new_server['port']))
+        url = new_server.get('url', 'n/a')
+        self.website.SetLabel(url)
+        self.website.SetURL(url)
+        
+        if 'host' in new_server:
+            self.txt_host.SetValue(new_server['host'])
+        if 'port' in new_server:
+            self.txt_port.SetValue(str(new_server['port']))
         
         # Call server specific code.
-        name = new_server['name'].lower()
+        name = new_server.get('name', 'Other').lower()
         if name == "slush's pool": self.layout_slush()
         elif name == "bitpenny": self.layout_bitpenny()
         elif name == "deepbit": self.layout_deepbit()        
@@ -744,7 +751,7 @@ class ProfilePanel(wx.Panel):
         self.set_widgets_visible([self.extra_info], False)
         self.layout_init()
         self.layout_server_and_website(row=0)
-        is_custom = self.server.GetSelection() in ["Other", "solo"]
+        is_custom = self.server.GetStringSelection().lower() in ["other", "solo"]
         if is_custom:
             self.layout_host_and_port(row=1)
         else:
@@ -981,7 +988,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
                            bitcoin_executable=self.bitcoin_executable)
         logger.debug('Saving: ' + json.dumps(config_data))
         with open(config_filename, 'w') as f:
-            json.dump(config_data, f)
+            json.dump(config_data, f, indent=4)
             self.message("Profiles saved OK to %s." % config_filename,
                           "Save successful", wx.OK | wx.ICON_INFORMATION)
         # TODO: handle save failed
