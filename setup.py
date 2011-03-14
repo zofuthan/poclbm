@@ -11,4 +11,9 @@ setup(windows=['guiminer.py'],
           optimize=2,
           excludes = ["Tkconstants", "Tkinter", "tcl"],
       )), 
-      data_files = ['msvcp90.dll', 'BitcoinMiner.cl', 'logo.png', 'LICENSE.txt'])
+      data_files = ['msvcp90.dll',
+                    'BitcoinMiner.cl',
+                    'logo.png',
+                    'LICENSE.txt',
+                    'servers.ini',
+                    'defaults.ini'])

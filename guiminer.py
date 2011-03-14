@@ -1,7 +1,7 @@
 """poclbm-gui - GUI miner for poclbm
 
 Copyright 2011 Chris MacLeod
-This program is released until the GNU GPL. See LICENSE.txt for details.
+This program is released under the GNU GPL. See LICENSE.txt for details.
 """
 
 import sys, os, subprocess, errno, re, threading, logging, time
@@ -9,9 +9,10 @@ import wx
 import json
 
 from wx.lib.agw import flatnotebook as fnb
+from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-03-06'
+__version__ = '2011-03-13'
 
 ABOUT_TEXT = \
 """Python OpenCL Bitcoin Miner GUI
@@ -30,6 +31,9 @@ by donating to:
 %s
 """
 
+# Layout constants
+LBL_STYLE = wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL
+
 # Events sent from the worker threads
 (UpdateHashRateEvent, EVT_UPDATE_HASHRATE) = NewEvent()
 (UpdateAcceptedEvent, EVT_UPDATE_ACCEPTED) = NewEvent()
@@ -43,13 +47,12 @@ def merge_whitespace(s):
     return s.strip()
 
 def get_opencl_devices():
+    """Return a list of available OpenCL devices."""
     import pyopencl
     platform = pyopencl.get_platforms()[0]
     devices = platform.get_devices()
     if len(devices) == 0:
         raise IOError
-    # TODO: maybe use horizontal scrollbar to show long device names?
-    # Or maybe it's nice if we can show device aliases.
     return ['[%d] %s' % (i, merge_whitespace(device.name)[:25])
                          for (i, device) in enumerate(devices)]
 
@@ -307,10 +310,11 @@ class ProfilePanel(wx.Panel):
       whether the poclbm instance is working solo or in a pool.
     """
     SOLO, POOL = range(2)
-    def __init__(self, parent, id, devices, statusbar, data):
+    def __init__(self, parent, id, devices, servers, defaults, statusbar, data):
         wx.Panel.__init__(self, parent, id)
         self.parent = parent
-        self.name = "Miner"
+        self.servers = servers
+        self.defaults = defaults        
         self.statusbar = statusbar
         self.is_mining = False
         self.is_possible_error = False
@@ -323,47 +327,99 @@ class ProfilePanel(wx.Panel):
         self.last_update_type = ProfilePanel.POOL
         self.last_update_time = None
         self.autostart = False
-        self.server_lbl = wx.StaticText(self, -1, _("Server:"))
-        self.txt_server = wx.TextCtrl(self, -1, "mining.bitcoin.cz")
+        self.server_lbl = wx.StaticText(self, -1, _("Server:"))                
+        self.server = wx.ComboBox(self, -1, 
+                                  choices=[s['name'] for s in servers], 
+                                  style=wx.CB_READONLY)
+        self.website_lbl = wx.StaticText(self, -1, _("Website:"))
+        self.website = hyperlink.HyperLinkCtrl(self, -1, "")
+        self.host_lbl = wx.StaticText(self, -1, _("Host:"))
+        self.txt_host = wx.TextCtrl(self, -1, "")
         self.port_lbl = wx.StaticText(self, -1, _("Port:"))
-        self.txt_port = wx.TextCtrl(self, -1, "8332")
+        self.txt_port = wx.TextCtrl(self, -1, "")
         self.user_lbl = wx.StaticText(self, -1, _("Username:"))
-        self.txt_username = wx.TextCtrl(self, -1, _(""))
+        self.txt_username = wx.TextCtrl(self, -1, "")
         self.pass_lbl = wx.StaticText(self, -1, _("Password:"))
         self.txt_pass = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
         self.device_lbl = wx.StaticText(self, -1, _("Device:"))
-        self.device_listbox = wx.ComboBox(self, -1, choices=devices, style=wx.CB_DROPDOWN)
-        self.flags_lbl = wx.StaticText(self, -1, _("Extra flags:"))
+        self.device_listbox = wx.ComboBox(self, -1, choices=devices, style=wx.CB_READONLY)
+        self.flags_lbl = wx.StaticText(self, -1, _("Extra flags:"))        
         self.txt_flags = wx.TextCtrl(self, -1, "")
-                
-        #self.chk_autostart = wx.CheckBox(self, -1, "Start this miner when the GUI starts")
+        self.extra_info = wx.StaticText(self, -1, "")
+        
+        self.all_widgets = [self.server_lbl, self.server,
+                            self.website_lbl, self.website,
+                            self.host_lbl, self.txt_host,
+                            self.port_lbl, self.txt_port,
+                            self.user_lbl, self.txt_username,
+                            self.pass_lbl, self.txt_pass,
+                            self.device_lbl, self.device_listbox,
+                            self.flags_lbl, self.txt_flags, 
+                            self.extra_info]
+        
         self.start = wx.Button(self, -1, _("Start mining!"))        
 
         self.device_listbox.SetSelection(0)
-        self.set_data(data)        
-        self.__do_layout()
+        self.server.SetStringSelection(self.defaults.get('default_server'))
+        
+        self.set_data(data)
 
         self.start.Bind(wx.EVT_BUTTON, self.toggle_mining)
+        self.server.Bind(wx.EVT_COMBOBOX, self.on_select_server)
         self.Bind(EVT_UPDATE_HASHRATE, lambda event: self.update_khash(event.rate))
         self.Bind(EVT_UPDATE_ACCEPTED, lambda event: self.update_shares(event.accepted))
         self.Bind(EVT_UPDATE_STATUS, lambda event: self.update_status(event.text))
         self.Bind(EVT_UPDATE_SOLOCHECK, lambda event: self.update_solo())
-        self.update_shares_on_statusbar()
-        
-        add_tooltip(self.device_listbox,
-            "Available OpenCL devices on your system.")
-        add_tooltip(self.txt_server,
-            "Server address, without http:// prefix.\nPooled mining example: mining.bitcoin.cz\nSolo mining example: localhost")
-        add_tooltip(self.txt_port,
-            "Server port. This is usually 8332.")
-        add_tooltip(self.txt_username,
-            "For pooled mining, the miner username (not your account username).\nExample: Kiv.GPU")
-        add_tooltip(self.txt_pass,
-            "For pooled mining, the miner password (not your account password).")
-        add_tooltip(self.txt_flags,
-            "Extra flags to pass to the miner.\nFor Radeon HD 5xxx use -v -w128 for best results.")
-        
+        self.update_shares_on_statusbar()                       
         self.clear_summary_widgets()
+
+    def get_data(self):
+        """Return a dict of our profile data."""        
+        return dict(name=self.name,
+                    hostname=self.txt_host.GetValue(),
+                    port=self.txt_port.GetValue(),
+                    username=self.txt_username.GetValue(),
+                    password=self.txt_pass.GetValue(),
+                    device=self.device_listbox.GetSelection(),
+                    flags=self.txt_flags.GetValue(),
+                    autostart=self.autostart)
+
+    def set_data(self, data):
+        """Set our profile data to the information in data. See get_data()."""
+        default_server = self.get_server_by_field(self.defaults['default_server'], 'name')
+        self.name = (data.get('name') or
+                     default_server.get('name', 'Miner'))
+                
+        # Backwards compatibility: hostname key used to be called server.
+        # We only save out hostname now but accept server from old INI files.
+        hostname = (data.get('hostname') or
+                    data.get('server') or
+                    default_server['host'])
+        self.txt_host.SetValue(hostname)
+        server = self.get_server_by_field(hostname, 'host')
+        self.server.SetStringSelection(server['name'])
+                            
+        self.txt_username.SetValue(
+            data.get('username') or 
+            self.defaults.get('default_username', ''))
+        
+        self.txt_pass.SetValue(
+            data.get('password') or
+            self.defaults.get('default_password', ''))
+                    
+        self.txt_port.SetValue(str(
+            data.get('port') or
+            server.get('port', 8332)))
+                
+        self.txt_flags.SetValue(data.get('flags', ''))
+        self.autostart = data.get('autostart', False)
+
+        # Handle case where they removed devices since last run.
+        device_index = data.get('device', None)
+        if device_index is not None and device_index < self.device_listbox.GetCount():
+            self.device_listbox.SetSelection(device_index)
+            
+        self.change_server(server)            
         
     def clear_summary_widgets(self):
         """Release all our summary widgets."""
@@ -407,6 +463,8 @@ class ProfilePanel(wx.Panel):
         """Return a list of summary widgets suitable for sizer.AddMany."""
         self.summary_panel = summary_panel
         self.summary_name = wx.StaticText(summary_panel, -1, self.name)
+        self.summary_name.Bind(wx.EVT_LEFT_UP, self.show_this_panel)
+                
         self.summary_status = wx.StaticText(summary_panel, -1, "Stopped")
         self.summary_shares_accepted = wx.StaticText(summary_panel, -1, "0")
         self.summary_shares_invalid = wx.StaticText(summary_panel, -1, "0")
@@ -424,28 +482,9 @@ class ProfilePanel(wx.Panel):
             (self.summary_autostart, 0, wx.ALIGN_CENTER, 0)
         ]
 
-    def __do_layout(self):
-        sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2.Add((20, 10), 0, wx.EXPAND, 0)
-        grid_sizer_1 = wx.FlexGridSizer(4, 4, 5, 5)        
-        grid_sizer_1.Add(self.server_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
-        grid_sizer_1.Add(self.txt_server, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.port_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
-        grid_sizer_1.Add(self.txt_port, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.user_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
-        grid_sizer_1.Add(self.txt_username, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.pass_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
-        grid_sizer_1.Add(self.txt_pass, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.device_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
-        grid_sizer_1.Add(self.device_listbox, 0, wx.EXPAND, 0)
-        grid_sizer_1.Add(self.flags_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
-        grid_sizer_1.Add(self.txt_flags, 0, wx.EXPAND, 0)
-        grid_sizer_1.AddGrowableCol(1)
-        grid_sizer_1.AddGrowableCol(3)
-        sizer_2.Add(grid_sizer_1, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
-        #sizer_2.Add(self.chk_autostart, 0, wx.EXPAND, 0) # TODO
-        sizer_2.Add(self.start, 0, wx.ALIGN_BOTTOM | wx.ALIGN_CENTER_HORIZONTAL | wx.BOTTOM, 5)
-        self.SetSizerAndFit(sizer_2)
+    def show_this_panel(self, event):
+        """Set focus to this panel."""
+        self.parent.SetSelection(self.parent.GetPageIndex(self))
 
     def toggle_autostart(self, event):
         self.autostart = event.IsChecked()
@@ -459,33 +498,6 @@ class ProfilePanel(wx.Panel):
         self.start.SetLabel("%s mining!" % self.get_start_stop_state())
         self.update_summary()
         
-
-    def get_data(self):
-        """Return a dict of our profile data."""        
-        return dict(name=self.name,
-                    server=self.txt_server.GetValue(),
-                    port=self.txt_port.GetValue(),
-                    username=self.txt_username.GetValue(),
-                    password=self.txt_pass.GetValue(),
-                    device=self.device_listbox.GetSelection(),
-                    flags=self.txt_flags.GetValue(),
-                    autostart=self.autostart)
-
-    def set_data(self, data):
-        """Set our profile data to the information in data. See get_data()."""
-        if 'name' in data: self.name = data['name']
-        if 'username' in data: self.txt_username.SetValue(data['username'])
-        if 'server' in data: self.txt_server.SetValue(data['server'])
-        if 'port' in data: self.txt_port.SetValue(data['port'])
-        if 'password' in data: self.txt_pass.SetValue(data['password'])
-        if 'flags' in data: self.txt_flags.SetValue(data['flags'])
-        if 'autostart' in data: self.autostart = data['autostart']
-
-        # Handle case where they removed devices since last run.
-        device_index = data.get('device', None)
-        if device_index is not None and device_index < self.device_listbox.GetCount():
-            self.device_listbox.SetSelection(device_index)
-
     def start_mining(self):
         """Launch a poclbm subprocess and attach a MinerListenerThread."""
         folder = get_module_path()  
@@ -500,7 +512,7 @@ class ProfilePanel(wx.Panel):
                 executable,
                 self.txt_username.GetValue(),
                 self.txt_pass.GetValue(),
-                self.txt_server.GetValue(),
+                self.txt_host.GetValue(),
                 self.txt_port.GetValue(),
                 self.device_listbox.GetSelection(),
                 self.txt_flags.GetValue()
@@ -553,9 +565,10 @@ class ProfilePanel(wx.Panel):
 
     def update_shares_on_statusbar(self):
         """For pooled mining, show the shares on the statusbar."""
-        text = "Shares: %d accepted, %d stale/invalid %s " % \
-               (self.accepted_shares, self.invalid_shares, 
-                self.format_last_update_time())
+        text = "Shares: %d accepted" % self.accepted_shares
+        if self.invalid_shares > 0:
+            text += ", %d stale/invalid" % self.invalid_shares         
+        text += " %s" % self.format_last_update_time()
         self.set_status(text, 0) 
 
     def update_last_time(self):
@@ -630,6 +643,162 @@ class ProfilePanel(wx.Panel):
         self.diff1_hashes += 1
         self.update_last_time()
         self.update_solo_status()
+        
+    def on_select_server(self, event):
+        """Update our info in response to a new server choice."""
+        new_server_name = self.server.GetValue()
+        new_server = self.get_server_by_field(new_server_name, 'name')    
+        self.change_server(new_server)
+    
+    def get_server_by_field(self, target_val, field):
+        """Return the first server dict with the specified name."""
+        for s in self.servers:
+            if s.get(field) == target_val:
+                return s
+
+    def set_widgets_visible(self, widgets, show=False):
+        """Show or hide each widget in widgets according to the show flag."""
+        for w in widgets:
+            if show:
+                w.Show()
+            else:
+                w.Hide()        
+
+    def set_tooltips(self):
+        add_tooltip(self.server, "Server to connect to. Different servers have different fees and features.\nCheck their websites for full information.")
+        add_tooltip(self.website, "Website of the currently selected server. Click to visit.")
+        add_tooltip(self.device_listbox, "Available OpenCL devices on your system.")
+        add_tooltip(self.txt_host, "Host address, without http:// prefix.")
+        add_tooltip(self.txt_port, "Server port. This is usually 8332.")
+        add_tooltip(self.txt_username, "The miner's username.\nMay be different than your account username.\nExample: Kiv.GPU")
+        add_tooltip(self.txt_pass, "The miner's password.\nMay be different than your account password.")
+        add_tooltip(self.txt_flags, "Extra flags to pass to the miner.\nFor Radeon HD 5xxx series use -v -w128 for best results.\nFor other cards consult the forum.")
+    
+    def change_server(self, new_server):
+        """Change the server to new_server, updating fields as needed."""
+        
+        # Set defaults before we do server specific code
+        self.set_tooltips()
+        self.set_widgets_visible(self.all_widgets, True)        
+               
+        self.website.SetLabel(new_server['url'])
+        self.website.SetURL(new_server['url'])
+        self.txt_host.SetValue(new_server['host'])
+        self.txt_port.SetValue(str(new_server['port']))
+        
+        # Call server specific code.
+        name = new_server['name'].lower()
+        if name == "slush's pool": self.layout_slush()
+        elif name == "bitpenny": self.layout_bitpenny()
+        elif name == "deepbit": self.layout_deepbit()        
+        else: self.layout_default()
+        
+        self.Layout()
+    
+    def layout_init(self):
+        """Create the sizers for this frame."""
+        self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.frame_sizer.Add((20, 10), 0, wx.EXPAND, 0)
+        self.inner_sizer = wx.GridBagSizer(10, 5)        
+    
+    def layout_server_and_website(self, row):
+        """Lay out the server and website widgets in the specified row."""
+        self.inner_sizer.Add(self.server_lbl, (row,0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.server, (row,1), flag=wx.EXPAND)        
+        self.inner_sizer.Add(self.website_lbl, (row,2), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.website, (row,3), flag=wx.ALIGN_CENTER_VERTICAL)        
+    
+    def layout_host_and_port(self, row):
+        """Lay out the host and port widgets in the specified row."""
+        self.inner_sizer.Add(self.host_lbl, (row,0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_host, (row,1), flag=wx.EXPAND)
+        self.inner_sizer.Add(self.port_lbl, (row,2), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_port, (row,3), flag=wx.EXPAND)
+    
+    def layout_user_and_pass(self, row):
+        """Lay out the user and pass widgets in the specified row."""
+        self.inner_sizer.Add(self.user_lbl, (row,0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_username, (row,1), flag=wx.EXPAND)
+        self.inner_sizer.Add(self.pass_lbl, (row,2), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_pass, (row,3), flag=wx.EXPAND)
+            
+    def layout_device_and_flags(self, row):
+        """Lay out the device and flags widgets in the specified row."""
+        self.inner_sizer.Add(self.device_lbl, (row,0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.device_listbox, (row,1), flag=wx.EXPAND)
+        self.inner_sizer.Add(self.flags_lbl, (row,2), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_flags, (row,3), flag=wx.EXPAND)
+    
+    def layout_finish(self):
+        """Lay out the start button and fit the sizer to the window."""
+        self.frame_sizer.Add(self.inner_sizer, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)        
+        self.frame_sizer.Add(self.start, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)        
+        self.inner_sizer.AddGrowableCol(1)
+        self.inner_sizer.AddGrowableCol(3)        
+        self.SetSizerAndFit(self.frame_sizer)
+    
+    def layout_default(self):
+        """Lay out a default miner with no custom changes."""
+        self.user_lbl.SetLabel("Username:")
+        
+        self.set_widgets_visible([self.extra_info], False)
+        self.layout_init()
+        self.layout_server_and_website(row=0)
+        is_custom = self.server.GetSelection() in ["Other", "solo"]
+        if is_custom:
+            self.layout_host_and_port(row=1)
+        else:
+            self.set_widgets_visible([self.host_lbl, self.txt_host, 
+                                      self.port_lbl, self.txt_port], False)
+            
+        self.layout_user_and_pass(row=1 + int(is_custom))
+        self.layout_device_and_flags(row=2 + int(is_custom))
+        self.layout_finish()
+    
+    ############################            
+    # Begin server specific code
+    def layout_bitpenny(self):
+        """BitPenny doesn't require registration or a password.
+        
+        The username is just their receiving address.
+        """
+        invisible = [self.txt_pass, self.txt_host, self.txt_port,
+                     self.pass_lbl, self.host_lbl, self.port_lbl]
+        self.set_widgets_visible(invisible, False)
+            
+        self.layout_init()
+        self.layout_server_and_website(row=0)                            
+        self.inner_sizer.Add(self.user_lbl, (1,0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_username, (1,1), span=(1,3), flag=wx.EXPAND)        
+        self.layout_device_and_flags(row=2)        
+        self.inner_sizer.Add(self.extra_info,(3,0), span=(1,4), flag=wx.EXPAND)                
+        self.layout_finish()
+        
+        self.extra_info.SetLabel("No registration is required - just enter an address and press Start.")
+        self.txt_pass.SetValue('poclbm-gui')
+        self.user_lbl.SetLabel("Address:")
+        add_tooltip(self.txt_username,
+            "Your receiving address for Bitcoins.\nE.g.: 1A94cjRpaPBMV9ZNWFihB5rTFEeihBALgc")        
+    
+    def layout_slush(self):
+        """Slush's pool uses a separate username for each miner."""
+        self.layout_default()
+        add_tooltip(self.txt_username,
+            "Your miner username (not your account username).\nExample: Kiv.GPU")
+        add_tooltip(self.txt_pass,
+            "Your miner password (not your account password).")
+
+    def layout_deepbit(self):
+        """Deepbit uses an email address for a username."""
+        self.layout_default()
+        add_tooltip(self.txt_username,
+            "The e-mail address you registered with.")
+        self.user_lbl.SetLabel("Email:")
+        
+    # End server specific code
+    ##########################                 
+
+                                
 
 class PoclbmFrame(wx.Frame):
     def __init__(self, *args, **kwds):
@@ -638,6 +807,17 @@ class PoclbmFrame(wx.Frame):
         self.nb = fnb.FlatNotebook(self, -1, style=style)        
         self.console_panel = None
         self.summary_panel = None
+        
+        # Servers and defaults are required, it's a fatal error not to have
+        # them.  
+        server_config_path = os.path.join(get_module_path(), 'servers.ini')
+        with open(server_config_path) as f:
+            data = json.load(f)
+            self.servers = data.get('servers')
+                    
+        defaults_config_path = os.path.join(get_module_path(), 'defaults.ini')
+        with open(defaults_config_path) as f:
+            self.defaults = json.load(f)
                
         self.menubar = wx.MenuBar()
         file_menu = wx.Menu()
@@ -722,6 +902,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.SetSizer(self.vertical_sizer)
         self.vertical_sizer.SetSizeHints(self)
         self.SetSizerAndFit(self.vertical_sizer)
+        self.Layout()
 
     @property
     def profile_panels(self):
@@ -730,16 +911,17 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         return [p for p in pages if 
                 p != self.console_panel and p != self.summary_panel]
     
-    def add_profile(self, data):
+    def add_profile(self, data={}):
         """Add a new ProfilePanel to the list of tabs."""
-        panel = ProfilePanel(self.nb, -1, self.devices, self.statusbar, data)
+        panel = ProfilePanel(self.nb, -1, self.devices, self.servers, 
+                             self.defaults, self.statusbar, data)
         self.nb.AddPage(panel, panel.name)
         # The newly created profile should have focus.
         self.nb.EnsureVisible(self.nb.GetPageCount() - 1)
         
         if self.summary_panel is not None:
             self.summary_panel.add_miners_to_grid() # Show new entry on summary
-        self.__do_layout()
+        
         return panel
 
     def message(self, *args, **kwargs):
@@ -806,13 +988,13 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
     
     def load_config(self, event=None):
         """Load JSON profile info from the config file."""
-        _, config_filename = self.get_storage_location()
-        if not os.path.exists(config_filename):
-            return # Nothing to load yet
-        with open(config_filename) as f:
-            config_data = json.load(f)
-        logger.debug('Loaded: ' + json.dumps(config_data))
-        # TODO: handle load failed or corrupted data
+        config_data = {}
+        
+        _, config_filename = self.get_storage_location()        
+        if os.path.exists(config_filename):
+            with open(config_filename) as f:
+                config_data.update(json.load(f))
+            logger.debug('Loaded: ' + json.dumps(config_data))
         
         executable = config_data.get('bitcoin_executable', None)
         if executable is not None:
@@ -828,17 +1010,17 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         for p in reversed(self.profile_panels):            
             p.stop_mining()
             self.nb.DeletePage(self.nb.GetPageIndex(p))
-               
-        # Miners go in the middle
-        data = config_data.get('profiles', [])
-        for d in data:
+
+        # If present, summary should be the leftmost tab on startup.
+        if config_data.get('show_summary', False):
+            self.show_summary() 
+                
+        profile_data = config_data.get('profiles', [])
+        for d in profile_data:
             self.add_profile(d)
             
-        if not any(data): # Create a default one for them to use 
-            self.add_profile(dict(name="slush's pool"))  
-
-        if config_data.get('show_summary', False):
-            self.show_summary()            
+        if not any(profile_data):  
+            self.add_profile() # Create a default one using defaults.ini         
                     
         if config_data.get('show_console', False):
             self.show_console()
@@ -972,8 +1154,9 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         if self.is_summary_visible():
             return
         self.summary_panel = SummaryPanel(self)
-        self.nb.InsertPage(0, self.summary_panel, "Summary")
-        self.nb.EnsureVisible(0)
+        self.nb.AddPage(self.summary_panel, "Summary")
+        index = self.nb.GetPageIndex(self.summary_panel)
+        self.nb.SetSelection(index)
     
     def on_menu_exit(self, event):
         self.Close(force=True)
