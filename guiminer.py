@@ -230,7 +230,7 @@ class SummaryPanel(wx.Panel):
         if any(p.is_mining for p in self.parent.profile_panels):
             self.parent.statusbar.SetStatusText(format_khash(total_rate), 1)
         else:
-            self.parent.statusbar.SetStatusText("", 0)       
+            self.parent.statusbar.SetStatusText("", 1)       
     
     def on_focus(self):
         """On focus, show the statusbar text."""
