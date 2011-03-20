@@ -53,16 +53,19 @@ Instructions for Pooled Mining
 ------------------------------
 
 Pooled mining is recommended for most users, since it gives steadier payouts
-than solo mining. To mine in a pool, you need to register an account with a mining pool.
-A good one by slush is here:
+than solo mining. Several pool servers are supported out of the box; you can
+select one from the "Server" dropdown menu. Different servers have different
+fees and features; you can visit the website for each one to learn more. Also,
+the official Bitcoin forums are a good source for information:
 
-    http://mining.bitcoin.cz/
+    http://www.bitcoin.org/smf/
+
+Most servers require (free) registration; to register go to the server website
+and follow their instructions.
     
-Once you have an account, double-click guiminer.exe to open it and enter your
-miner account. You need a miner account for each GPU you have, so if you have two GPUs 
-you will need two separate accounts. If you have a multi-core CPU, one account is
-enough but be warned that CPU mining is extremely slow compared to GPU mining and
-probably not worth the electricity.
+Once you've registered, you can enter your login information in the fields of
+the GUI. The "Extra flags" field is optional and can be used to fine-tune GPU
+performance.
 
 Click "Start mining!" to connect to the server. The miner should connect and start
 showing your hash rate. This is the number of attempts per second to solve the
@@ -106,10 +109,10 @@ Then make sure bitcoin.exe is not running already and choose "Solo
 utilities -> Launch Bitcoin client". This should bring up the official
 Bitcoin client. You will need to leave this open while you are solo mining.
 
-Now you can enter your information in the text boxes. For "Server" type
-"localhost" since the server is on your own machine. Put your username and
-password that you chose earlier. Then press "Start mining!" to connect and
-start mining.
+Now you can enter your information in the text boxes. Make sure the "Host" 
+option reads "localhost" since the server is on your own machine. Put your 
+username and password that you chose earlier. Then press "Start mining!" to 
+connect and start mining.
 
 
 
