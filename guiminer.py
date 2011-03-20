@@ -4,9 +4,10 @@ Copyright 2011 Chris MacLeod
 This program is released under the GNU GPL. See LICENSE.txt for details.
 """
 
-import sys, os, subprocess, errno, re, threading, logging, time
+import sys, os, subprocess, errno, re, threading, logging, time, httplib, urllib
 import wx
 import json
+import collections
 
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
@@ -30,9 +31,12 @@ by donating to:
 
 %s
 """
+# Time constants
+SAMPLE_TIME_SECS = 3600
 
 # Layout constants
 LBL_STYLE = wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL
+BTN_STYLE = wx.ALIGN_CENTER_HORIZONTAL | wx.ALL
 
 # Events sent from the worker threads
 (UpdateHashRateEvent, EVT_UPDATE_HASHRATE) = NewEvent()
@@ -92,7 +96,14 @@ def format_khash(rate):
         return "Connected"
     else:
         return "%d khash/s" % rate
-
+    
+def format_balance(amount):
+    """Format a quantity of Bitcoins in BTC."""
+    amount = float(amount)
+    if amount > 0.001:
+        return "%.2f BTC" % amount
+    return "0"
+    
 def init_logger():
     """Set up and return the logging object and custom formatter."""
     logger = logging.getLogger("poclbm-gui")
@@ -106,6 +117,19 @@ def init_logger():
     return logger, formatter
 
 logger, formatter = init_logger()
+
+def http_request(hostname, *args):
+    """Do a HTTP request and return the response data."""
+    try:
+        conn = httplib.HTTPConnection(hostname)
+        logger.debug("Requesting balance: %s", str(args))
+        conn.request(*args)        
+        response = conn.getresponse()            
+        data = response.read()
+        logger.debug("Server replied: %s, %s", str(response.status), data)
+        return data
+    finally:
+        conn.close()
 
 class ConsolePanel(wx.Panel):
     """Panel that displays logging events.
@@ -320,12 +344,12 @@ class ProfilePanel(wx.Panel):
         self.is_possible_error = False
         self.miner = None # subprocess.Popen instance when mining
         self.miner_listener = None # MinerListenerThread when mining
-        self.accepted_shares = 0 # POOL mode only
+        self.accepted_shares = 0
+        self.accepted_times = collections.deque()
         self.invalid_shares = 0 # POOL mode only
-        self.diff1_hashes = 0 # SOLO mode only
+        self.invalid_times = collections.deque()
         self.last_rate = 0 # units of khash/s
         self.last_update_type = ProfilePanel.POOL
-        self.last_update_time = None
         self.autostart = False
         self.server_lbl = wx.StaticText(self, -1, _("Server:"))                
         self.server = wx.ComboBox(self, -1, 
@@ -345,7 +369,14 @@ class ProfilePanel(wx.Panel):
         self.device_listbox = wx.ComboBox(self, -1, choices=devices, style=wx.CB_READONLY)
         self.flags_lbl = wx.StaticText(self, -1, _("Extra flags:"))        
         self.txt_flags = wx.TextCtrl(self, -1, "")
-        self.extra_info = wx.StaticText(self, -1, "")
+        self.extra_info = wx.StaticText(self, -1, "")        
+        self.balance_lbl = wx.StaticText(self, -1, _("Balance:"))
+        self.balance_amt = wx.StaticText(self, -1, "0")
+        self.balance_refresh = wx.Button(self, -1, _("Refresh balance"))
+        self.balance_refresh_timer = wx.Timer()
+        self.withdraw = wx.Button(self, -1, _("Withdraw"))        
+        self.balance_cooldown_seconds = 0
+        self.balance_auth_token = ""
         
         self.all_widgets = [self.server_lbl, self.server,
                             self.website_lbl, self.website,
@@ -355,6 +386,8 @@ class ProfilePanel(wx.Panel):
                             self.pass_lbl, self.txt_pass,
                             self.device_lbl, self.device_listbox,
                             self.flags_lbl, self.txt_flags, 
+                            self.balance_lbl, self.balance_amt,
+                            self.balance_refresh, self.withdraw,
                             self.extra_info]
         
         self.start = wx.Button(self, -1, _("Start mining!"))        
@@ -366,12 +399,27 @@ class ProfilePanel(wx.Panel):
 
         self.start.Bind(wx.EVT_BUTTON, self.toggle_mining)
         self.server.Bind(wx.EVT_COMBOBOX, self.on_select_server)
+        self.balance_refresh_timer.Bind(wx.EVT_TIMER, self.on_balance_cooldown_tick)
+        self.balance_refresh.Bind(wx.EVT_BUTTON, self.on_balance_refresh)
+        self.withdraw.Bind(wx.EVT_BUTTON, self.on_withdraw)
         self.Bind(EVT_UPDATE_HASHRATE, lambda event: self.update_khash(event.rate))
         self.Bind(EVT_UPDATE_ACCEPTED, lambda event: self.update_shares(event.accepted))
         self.Bind(EVT_UPDATE_STATUS, lambda event: self.update_status(event.text))
         self.Bind(EVT_UPDATE_SOLOCHECK, lambda event: self.update_solo())
         self.update_shares_on_statusbar()                       
         self.clear_summary_widgets()
+
+    @property 
+    def last_update_time(self):
+        """Return the local time of the last accepted share."""
+        if self.accepted_times:
+            return time.localtime(self.accepted_times[-1])
+        return None
+
+    @property
+    def server_config(self):
+        hostname = self.txt_host.GetValue()
+        return self.get_server_by_field(hostname, 'host')
 
     def get_data(self):
         """Return a dict of our profile data."""        
@@ -382,23 +430,23 @@ class ProfilePanel(wx.Panel):
                     password=self.txt_pass.GetValue(),
                     device=self.device_listbox.GetSelection(),
                     flags=self.txt_flags.GetValue(),
-                    autostart=self.autostart)
+                    autostart=self.autostart,
+                    balance_auth_token=self.balance_auth_token)
 
     def set_data(self, data):
         """Set our profile data to the information in data. See get_data()."""
-        default_server = self.get_server_by_field(
-                            self.defaults['default_server'], 'name')
+        default_server_config = self.get_server_by_field(
+                                    self.defaults['default_server'], 'name')
         self.name = (data.get('name') or 'Default')
                 
         # Backwards compatibility: hostname key used to be called server.
         # We only save out hostname now but accept server from old INI files.
         hostname = (data.get('hostname') or
                     data.get('server') or
-                    default_server['host'])
+                    default_server_config['host'])
         self.txt_host.SetValue(hostname)
-        server = self.get_server_by_field(hostname, 'host')
                                     
-        self.server.SetStringSelection(server.get('name', "Other"))
+        self.server.SetStringSelection(self.server_config.get('name', "Other"))
                                             
         self.txt_username.SetValue(
             data.get('username') or 
@@ -410,17 +458,19 @@ class ProfilePanel(wx.Panel):
                     
         self.txt_port.SetValue(str(
             data.get('port') or
-            server.get('port', 8332)))
+            self.server_config.get('port', 8332)))
                 
         self.txt_flags.SetValue(data.get('flags', ''))
-        self.autostart = data.get('autostart', False)
+        self.autostart = data.get('autostart', False)        
 
         # Handle case where they removed devices since last run.
         device_index = data.get('device', None)
         if device_index is not None and device_index < self.device_listbox.GetCount():
             self.device_listbox.SetSelection(device_index)
                     
-        self.change_server(server)            
+        self.change_server(self.server_config)
+        
+        self.balance_auth_token = data.get('balance_auth_token', '')           
         
     def clear_summary_widgets(self):
         """Release all our summary widgets."""
@@ -449,12 +499,14 @@ class ProfilePanel(wx.Panel):
             text = format_khash(self.last_rate)        
         self.summary_status.SetLabel(text)
         
+        self.summary_shares_accepted.SetLabel("%d (%d)" %
+            (self.accepted_shares, len(self.accepted_times)))
+                
         if self.last_update_type == ProfilePanel.SOLO:            
-            self.summary_shares_accepted.SetLabel(str(self.diff1_hashes))
             self.summary_shares_invalid.SetLabel("-")
-        else: # TODO: we assume POOL here
-            self.summary_shares_accepted.SetLabel(str(self.accepted_shares))
-            self.summary_shares_invalid.SetLabel(str(self.invalid_shares))            
+        else:
+            self.summary_shares_invalid.SetLabel("%d (%d)" %
+                (self.invalid_shares, len(self.invalid_times)))            
 
         self.summary_start.SetLabel(self.get_start_stop_state())
         self.summary_autostart.SetValue(self.autostart)
@@ -535,6 +587,12 @@ class ProfilePanel(wx.Panel):
         self.miner_listener.start()
         self.is_mining = True
         self.set_status("Starting...", 1)
+    
+    
+    def on_close(self):
+        """Prepare to close gracefully."""
+        self.stop_mining()
+        self.balance_refresh_timer.Stop()
         
     def stop_mining(self):
         """Terminate the poclbm process if able and its associated listener."""
@@ -572,9 +630,18 @@ class ProfilePanel(wx.Panel):
         text += " %s" % self.format_last_update_time()
         self.set_status(text, 0) 
 
-    def update_last_time(self):
+    def update_last_time(self, accepted):
         """Set the last update time to now (in local time)."""
-        self.last_update_time = time.localtime()
+        
+        now = time.time()
+        if accepted:
+            self.accepted_times.append(now)
+            while now - self.accepted_times[0] > SAMPLE_TIME_SECS:
+                self.accepted_times.popleft()
+        else:
+            self.invalid_times.append(now)
+            while now - self.invalid_times[0] > SAMPLE_TIME_SECS:
+                self.invalid_times.popleft()        
         
     def format_last_update_time(self):
         """Format last update time for display."""
@@ -590,7 +657,7 @@ class ProfilePanel(wx.Panel):
             self.accepted_shares += 1
         else:
             self.invalid_shares += 1
-        self.update_last_time()
+        self.update_last_time(accepted)
         self.update_shares_on_statusbar()
 
     def update_status(self, msg):
@@ -635,14 +702,14 @@ class ProfilePanel(wx.Panel):
         to the block.
         """
         text = "Difficulty 1 hashes: %d %s" % \
-            (self.diff1_hashes, self.format_last_update_time())
+            (self.accepted_shares, self.format_last_update_time())
         self.set_status(text, 0)
 
     def update_solo(self):
         """Update our easy hashes with a report from the listener thread."""
         self.last_update_type = ProfilePanel.SOLO
-        self.diff1_hashes += 1
-        self.update_last_time()
+        self.accepted_shares += 1
+        self.update_last_time(True)
         self.update_solo_status()
         
     def on_select_server(self, event):
@@ -681,25 +748,137 @@ class ProfilePanel(wx.Panel):
         
         # Set defaults before we do server specific code
         self.set_tooltips()
-        self.set_widgets_visible(self.all_widgets, True)        
+        self.set_widgets_visible(self.all_widgets, True)
+        self.withdraw.Disable()        
                
         url = new_server.get('url', 'n/a')
         self.website.SetLabel(url)
         self.website.SetURL(url)
         
+        # Invalidate any previous auth token since it won't be valid for the
+        # new server.
+        self.balance_auth_token = "" 
+
         if 'host' in new_server:
             self.txt_host.SetValue(new_server['host'])
         if 'port' in new_server:
             self.txt_port.SetValue(str(new_server['port']))
         
+        
         # Call server specific code.
+        # TODO: probably best to use hostname as the unique identifier in code.
         name = new_server.get('name', 'Other').lower()
         if name == "slush's pool": self.layout_slush()
         elif name == "bitpenny": self.layout_bitpenny()
-        elif name == "deepbit": self.layout_deepbit()        
+        elif name == "deepbit": self.layout_deepbit()
+        elif name == "btcmine": self.layout_btcmine()        
         else: self.layout_default()
                
-        self.Layout()        
+        self.Layout()
+        
+    def on_balance_refresh(self, event=None, withdraw=False):
+        """Refresh the miner's balance from the server."""
+        host = self.server_config.get("host")
+        
+        if host in ["mining.bitcoin.cz", "btcmine.com"]:
+            if not self.balance_auth_token:
+                self.prompt_auth_token()
+            if not self.balance_auth_token: # They cancelled the dialog
+                return                        
+            self.http_thread = threading.Thread(
+                target=self.request_balance_get, 
+                args=(self.balance_auth_token,))
+            self.http_thread.start()
+            
+        elif host in ["bitpenny.dyndns.biz"]:
+            self.http_thread = threading.Thread(
+                target=self.request_balance_post, args=(withdraw,))
+            self.http_thread.start()
+            
+        self.balance_refresh.Disable() # TODO: handle timeout
+        self.balance_cooldown_seconds = 10
+        self.balance_refresh_timer.Start(1000)
+    
+    def on_balance_cooldown_tick(self, event=None):
+        """Each second, decrement the cooldown for refreshing balance."""        
+        self.balance_cooldown_seconds -= 1
+        self.balance_refresh.SetLabel("%d..." % self.balance_cooldown_seconds)
+        if self.balance_cooldown_seconds <= 0:
+            self.balance_refresh_timer.Stop()
+            self.balance_refresh.Enable()
+            self.balance_refresh.SetLabel(_("Refresh balance"))
+
+    def prompt_auth_token(self):
+        """Prompt user for an auth token, returning the token on success.
+        
+        On failure, return the empty string.
+        """  
+        url = self.server_config.get('balance_token_url')
+        dialog = BalanceAuthRequest(self, url)
+        result = dialog.ShowModal()
+        dialog.Destroy()
+        if result == wx.ID_CANCEL:
+            return
+        self.balance_auth_token = dialog.get_value() # TODO: validate token?
+        
+    def request_balance_get(self, balance_auth_token):
+        """Request our balance from the server via HTTP GET and auth token."""
+        data = http_request(
+            self.server_config['balance_host'],
+            "GET",
+            self.server_config["balance_url"] % balance_auth_token
+        )
+        if not data:
+            data = "Connection error"
+        else:
+            try:
+                info = json.loads(data)
+                confirmed = info.get('confirmed_reward') or info.get('confirmed', 0)
+                unconfirmed = info.get('unconfirmed_reward') or info.get('unconformed', 0)
+                data = "%s confirmed, %s unconfirmed" % (
+                            format_balance(confirmed), 
+                            format_balance(unconfirmed))            
+            except: # TODO: what exception here?
+                data = "Bad response from server."
+                                            
+        wx.CallAfter(self.balance_amt.SetLabel, data)            
+                          
+    def request_balance_post(self, withdraw):
+        """Request our balance from the server via HTTP POST."""
+        server_config = self.server_config
+        # Assume BitPenny for now; support other miners later.
+        post_params = dict(a=self.txt_username.GetValue())
+        if withdraw: post_params['w'] = 1
+            
+        data = http_request(
+             server_config['balance_host'],
+             "POST",
+             server_config['balance_url'],
+             urllib.urlencode(post_params),
+             {"Content-type": "application/x-www-form-urlencoded"}
+        )
+        if not data:
+            data = "Connection error"
+        elif withdraw:
+            data = "Withdraw OK"            
+        wx.CallAfter(self.on_balance_received, data)
+        
+    def on_balance_received(self, balance):
+        """Set the balance in the GUI."""
+        try:
+            amt = float(balance)
+        except ValueError: # Response was some kind of error
+            self.balance_amt.SetLabel(balance)
+        else:
+            if amt > 0.1:
+                self.withdraw.Enable()
+            amt_str = format_balance(amt)
+            self.balance_amt.SetLabel(amt_str)
+        self.Layout()
+    
+    def on_withdraw(self, event):
+        self.withdraw.Disable()
+        self.on_balance_refresh(withdraw=True)
     
     def set_name(self, name):
         """Set the label on this miner's tab to name."""
@@ -714,7 +893,8 @@ class ProfilePanel(wx.Panel):
         """Create the sizers for this frame."""
         self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
         self.frame_sizer.Add((20, 10), 0, wx.EXPAND, 0)
-        self.inner_sizer = wx.GridBagSizer(10, 5)        
+        self.inner_sizer = wx.GridBagSizer(10, 5)
+        self.button_sizer = wx.BoxSizer(wx.HORIZONTAL)
     
     def layout_server_and_website(self, row):
         """Lay out the server and website widgets in the specified row."""
@@ -744,19 +924,30 @@ class ProfilePanel(wx.Panel):
         self.inner_sizer.Add(self.flags_lbl, (row,2), flag=LBL_STYLE)
         self.inner_sizer.Add(self.txt_flags, (row,3), flag=wx.EXPAND)
     
+    def layout_balance(self, row):
+        """Lay out the balance widgets in the specified row."""
+        self.inner_sizer.Add(self.balance_lbl, (row,0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.balance_amt, (row,1))            
+        
     def layout_finish(self):
-        """Lay out the start button and fit the sizer to the window."""
+        """Lay out the buttons and fit the sizer to the window."""
         self.frame_sizer.Add(self.inner_sizer, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)        
-        self.frame_sizer.Add(self.start, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)        
+        self.frame_sizer.Add(self.button_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL)                    
         self.inner_sizer.AddGrowableCol(1)
-        self.inner_sizer.AddGrowableCol(3)        
-        self.SetSizerAndFit(self.frame_sizer)
+        self.inner_sizer.AddGrowableCol(3)   
+        for btn in [self.start, self.balance_refresh, self.withdraw]:
+            self.button_sizer.Add(btn, 0, BTN_STYLE, 5)
+        self.SetSizerAndFit(self.frame_sizer)    
     
     def layout_default(self):
         """Lay out a default miner with no custom changes."""
         self.user_lbl.SetLabel("Username:")
         
-        self.set_widgets_visible([self.extra_info], False)
+        self.set_widgets_visible([self.extra_info,  
+                                  self.balance_lbl,
+                                  self.balance_amt,
+                                  self.balance_refresh,
+                                  self.withdraw], False)
         self.layout_init()
         self.layout_server_and_website(row=0)
         is_custom = self.server.GetStringSelection().lower() in ["other", "solo"]
@@ -786,9 +977,10 @@ class ProfilePanel(wx.Panel):
         self.inner_sizer.Add(self.user_lbl, (1,0), flag=LBL_STYLE)
         self.inner_sizer.Add(self.txt_username, (1,1), span=(1,3), flag=wx.EXPAND)        
         self.layout_device_and_flags(row=2)        
-        self.inner_sizer.Add(self.extra_info,(3,0), span=(1,4), flag=wx.EXPAND)                
+        self.layout_balance(row=3)
+        self.inner_sizer.Add(self.extra_info,(4,0), span=(1,4), flag=wx.ALIGN_CENTER_HORIZONTAL)
         self.layout_finish()
-        
+                        
         self.extra_info.SetLabel("No registration is required - just enter an address and press Start.")
         self.txt_pass.SetValue('poclbm-gui')
         self.user_lbl.SetLabel("Address:")
@@ -797,9 +989,34 @@ class ProfilePanel(wx.Panel):
     
     def layout_slush(self):
         """Slush's pool uses a separate username for each miner."""
-        self.layout_default()
+        self.set_widgets_visible([self.host_lbl, self.txt_host, 
+                                  self.port_lbl, self.txt_port,
+                                  self.withdraw], False)        
+        self.layout_init()
+        self.layout_server_and_website(row=0)
+        self.layout_user_and_pass(row=1)
+        self.layout_device_and_flags(row=2)
+        self.layout_balance(row=3)
+        self.layout_finish()
+        
         add_tooltip(self.txt_username,
             "Your miner username (not your account username).\nExample: Kiv.GPU")
+        add_tooltip(self.txt_pass,
+            "Your miner password (not your account password).")
+
+    def layout_btcmine(self):
+        self.set_widgets_visible([self.host_lbl, self.txt_host, 
+                                  self.port_lbl, self.txt_port,
+                                  self.withdraw], False)             
+        self.layout_init()
+        self.layout_server_and_website(row=0)
+        self.layout_user_and_pass(row=1)
+        self.layout_device_and_flags(row=2)
+        self.layout_balance(row=3)
+        self.layout_finish()        
+
+        add_tooltip(self.txt_username,
+            "Your miner username. \nExample: kiv123@kiv123")
         add_tooltip(self.txt_pass,
             "Your miner password (not your account password).")
 
@@ -985,7 +1202,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             if self.summary_panel is not None:
                 self.summary_panel.on_close()
             for p in self.profile_panels:
-                p.stop_mining()
+                p.on_close()
             if self.tbicon is not None:
                 self.tbicon.RemoveIcon()
                 self.tbicon.timer.Stop()
@@ -1030,7 +1247,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             if result == wx.ID_NO:
                 return                      
         for p in reversed(self.profile_panels):            
-            p.stop_mining()
+            p.on_close()
             self.nb.DeletePage(self.nb.GetPageIndex(p))
 
         # If present, summary should be the leftmost tab on startup.
@@ -1097,7 +1314,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             if result == wx.ID_NO:
                 event.Veto()
                 return            
-        p.stop_mining()
+        p.on_close()
         event.Skip() # OK to close the tab now
     
     def on_page_closed(self, event):
@@ -1217,6 +1434,34 @@ class SoloPasswordRequest(wx.Dialog):
         """Return the (username, password) supplied by the user."""
         return self.txt_username.GetValue(), self.txt_pass.GetValue()
 
+
+class BalanceAuthRequest(wx.Dialog):
+    """Dialog prompting user for an auth token to refresh their balance."""
+    instructions = \
+"""Click the link below to log in to the pool and get a special token. 
+This token lets you securely check your balance.
+To remember this token for the future, save your miner settings."""
+    def __init__(self, parent, url):
+        style = wx.DEFAULT_DIALOG_STYLE
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        wx.Dialog.__init__(self, parent, -1, "Refresh balance", style=style)
+        self.instructions = wx.StaticText(self, -1, BalanceAuthRequest.instructions)
+        self.website = hyperlink.HyperLinkCtrl(self, -1, url)
+        self.txt_token = wx.TextCtrl(self, -1, "(Paste token here)")
+        buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+        
+        vbox.AddMany([
+            (self.instructions, 0, wx.ALL, 10),
+            (self.website, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10),
+            (self.txt_token, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 10),
+            (buttons, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
+        ])
+        self.SetSizerAndFit(vbox)
+        
+    def get_value(self):
+        """Return the auth token supplied by the user."""
+        return self.txt_token.GetValue()
+        
 
 class AboutGuiminer(wx.Dialog):
     """About dialog for the app with a donation address."""
