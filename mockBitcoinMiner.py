@@ -1,7 +1,6 @@
 import threading
 import time
 import random
-import socket
 import sys
 import Queue
 import datetime
@@ -11,10 +10,10 @@ OUTPUT_SIZE = 0x100
 TIME_FORMAT = '%d/%m/%Y %H:%M:%S'
 
 def if_else(condition, trueVal, falseVal):
-	if condition:
-		return trueVal
-	else:
-		return falseVal
+    if condition:
+        return trueVal
+    else:
+        return falseVal
 
 class MockBitcoinMiner(threading.Thread):
     """Mock version of class BitcoinMiner.
