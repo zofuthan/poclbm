@@ -242,6 +242,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     Shows status messages on hover and opens on click.
     """
     TBMENU_RESTORE = wx.NewId()
+    TBMENU_PAUSE = wx.NewId()
     TBMENU_CLOSE = wx.NewId()
     TBMENU_CHANGE = wx.NewId()
     TBMENU_REMOVE = wx.NewId()
@@ -252,19 +253,24 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
         self.icon = get_icon()
         self.timer = wx.Timer(self)
         self.timer.Start(1000)
+        self.is_paused = False
 
+        
         self.SetIcon(self.icon, "poclbm-gui")
         self.imgidx = 1
         self.Bind(wx.EVT_TASKBAR_LEFT_DCLICK, self.on_taskbar_activate)
         self.Bind(wx.EVT_MENU, self.on_taskbar_activate, id=self.TBMENU_RESTORE)
         self.Bind(wx.EVT_MENU, self.on_taskbar_close, id=self.TBMENU_CLOSE)
+        self.Bind(wx.EVT_MENU, self.on_pause, id=self.TBMENU_PAUSE)
         self.Bind(wx.EVT_TIMER, self.on_update_tooltip)
 
     def CreatePopupMenu(self):
         """Override from wx.TaskBarIcon. Creates the right-click menu."""
         menu = wx.Menu()
+        menu.AppendCheckItem(self.TBMENU_PAUSE, "Pause all")
+        menu.Check(self.TBMENU_PAUSE, self.is_paused)
         menu.Append(self.TBMENU_RESTORE, "Restore")
-        menu.Append(self.TBMENU_CLOSE, "Close")
+        menu.Append(self.TBMENU_CLOSE, "Close")        
         return menu
    
     def on_taskbar_activate(self, evt):
@@ -282,8 +288,19 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
         objs = self.frame.profile_panels
         if objs:
             text = '\n'.join(p.get_taskbar_text() for p in objs)
-            self.SetIcon(self.icon, text)    
-
+            self.SetIcon(self.icon, text)  
+    
+    def on_pause(self, event):
+        """Pause or resume the currently running miners."""
+        self.is_paused = event.Checked()
+        for miner in self.frame.profile_panels:
+            if self.is_paused:
+                miner.pause()
+            else:
+                miner.resume()
+        #event.Skip() # Allow the box to become checked
+                
+            
 class MinerListenerThread(threading.Thread):
     def __init__(self, parent, miner):
         threading.Thread.__init__(self)
@@ -341,6 +358,7 @@ class ProfilePanel(wx.Panel):
         self.defaults = defaults        
         self.statusbar = statusbar
         self.is_mining = False
+        self.is_paused = False
         self.is_possible_error = False
         self.miner = None # subprocess.Popen instance when mining
         self.miner_listener = None # MinerListenerThread when mining
@@ -421,6 +439,18 @@ class ProfilePanel(wx.Panel):
         hostname = self.txt_host.GetValue()
         return self.get_server_by_field(hostname, 'host')
 
+    def pause(self):
+        """Pause the miner if we are mining, otherwise do nothing."""
+        if self.is_mining:            
+            self.stop_mining()
+            self.is_paused = True
+    
+    def resume(self):
+        """Resume the miner if we are paused, otherwise do nothing."""
+        if self.is_paused:                    
+            self.start_mining()
+            self.is_paused = False
+
     def get_data(self):
         """Return a dict of our profile data."""        
         return dict(name=self.name,
@@ -491,7 +521,9 @@ class ProfilePanel(wx.Panel):
             return
         
         self.summary_name.SetLabel(self.name)
-        if not self.is_mining:
+        if self.is_paused:
+            text = "Paused"
+        elif not self.is_mining:
             text = "Stopped"
         elif self.is_possible_error:
             text = "Connection problems"
@@ -553,6 +585,7 @@ class ProfilePanel(wx.Panel):
         
     def start_mining(self):
         """Launch a poclbm subprocess and attach a MinerListenerThread."""
+        self.is_paused = False
         folder = get_module_path()  
         if USE_MOCK:            
             executable = "python mockBitcoinMiner.py"
@@ -609,6 +642,7 @@ class ProfilePanel(wx.Panel):
             self.miner_listener = None            
         self.is_mining = False
         self.set_status("Stopped", 1)
+        self.is_paused = False
           
     def update_khash(self, rate):
         """Update our rate according to a report from the listener thread.
