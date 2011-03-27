@@ -13,7 +13,7 @@ setup(windows=['guiminer.py'],
       )), 
       data_files = ['msvcp90.dll',
                     'BitcoinMiner.cl',
-                    'logo.png',
+                    'logo.ico',
                     'LICENSE.txt',
                     'servers.ini',
                     'defaults.ini'])

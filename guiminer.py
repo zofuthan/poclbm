@@ -33,6 +33,7 @@ by donating to:
 """
 # Time constants
 SAMPLE_TIME_SECS = 3600
+REFRESH_RATE_MILLIS = 2000
 
 # Layout constants
 LBL_STYLE = wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL
@@ -65,13 +66,9 @@ def get_module_path():
     module_name = sys.executable if hasattr(sys, 'frozen') else __file__
     return os.path.dirname(module_name)
 
-def get_icon():
-    """Return the Bitcoin program icon."""
-    image_path = os.path.join(get_module_path(), 'logo.png')
-    image = wx.Image(image_path, wx.BITMAP_TYPE_PNG).ConvertToBitmap()
-    icon = wx.EmptyIcon()
-    icon.CopyFromBitmap(image)
-    return icon
+def get_icon_bundle():
+    """Return the Bitcoin program icon bundle."""
+    return wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)    
     
 def mkdir_p(path):
     """If the directory 'path' doesn't exist, create it. Same as mkdir -p."""
@@ -171,7 +168,7 @@ class SummaryPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
         self.parent = parent
         self.timer = wx.Timer(self)
-        self.timer.Start(2000)
+        self.timer.Start(REFRESH_RATE_MILLIS)
         self.Bind(wx.EVT_TIMER, self.on_update_tooltip)
         
         flags = wx.ALIGN_CENTER_HORIZONTAL | wx.ALL
@@ -250,12 +247,10 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     def __init__(self, frame):
         wx.TaskBarIcon.__init__(self)
         self.frame = frame
-        self.icon = get_icon()
+        self.icon = get_icon_bundle().GetIcon((16,16)) # TODO: linux size?
         self.timer = wx.Timer(self)
-        self.timer.Start(1000)
+        self.timer.Start(REFRESH_RATE_MILLIS)
         self.is_paused = False
-
-        
         self.SetIcon(self.icon, "poclbm-gui")
         self.imgidx = 1
         self.Bind(wx.EVT_TASKBAR_LEFT_DCLICK, self.on_taskbar_activate)
@@ -272,7 +267,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
         menu.Append(self.TBMENU_RESTORE, "Restore")
         menu.Append(self.TBMENU_CLOSE, "Close")        
         return menu
-   
+      
     def on_taskbar_activate(self, evt):
         if self.frame.IsIconized():
             self.frame.Iconize(False)
@@ -288,7 +283,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
         objs = self.frame.profile_panels
         if objs:
             text = '\n'.join(p.get_taskbar_text() for p in objs)
-            self.SetIcon(self.icon, text)  
+            self.SetIcon(self.icon, text)
     
     def on_pause(self, event):
         """Pause or resume the currently running miners."""
@@ -1162,7 +1157,7 @@ class PoclbmFrame(wx.Frame):
         try:
             self.tbicon = GUIMinerTaskBarIcon(self)
         except:
-            self.tbicon = None # TODO: what happens on Linux?
+            self.tbicon = None # TODO: what happens on Linux?            
                          
         self.__set_properties()
 
@@ -1196,7 +1191,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.__do_layout()
     
     def __set_properties(self):
-        self.SetIcon(get_icon())        
+        self.SetIcons(get_icon_bundle())        
         self.SetTitle(_("poclbm-gui"))
         self.statusbar.SetStatusWidths([-1, 125])
         statusbar_fields = [_(""), _("Not started")]
