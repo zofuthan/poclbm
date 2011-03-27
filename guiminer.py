@@ -579,8 +579,7 @@ class ProfilePanel(wx.Panel):
         if self.is_mining:
             self.stop_mining()            
         else:
-            self.start_mining()
-        self.start.SetLabel("%s mining!" % self.get_start_stop_state())
+            self.start_mining()        
         self.update_summary()
         
     def start_mining(self):
@@ -620,6 +619,7 @@ class ProfilePanel(wx.Panel):
         self.miner_listener.start()
         self.is_mining = True
         self.set_status("Starting...", 1)
+        self.start.SetLabel("%s mining!" % self.get_start_stop_state())
     
     
     def on_close(self):
@@ -641,8 +641,9 @@ class ProfilePanel(wx.Panel):
             self.miner_listener.shutdown_event.set()
             self.miner_listener = None            
         self.is_mining = False
-        self.set_status("Stopped", 1)
         self.is_paused = False
+        self.set_status("Stopped", 1)        
+        self.start.SetLabel("%s mining!" % self.get_start_stop_state())
           
     def update_khash(self, rate):
         """Update our rate according to a report from the listener thread.
