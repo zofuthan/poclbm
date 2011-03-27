@@ -350,7 +350,6 @@ class ProfilePanel(wx.Panel):
     - Post updates to the GUI's statusbar; the format depends
       whether the poclbm instance is working solo or in a pool.
     """
-    SOLO, POOL = range(2)
     def __init__(self, parent, id, devices, servers, defaults, statusbar, data):
         wx.Panel.__init__(self, parent, id)
         self.parent = parent
@@ -362,12 +361,12 @@ class ProfilePanel(wx.Panel):
         self.is_possible_error = False
         self.miner = None # subprocess.Popen instance when mining
         self.miner_listener = None # MinerListenerThread when mining
-        self.accepted_shares = 0
+        self.solo_blocks_found = 0
+        self.accepted_shares = 0 # shares for pool, diff1 hashes for solo
         self.accepted_times = collections.deque()
-        self.invalid_shares = 0 # POOL mode only
+        self.invalid_shares = 0
         self.invalid_times = collections.deque()
         self.last_rate = 0 # units of khash/s
-        self.last_update_type = ProfilePanel.POOL
         self.autostart = False
         self.server_lbl = wx.StaticText(self, -1, _("Server:"))                
         self.server = wx.ComboBox(self, -1, 
@@ -424,7 +423,7 @@ class ProfilePanel(wx.Panel):
         self.Bind(EVT_UPDATE_ACCEPTED, lambda event: self.update_shares(event.accepted))
         self.Bind(EVT_UPDATE_STATUS, lambda event: self.update_status(event.text))
         self.Bind(EVT_UPDATE_SOLOCHECK, lambda event: self.update_solo())
-        self.update_shares_on_statusbar()                       
+        self.update_statusbar()                       
         self.clear_summary_widgets()
 
     @property 
@@ -438,6 +437,11 @@ class ProfilePanel(wx.Panel):
     def server_config(self):
         hostname = self.txt_host.GetValue()
         return self.get_server_by_field(hostname, 'host')
+    
+    @property
+    def is_solo(self):
+        """Return True if this miner is configured for solo mining."""
+        return self.server.GetStringSelection() == "solo"
 
     def pause(self):
         """Pause the miner if we are mining, otherwise do nothing."""
@@ -534,7 +538,7 @@ class ProfilePanel(wx.Panel):
         self.summary_shares_accepted.SetLabel("%d (%d)" %
             (self.accepted_shares, len(self.accepted_times)))
                 
-        if self.last_update_type == ProfilePanel.SOLO:            
+        if self.is_solo:            
             self.summary_shares_invalid.SetLabel("-")
         else:
             self.summary_shares_invalid.SetLabel("%d (%d)" %
@@ -654,15 +658,22 @@ class ProfilePanel(wx.Panel):
         self.last_rate = rate
         self.set_status(format_khash(rate), 1)
         if self.is_possible_error:
-            self.update_shares_on_statusbar()
+            self.update_statusbar()
             self.is_possible_error = False
 
-    def update_shares_on_statusbar(self):
-        """For pooled mining, show the shares on the statusbar."""
-        text = "Shares: %d accepted" % self.accepted_shares
-        if self.invalid_shares > 0:
-            text += ", %d stale/invalid" % self.invalid_shares         
-        text += " %s" % self.format_last_update_time()
+    def update_statusbar(self):
+        """Show the shares or equivalent on the statusbar."""
+        if self.is_solo:
+            text = "Difficulty 1 hashes: %d %s" % \
+                (self.accepted_shares, self.format_last_update_time())
+            if self.solo_blocks_found > 0:
+                block_text = "Blocks: %d, " % self.solo_blocks_found
+                text = block_text + text
+        else:
+            text = "Shares: %d accepted" % self.accepted_shares
+            if self.invalid_shares > 0:
+                text += ", %d stale/invalid" % self.invalid_shares         
+            text += " %s" % self.format_last_update_time()
         self.set_status(text, 0) 
 
     def update_last_time(self, accepted):
@@ -687,13 +698,14 @@ class ProfilePanel(wx.Panel):
 
     def update_shares(self, accepted):
         """Update our shares with a report from the listener thread."""
-        self.last_update_type = ProfilePanel.POOL
-        if accepted:
+        if self.is_solo and accepted:
+            self.solo_blocks_found += 1
+        elif accepted:
             self.accepted_shares += 1
         else:
             self.invalid_shares += 1
         self.update_last_time(accepted)
-        self.update_shares_on_statusbar()
+        self.update_statusbar()
 
     def update_status(self, msg):
         """Update our status with a report from the listener thread.
@@ -716,7 +728,7 @@ class ProfilePanel(wx.Panel):
         This ensures that when switching tabs, the statusbar always
         shows the current tab's status.
         """
-        self.update_shares_on_statusbar()
+        self.update_statusbar()
         if self.is_mining:
             self.update_khash(self.last_rate)
         else:
@@ -729,23 +741,11 @@ class ProfilePanel(wx.Panel):
         else:
             return "%s: Stopped" % self.name
 
-    def update_solo_status(self):
-        """For solo mining, show the number of easy hashes solved.
-
-        This is a rough indicator of how fast the miner is going,
-        since some small fraction of easy hashes are also valid solutions
-        to the block.
-        """
-        text = "Difficulty 1 hashes: %d %s" % \
-            (self.accepted_shares, self.format_last_update_time())
-        self.set_status(text, 0)
-
     def update_solo(self):
         """Update our easy hashes with a report from the listener thread."""
-        self.last_update_type = ProfilePanel.SOLO
         self.accepted_shares += 1
         self.update_last_time(True)
-        self.update_solo_status()
+        self.update_statusbar()
         
     def on_select_server(self, event):
         """Update our info in response to a new server choice."""
