@@ -935,7 +935,7 @@ class ProfilePanel(wx.Panel):
         self.name = name
         if self.summary_name:
             self.summary_name.SetLabel(self.name)
-        self.set_tab_name(name)
+        self.update_tab_name()
             
     def update_tab_name(self):
         """Update the tab name to reflect modified status."""
