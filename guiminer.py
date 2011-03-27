@@ -1144,7 +1144,7 @@ class PoclbmFrame(wx.Frame):
         solo_menu = wx.Menu()
         solo_menu.Append(ID_SOLO, "&Create solo password...", _("Configure a user/pass for solo mining"), wx.ITEM_NORMAL)
         solo_menu.Append(ID_PATHS, "&Set Bitcoin client path...", _("Set the location of the official Bitcoin client"), wx.ITEM_NORMAL)
-        solo_menu.Append(ID_LAUNCH, "&Launch Bitcoin client", _("Launch the official Bitcoin client for solo mining"), wx.ITEM_NORMAL)
+        solo_menu.Append(ID_LAUNCH, "&Launch Bitcoin client as server", _("Launch the official Bitcoin client as a server for solo mining"), wx.ITEM_NORMAL)
         self.menubar.Append(solo_menu, _("&Solo utilities"))
                       
         help_menu = wx.Menu()
@@ -1419,7 +1419,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
                 "Launch failed", wx.ICON_ERROR | wx.OK)
             return
         self.message(
-            "Client launched ok. You can start the miner now.",
+            "Client launched ok. You can start a miner now with the solo set to 'server'.",
             "Launched ok.",
             wx.OK)
         
