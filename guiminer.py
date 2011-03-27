@@ -13,7 +13,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-03-20'
+__version__ = '2011-03-27'
 
 ABOUT_TEXT = \
 """Python OpenCL Bitcoin Miner GUI
