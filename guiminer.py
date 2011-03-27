@@ -395,17 +395,20 @@ class ProfilePanel(wx.Panel):
         self.balance_cooldown_seconds = 0
         self.balance_auth_token = ""
         
-        self.all_widgets = [self.server_lbl, self.server,
-                            self.website_lbl, self.website,
-                            self.host_lbl, self.txt_host,
-                            self.port_lbl, self.txt_port,
-                            self.user_lbl, self.txt_username,
-                            self.pass_lbl, self.txt_pass,
-                            self.device_lbl, self.device_listbox,
-                            self.flags_lbl, self.txt_flags, 
-                            self.balance_lbl, self.balance_amt,
-                            self.balance_refresh, self.withdraw,
-                            self.extra_info]
+        self.labels = [self.server_lbl, self.website_lbl,
+                      self.host_lbl, self.port_lbl,
+                      self.user_lbl, self.pass_lbl,
+                      self.device_lbl, self.flags_lbl, 
+                      self.balance_lbl]
+        self.txts = [self.txt_host, self.txt_port, 
+                     self.txt_username, self.txt_pass,
+                     self.txt_flags]
+        self.all_widgets = [self.server, self.website,
+                            self.device_listbox,
+                            self.balance_amt,
+                            self.balance_refresh, 
+                            self.withdraw] + self.labels + self.txts
+        # self.extra_info not included because it's invisible by default
         
         self.start = wx.Button(self, -1, _("Start mining!"))        
 
@@ -414,6 +417,10 @@ class ProfilePanel(wx.Panel):
         
         self.set_data(data)
 
+        for txt in self.txts:
+            txt.Bind(wx.EVT_KEY_UP, self.check_if_modified)
+        self.device_listbox.Bind(wx.EVT_COMBOBOX, self.check_if_modified)
+            
         self.start.Bind(wx.EVT_BUTTON, self.toggle_mining)
         self.server.Bind(wx.EVT_COMBOBOX, self.on_select_server)
         self.balance_refresh_timer.Bind(wx.EVT_TIMER, self.on_balance_cooldown_tick)
@@ -443,6 +450,11 @@ class ProfilePanel(wx.Panel):
         """Return True if this miner is configured for solo mining."""
         return self.server.GetStringSelection() == "solo"
 
+    @property
+    def is_modified(self):
+        """Return True if this miner has unsaved changes pending."""
+        return self.last_data != self.get_data()
+
     def pause(self):
         """Pause the miner if we are mining, otherwise do nothing."""
         if self.is_mining:            
@@ -469,6 +481,7 @@ class ProfilePanel(wx.Panel):
 
     def set_data(self, data):
         """Set our profile data to the information in data. See get_data()."""
+        self.last_data = data
         default_server_config = self.get_server_by_field(
                                     self.defaults['default_server'], 'name')
         self.name = (data.get('name') or 'Default')
@@ -811,6 +824,8 @@ class ProfilePanel(wx.Panel):
                
         self.Layout()
         
+        self.update_tab_name()
+        
     def on_balance_refresh(self, event=None, withdraw=False):
         """Refresh the miner's balance from the server."""
         host = self.server_config.get("host")
@@ -920,9 +935,26 @@ class ProfilePanel(wx.Panel):
         self.name = name
         if self.summary_name:
             self.summary_name.SetLabel(self.name)
+        self.set_tab_name(name)
+            
+    def update_tab_name(self):
+        """Update the tab name to reflect modified status."""
+        name = self.name
+        if self.is_modified:
+            name += "*" 
         page = self.parent.GetPageIndex(self)
         if page != -1:
             self.parent.SetPageText(page, name)
+            
+    def check_if_modified(self, event):
+        """Update the title of the tab to have an asterisk if we are modified."""
+        self.update_tab_name()
+        event.Skip()
+        
+    def on_saved(self):
+        """Update our last data after a save."""
+        self.last_data = self.get_data()
+        self.update_tab_name()
     
     def layout_init(self):
         """Create the sizers for this frame."""
@@ -1232,6 +1264,14 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
             self.Hide()
             event.Veto()
         else:
+            if any(p.is_modified for p in self.profile_panels):
+                dialog = wx.MessageDialog(self, 'Do you want to save changes?', 'Save', 
+                    wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION)
+                retval = dialog.ShowModal()
+                dialog.Destroy()
+                if retval == wx.ID_YES:
+                    self.save_config()
+            
             if self.console_panel is not None:
                 self.console_panel.on_close()
             if self.summary_panel is not None:
@@ -1244,7 +1284,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
                 self.tbicon.Destroy()
             event.Skip()
 
-    def save_config(self, event):
+    def save_config(self, event=None):
         """Save the current miner profiles to our config file in JSON format."""
         folder, config_filename = self.get_storage_location()
         mkdir_p(folder)
@@ -1256,8 +1296,10 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         logger.debug('Saving: ' + json.dumps(config_data))
         with open(config_filename, 'w') as f:
             json.dump(config_data, f, indent=4)
-            self.message("Profiles saved OK to %s." % config_filename,
-                          "Save successful", wx.OK | wx.ICON_INFORMATION)
+        self.message("Profiles saved OK to %s." % config_filename,
+                      "Save successful", wx.OK | wx.ICON_INFORMATION)
+        for p in self.profile_panels:
+            p.on_saved()
         # TODO: handle save failed
     
     def load_config(self, event=None):
