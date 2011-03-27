@@ -96,10 +96,7 @@ def format_khash(rate):
     
 def format_balance(amount):
     """Format a quantity of Bitcoins in BTC."""
-    amount = float(amount)
-    if amount > 0.001:
-        return "%.2f BTC" % amount
-    return "0"
+    return "%.3f BTC" % float(amount)
     
 def init_logger():
     """Set up and return the logging object and custom formatter."""
