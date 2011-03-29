@@ -66,6 +66,15 @@ def get_module_path():
     module_name = sys.executable if hasattr(sys, 'frozen') else __file__
     return os.path.dirname(module_name)
 
+def get_taskbar_icon():
+    """Return the taskbar icon.
+
+    This works around Window's annoying behavior of ignoring the 16x16 image
+    and using nearest neighbour downsampling on the 32x32 image instead."""
+    ib = wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)
+    return ib.GetIcon((16,16))
+    return icon
+
 def get_icon_bundle():
     """Return the Bitcoin program icon bundle."""
     return wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)    
@@ -244,7 +253,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     def __init__(self, frame):
         wx.TaskBarIcon.__init__(self)
         self.frame = frame
-        self.icon = get_icon_bundle().GetIcon((16,16)) # TODO: linux size?
+        self.icon = get_taskbar_icon()
         self.timer = wx.Timer(self)
         self.timer.Start(REFRESH_RATE_MILLIS)
         self.is_paused = False

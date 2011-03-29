@@ -1,7 +1,11 @@
 from distutils.core import setup
 import py2exe
 
-setup(windows=['guiminer.py'],
+setup(windows=[
+        {'script': 'guiminer.py',
+         'icon_resources': [(0, "logo.ico")]
+        }
+      ],
       console=['poclbm.py'],
       # OpenCL.dll is vendor specific
       options=dict(py2exe=dict(
