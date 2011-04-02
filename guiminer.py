@@ -338,7 +338,7 @@ class MinerListenerThread(threading.Thread):
             event = UpdateStatusEvent(text=line)
             logger.info('Listener for "%s": %s', self.parent.name, line)
             wx.PostEvent(self.parent, event)
-        logger.debug('Listener for "%s" shutting down' % self.parent.name)
+        logger.debug('Listener for "%s" shutting down', self.parent.name)
         
         
 class ProfilePanel(wx.Panel):
@@ -831,7 +831,10 @@ class ProfilePanel(wx.Panel):
         """Refresh the miner's balance from the server."""
         host = self.server_config.get("host")
         
-        if host in ["mining.bitcoin.cz", "btcmine.com"]:
+        HOSTS_REQUIRING_AUTH_TOKEN = ["mining.bitcoin.cz", 
+                                      "btcmine.com", 
+                                      "deepbit.net"]
+        if host in HOSTS_REQUIRING_AUTH_TOKEN:
             if not self.balance_auth_token:
                 self.prompt_auth_token()
             if not self.balance_auth_token: # They cancelled the dialog
@@ -846,7 +849,7 @@ class ProfilePanel(wx.Panel):
                 target=self.request_balance_post, args=(withdraw,))
             self.http_thread.start()
             
-        self.balance_refresh.Disable() # TODO: handle timeout
+        self.balance_refresh.Disable()
         self.balance_cooldown_seconds = 10
         self.balance_refresh_timer.Start(1000)
     
@@ -886,9 +889,9 @@ class ProfilePanel(wx.Panel):
                 info = json.loads(data)
                 confirmed = info.get('confirmed_reward') or info.get('confirmed', 0)
                 unconfirmed = info.get('unconfirmed_reward') or info.get('unconformed', 0)
-                data = "%s confirmed, %s unconfirmed" % (
-                            format_balance(confirmed), 
-                            format_balance(unconfirmed))            
+                data = "%s confirmed" % format_balance(confirmed)
+                if unconfirmed > 0:
+                    data += ", %s unconfirmed" % format_balance(unconfirmed)
             except: # TODO: what exception here?
                 data = "Bad response from server."
                                             
@@ -1090,7 +1093,15 @@ class ProfilePanel(wx.Panel):
 
     def layout_deepbit(self):
         """Deepbit uses an email address for a username."""
-        self.layout_default()
+        self.set_widgets_visible([self.host_lbl, self.txt_host, 
+                                  self.port_lbl, self.txt_port,
+                                  self.withdraw], False)             
+        self.layout_init()
+        self.layout_server_and_website(row=0)
+        self.layout_user_and_pass(row=1)
+        self.layout_device_and_flags(row=2)
+        self.layout_balance(row=3)
+        self.layout_finish()
         add_tooltip(self.txt_username,
             "The e-mail address you registered with.")
         self.user_lbl.SetLabel("Email:")
@@ -1198,7 +1209,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
     
     def __set_properties(self):
         self.SetIcons(get_icon_bundle())        
-        self.SetTitle(_("poclbm-gui"))
+        self.SetTitle(_("poclbm-gui - v" + __version__))
         self.statusbar.SetStatusWidths([-1, 125])
         statusbar_fields = [_(""), _("Not started")]
         for i in range(len(statusbar_fields)):  
