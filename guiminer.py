@@ -407,7 +407,7 @@ class MinerTab(wx.Panel):
         self.pass_lbl = wx.StaticText(self, -1, _("Password:"))
         self.txt_pass = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
         self.device_lbl = wx.StaticText(self, -1, _("Device:"))
-        self.device_listbox = wx.ComboBox(self, -1, choices=devices, style=wx.CB_READONLY)
+        self.device_listbox = wx.ComboBox(self, -1, choices=devices or ["No OpenCL devices"], style=wx.CB_READONLY)
         self.flags_lbl = wx.StaticText(self, -1, _("Extra flags:"))        
         self.txt_flags = wx.TextCtrl(self, -1, "")
         self.extra_info = wx.StaticText(self, -1, "")        
@@ -1267,6 +1267,7 @@ class GUIMiner(wx.Frame):
         try:
             self.devices = get_opencl_devices()
         except:
+            self.devices = []
             self.message("""No OpenCL devices were found.
 If you only want to mine using CPU or CUDA, you can ignore this message.
 If you want to mine on ATI graphics cards, you may need to install the ATI Stream
@@ -1276,7 +1277,7 @@ SDK, or your GPU may not support OpenCL.
                 wx.OK | wx.ICON_INFORMATION)
             file_menu.Enable(wx.ID_NEW, False)
             file_menu.SetHelpString(wx.ID_NEW, "OpenCL not found - can't add a OpenCL miner")
-
+        
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.new_external_profile, id=ID_NEW_EXTERNAL)
         self.Bind(wx.EVT_MENU, self.save_config, id=wx.ID_SAVE)
