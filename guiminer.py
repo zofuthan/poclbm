@@ -13,15 +13,16 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-03-27'
+__version__ = '2011-04-02'
 
 ABOUT_TEXT = \
-"""Python OpenCL Bitcoin Miner GUI
+"""GUIMiner
 
 Version: %s
 
 GUI by Chris 'Kiv' MacLeod
 Original poclbm miner by m0mchil
+Original rpcminers by puddinpop
 
 Get the source code or file issues at GitHub:
     https://github.com/Kiv/poclbm
@@ -30,7 +31,18 @@ If you enjoyed this software, support its development
 by donating to:
 
 %s
+
+Even a single Bitcoin is appreciated and helps motivate
+further work on this software.
 """
+# Alternate backends that we know how to call
+SUPPORTED_BACKENDS = [
+    "rpcminer-4way.exe", 
+    "rpcminer-cpu.exe", 
+    "rpcminer-cuda.exe",
+    "rpcminer-opencl.exe",
+]
+
 # Time constants
 SAMPLE_TIME_SECS = 3600
 REFRESH_RATE_MILLIS = 2000
@@ -52,7 +64,11 @@ def merge_whitespace(s):
     return s.strip()
 
 def get_opencl_devices():
-    """Return a list of available OpenCL devices."""
+    """Return a list of available OpenCL devices.
+    
+    Raises ImportError if OpenCL is not found.
+    Raises IOError if no OpenCL devices are found.
+    """
     import pyopencl
     platform = pyopencl.get_platforms()[0]
     devices = platform.get_devices()
@@ -73,7 +89,6 @@ def get_taskbar_icon():
     and using nearest neighbour downsampling on the 32x32 image instead."""
     ib = wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)
     return ib.GetIcon((16,16))
-    return icon
 
 def get_icon_bundle():
     """Return the Bitcoin program icon bundle."""
@@ -99,7 +114,7 @@ def format_khash(rate):
     if rate > 10**3:
         return "%.1f Mhash/s" % (rate / 1000.)
     elif rate == 0:
-        return "Connected"
+        return "Connecting..."
     else:
         return "%d khash/s" % rate
     
@@ -303,53 +318,55 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
                 
             
 class MinerListenerThread(threading.Thread):
+    LINES = [
+        (r"accepted|\"result\": true", 
+            lambda _: UpdateAcceptedEvent(accepted=True)),
+        (r"invalid|stale", lambda _: 
+            UpdateAcceptedEvent(accepted=False)),
+        (r"(\d+) khash/s", lambda match: 
+            UpdateHashRateEvent(rate=int(match.group(1)))),
+        (r"checking (\d+)", lambda _: 
+            UpdateSoloCheckEvent()),
+        (r"Target =", 
+            lambda _: None) # Just ignore this
+    ]
+
     def __init__(self, parent, miner):
         threading.Thread.__init__(self)
         self.shutdown_event = threading.Event()
         self.parent = parent
         self.miner = miner
-
+        
     def run(self):
         logger.debug('Listener for "%s" started' % self.parent.name)
         while not self.shutdown_event.is_set():            
             line = self.miner.stdout.readline().strip()
+            logger.debug("Line: %s", line)
             if not line: continue
-            match = re.search(r"accepted", line, flags=re.I)
-            if match is not None:
-                event = UpdateAcceptedEvent(accepted=True)
+            for s, event_func in MinerListenerThread.LINES:
+                match = re.search(s, line, flags=re.I)
+                if match is not None:
+                    event = event_func(match)
+                    if event is not None:
+                        wx.PostEvent(self.parent, event)
+                    break
+            else:
+                # Possible error or new message, just pipe it through
+                event = UpdateStatusEvent(text=line)
+                logger.info('Listener for "%s": %s', self.parent.name, line)
                 wx.PostEvent(self.parent, event)
-                continue
-            match = re.search(r"invalid|stale", line, flags=re.I)
-            if match is not None:
-                event = UpdateAcceptedEvent(accepted=False)
-                wx.PostEvent(self.parent, event)
-                continue
-            match = re.search(r"(\d+) khash/s", line, flags=re.I)
-            if match is not None:
-                event = UpdateHashRateEvent(rate=int(match.group(1)))
-                wx.PostEvent(self.parent, event)
-                continue
-            match = re.search(r"checking (\d+)", line, flags=re.I)
-            if match is not None:
-                event = UpdateSoloCheckEvent()
-                wx.PostEvent(self.parent, event)
-                continue
-            # Possible error or new message, just pipe it through
-            event = UpdateStatusEvent(text=line)
-            logger.info('Listener for "%s": %s', self.parent.name, line)
-            wx.PostEvent(self.parent, event)
         logger.debug('Listener for "%s" shutting down', self.parent.name)
         
         
-class ProfilePanel(wx.Panel):
+class MinerTab(wx.Panel):
     """A tab in the GUI representing a miner instance.
 
-    Each ProfilePanel has these responsibilities:
+    Each MinerTab has these responsibilities:
     - Persist its data to and from the config file
-    - Launch a poclbm subprocess and monitor its progress
+    - Launch a backend subprocess and monitor its progress
       by creating a MinerListenerThread.
-    - Post updates to the GUI's statusbar; the format depends
-      whether the poclbm instance is working solo or in a pool.
+    - Post updates to the GUI's statusbar & summary panel; the format depends
+      whether the backend is working solo or in a pool.
     """
     def __init__(self, parent, id, devices, servers, defaults, statusbar, data):
         wx.Panel.__init__(self, parent, id)
@@ -361,7 +378,7 @@ class ProfilePanel(wx.Panel):
         self.is_paused = False
         self.is_possible_error = False
         self.miner = None # subprocess.Popen instance when mining
-        self.miner_listener = None # MinerListenerThread when mining
+        self.miner_listener = None # MinerListenerThread when mining 
         self.solo_blocks_found = 0
         self.accepted_shares = 0 # shares for pool, diff1 hashes for solo
         self.accepted_times = collections.deque()
@@ -375,6 +392,8 @@ class ProfilePanel(wx.Panel):
                                   style=wx.CB_READONLY)
         self.website_lbl = wx.StaticText(self, -1, _("Website:"))
         self.website = hyperlink.HyperLinkCtrl(self, -1, "")
+        self.external_lbl = wx.StaticText(self, -1, _("Ext. Path:"))
+        self.txt_external = wx.TextCtrl(self, -1, "")
         self.host_lbl = wx.StaticText(self, -1, _("Host:"))
         self.txt_host = wx.TextCtrl(self, -1, "")
         self.port_lbl = wx.StaticText(self, -1, _("Port:"))
@@ -409,7 +428,9 @@ class ProfilePanel(wx.Panel):
                             self.balance_amt,
                             self.balance_refresh, 
                             self.withdraw] + self.labels + self.txts
-        # self.extra_info not included because it's invisible by default
+        self.hidden_widgets = [self.extra_info, 
+                               self.txt_external, 
+                               self.external_lbl]
         
         self.start = wx.Button(self, -1, _("Start mining!"))        
 
@@ -456,6 +477,16 @@ class ProfilePanel(wx.Panel):
         """Return True if this miner has unsaved changes pending."""
         return self.last_data != self.get_data()
 
+    @property
+    def external_path(self):
+        """Return the path to an external miner, or "" if none is present."""
+        return self.txt_external.GetValue()
+    
+    @property
+    def is_external_miner(self):
+        """Return True if this miner has an external path configured."""
+        return self.txt_external.GetValue() != ""
+
     def pause(self):
         """Pause the miner if we are mining, otherwise do nothing."""
         if self.is_mining:            
@@ -478,7 +509,8 @@ class ProfilePanel(wx.Panel):
                     device=self.device_listbox.GetSelection(),
                     flags=self.txt_flags.GetValue(),
                     autostart=self.autostart,
-                    balance_auth_token=self.balance_auth_token)
+                    balance_auth_token=self.balance_auth_token,
+                    external_path=self.external_path)
 
     def set_data(self, data):
         """Set our profile data to the information in data. See get_data()."""
@@ -509,7 +541,8 @@ class ProfilePanel(wx.Panel):
             self.server_config.get('port', 8332)))
                 
         self.txt_flags.SetValue(data.get('flags', ''))
-        self.autostart = data.get('autostart', False)        
+        self.autostart = data.get('autostart', False)
+        self.txt_external.SetValue(data.get('external_path', ''))    
 
         # Handle case where they removed devices since last run.
         device_index = data.get('device', None)
@@ -599,10 +632,8 @@ class ProfilePanel(wx.Panel):
         else:
             self.start_mining()        
         self.update_summary()
-        
-    def start_mining(self):
-        """Launch a poclbm subprocess and attach a MinerListenerThread."""
-        self.is_paused = False
+
+    def configure_subprocess_poclbm(self):
         folder = get_module_path()  
         if USE_MOCK:            
             executable = "python mockBitcoinMiner.py"
@@ -620,14 +651,45 @@ class ProfilePanel(wx.Panel):
                 self.device_listbox.GetSelection(),
                 self.txt_flags.GetValue()
         )
+        return cmd, folder
+
+    def configure_subprocess_rpcminer(self):
+        # TODO: is this true that we always expect HTTP for rpcminer?
+        # If so we should strip it automatically for the other one too
+        host = self.txt_host.GetValue()
+        if not host.startswith("http://"): host = "http://" + host
+        
+        cmd = "%s -user=%s -password=%s -url=%s:%s %s" % (
+            self.external_path,
+            self.txt_username.GetValue(),
+            self.txt_pass.GetValue(),
+            host,
+            self.txt_port.GetValue(),
+            self.txt_flags.GetValue()
+        )
+        return cmd, os.path.dirname(self.external_path)
+    
+    def start_mining(self):
+        """Launch a miner subprocess and attach a MinerListenerThread."""
+        self.is_paused = False
+       
         # Avoid showing a console window when frozen
         try: import win32process
         except ImportError: flags = 0
         else: flags = win32process.CREATE_NO_WINDOW
+
+        # Determine what command line arguments to use
+        if not self.is_external_miner:
+            conf_func = self.configure_subprocess_poclbm
+        elif "rpcminer" in self.external_path:
+            conf_func = self.configure_subprocess_rpcminer
+        else:
+            raise # TODO: handle unrecognized miner 
+        cmd, cwd = conf_func()
                 
         try:
             logger.debug('Running command: ' + cmd)
-            self.miner = subprocess.Popen(cmd, cwd=folder, 
+            self.miner = subprocess.Popen(cmd, cwd=cwd, 
                                           stdout=subprocess.PIPE,
                                           creationflags=flags)
         except OSError:
@@ -637,8 +699,7 @@ class ProfilePanel(wx.Panel):
         self.miner_listener.start()
         self.is_mining = True
         self.set_status("Starting...", 1)
-        self.start.SetLabel("%s mining!" % self.get_start_stop_state())
-    
+        self.start.SetLabel("%s mining!" % self.get_start_stop_state())    
     
     def on_close(self):
         """Prepare to close gracefully."""
@@ -961,11 +1022,20 @@ class ProfilePanel(wx.Panel):
         self.update_tab_name()
     
     def layout_init(self):
-        """Create the sizers for this frame."""
+        """Create the sizers for this frame and set up the external text.
+        
+        Return the lowest row that is available.       
+        """
         self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
         self.frame_sizer.Add((20, 10), 0, wx.EXPAND, 0)
         self.inner_sizer = wx.GridBagSizer(10, 5)
         self.button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        row = 0
+        if self.is_external_miner:
+            self.inner_sizer.Add(self.external_lbl, (row,0), flag=LBL_STYLE)
+            self.inner_sizer.Add(self.txt_external, (row,1), span=(1,3), flag=wx.EXPAND)
+            row += 1
+        return row
     
     def layout_server_and_website(self, row):
         """Lay out the server and website widgets in the specified row."""
@@ -989,11 +1059,19 @@ class ProfilePanel(wx.Panel):
         self.inner_sizer.Add(self.txt_pass, (row,3), flag=wx.EXPAND)
             
     def layout_device_and_flags(self, row):
-        """Lay out the device and flags widgets in the specified row."""
-        self.inner_sizer.Add(self.device_lbl, (row,0), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.device_listbox, (row,1), flag=wx.EXPAND)
-        self.inner_sizer.Add(self.flags_lbl, (row,2), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.txt_flags, (row,3), flag=wx.EXPAND)
+        """Lay out the device and flags widgets in the specified row.
+        
+        Hide the device widgets if there's an external miner present.
+        """
+        no_external = not self.is_external_miner
+        self.set_widgets_visible([self.device_lbl, self.device_listbox], no_external)        
+        if no_external:
+            self.inner_sizer.Add(self.device_lbl, (row,0), flag=LBL_STYLE)
+            self.inner_sizer.Add(self.device_listbox, (row,1), flag=wx.EXPAND)
+        col = 2 * (no_external)
+        self.inner_sizer.Add(self.flags_lbl, (row,col), flag=LBL_STYLE)
+        span = (1,1) if no_external else (1,4) 
+        self.inner_sizer.Add(self.txt_flags, (row,col+1), span=span, flag=wx.EXPAND)
     
     def layout_balance(self, row):
         """Lay out the balance widgets in the specified row."""
@@ -1008,28 +1086,31 @@ class ProfilePanel(wx.Panel):
         self.inner_sizer.AddGrowableCol(3)   
         for btn in [self.start, self.balance_refresh, self.withdraw]:
             self.button_sizer.Add(btn, 0, BTN_STYLE, 5)
+        
+        self.set_widgets_visible([self.external_lbl, self.txt_external],
+                                 self.is_external_miner)
         self.SetSizerAndFit(self.frame_sizer)    
     
     def layout_default(self):
         """Lay out a default miner with no custom changes."""
         self.user_lbl.SetLabel("Username:")
         
-        self.set_widgets_visible([self.extra_info,  
-                                  self.balance_lbl,
+        self.set_widgets_visible(self.hidden_widgets, False)        
+        self.set_widgets_visible([self.balance_lbl,
                                   self.balance_amt,
                                   self.balance_refresh,
                                   self.withdraw], False)
-        self.layout_init()
-        self.layout_server_and_website(row=0)
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
         is_custom = self.server.GetStringSelection().lower() in ["other", "solo"]
         if is_custom:
-            self.layout_host_and_port(row=1)
+            self.layout_host_and_port(row=row+1)
         else:
             self.set_widgets_visible([self.host_lbl, self.txt_host, 
                                       self.port_lbl, self.txt_port], False)
             
-        self.layout_user_and_pass(row=1 + int(is_custom))
-        self.layout_device_and_flags(row=2 + int(is_custom))
+        self.layout_user_and_pass(row=row + 1 + int(is_custom))
+        self.layout_device_and_flags(row=row + 2 + int(is_custom))
         self.layout_finish()
     
     ############################            
@@ -1043,13 +1124,13 @@ class ProfilePanel(wx.Panel):
                      self.pass_lbl, self.host_lbl, self.port_lbl]
         self.set_widgets_visible(invisible, False)
             
-        self.layout_init()
-        self.layout_server_and_website(row=0)                            
-        self.inner_sizer.Add(self.user_lbl, (1,0), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.txt_username, (1,1), span=(1,3), flag=wx.EXPAND)        
-        self.layout_device_and_flags(row=2)        
-        self.layout_balance(row=3)
-        self.inner_sizer.Add(self.extra_info,(4,0), span=(1,4), flag=wx.ALIGN_CENTER_HORIZONTAL)
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)                            
+        self.inner_sizer.Add(self.user_lbl, (row+1,0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_username, (row+1,1), span=(1,3), flag=wx.EXPAND)        
+        self.layout_device_and_flags(row=row+2)        
+        self.layout_balance(row=row+3)
+        self.inner_sizer.Add(self.extra_info,(row+4,0), span=(1,4), flag=wx.ALIGN_CENTER_HORIZONTAL)
         self.layout_finish()
                         
         self.extra_info.SetLabel("No registration is required - just enter an address and press Start.")
@@ -1063,11 +1144,11 @@ class ProfilePanel(wx.Panel):
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
                                   self.port_lbl, self.txt_port,
                                   self.withdraw], False)        
-        self.layout_init()
-        self.layout_server_and_website(row=0)
-        self.layout_user_and_pass(row=1)
-        self.layout_device_and_flags(row=2)
-        self.layout_balance(row=3)
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
+        self.layout_user_and_pass(row=row+1)
+        self.layout_device_and_flags(row=row+2)
+        self.layout_balance(row=row+3)
         self.layout_finish()
         
         add_tooltip(self.txt_username,
@@ -1079,11 +1160,11 @@ class ProfilePanel(wx.Panel):
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
                                   self.port_lbl, self.txt_port,
                                   self.withdraw], False)             
-        self.layout_init()
-        self.layout_server_and_website(row=0)
-        self.layout_user_and_pass(row=1)
-        self.layout_device_and_flags(row=2)
-        self.layout_balance(row=3)
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
+        self.layout_user_and_pass(row=row+1)
+        self.layout_device_and_flags(row=row+2)
+        self.layout_balance(row=row+3)
         self.layout_finish()        
 
         add_tooltip(self.txt_username,
@@ -1096,22 +1177,21 @@ class ProfilePanel(wx.Panel):
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
                                   self.port_lbl, self.txt_port,
                                   self.withdraw], False)             
-        self.layout_init()
-        self.layout_server_and_website(row=0)
-        self.layout_user_and_pass(row=1)
-        self.layout_device_and_flags(row=2)
-        self.layout_balance(row=3)
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
+        self.layout_user_and_pass(row=row+1)
+        self.layout_device_and_flags(row=row+2)
+        self.layout_balance(row=row+3)
         self.layout_finish()
         add_tooltip(self.txt_username,
             "The e-mail address you registered with.")
         self.user_lbl.SetLabel("Email:")
         
     # End server specific code
-    ##########################                 
-
+    ##########################
                                 
 
-class PoclbmFrame(wx.Frame):
+class GUIMiner(wx.Frame):
     def __init__(self, *args, **kwds):
         wx.Frame.__init__(self, *args, **kwds)
         style = fnb.FNB_X_ON_TAB | fnb.FNB_FF2 | fnb.FNB_HIDE_ON_SINGLE_TAB
@@ -1137,10 +1217,12 @@ class PoclbmFrame(wx.Frame):
         defaults_config_path = os.path.join(get_module_path(), 'defaults.ini')
         with open(defaults_config_path) as f:
             self.defaults = json.load(f)
-               
+        
+        ID_NEW_EXTERNAL = wx.NewId()
         self.menubar = wx.MenuBar()
         file_menu = wx.Menu()
-        file_menu.Append(wx.ID_NEW, _("&New miner..."), _("Create a new miner profile"), wx.ITEM_NORMAL)
+        file_menu.Append(wx.ID_NEW, _("&New OpenCL miner..."), _("Create a new miner profile"), wx.ITEM_NORMAL)
+        file_menu.Append(ID_NEW_EXTERNAL, _("New &other miner..."), _("Create a CPU or CUDA miner (requires external program)"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_SAVE, _("&Save settings"), _("Save your settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_OPEN, _("&Load settings"), _("Load stored settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_EXIT, "", "", wx.ITEM_NORMAL)
@@ -1176,19 +1258,23 @@ class PoclbmFrame(wx.Frame):
         except:
             self.tbicon = None # TODO: what happens on Linux?            
                          
-        self.__set_properties()
+        self.set_properties()
 
         try:
             self.devices = get_opencl_devices()
         except:
-            self.message("""Couldn't find any OpenCL devices.
-Check that your video card supports OpenCL and that you have a working version of OpenCL installed.
-If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
+            self.message("""No OpenCL devices were found.
+If you only want to mine using CPU or CUDA, you can ignore this message.
+If you want to mine on ATI graphics cards, you may need to install the ATI Stream
+SDK, or your GPU may not support OpenCL.
+""",
                 "No OpenCL devices found.",
-                wx.OK | wx.ICON_ERROR)
-            sys.exit(1)        
+                wx.OK | wx.ICON_INFORMATION)
+            file_menu.Enable(wx.ID_NEW, False)
+            file_menu.SetHelpString(wx.ID_NEW, "OpenCL not found - can't add a OpenCL miner")
 
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
+        self.Bind(wx.EVT_MENU, self.new_external_profile, id=ID_NEW_EXTERNAL)
         self.Bind(wx.EVT_MENU, self.save_config, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.load_config, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.on_menu_exit, id=wx.ID_EXIT)
@@ -1205,9 +1291,9 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
         self.load_config()           
-        self.__do_layout()
+        self.do_layout()
     
-    def __set_properties(self):
+    def set_properties(self):
         self.SetIcons(get_icon_bundle())        
         self.SetTitle(_("poclbm-gui - v" + __version__))
         self.statusbar.SetStatusWidths([-1, 125])
@@ -1215,7 +1301,7 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         for i in range(len(statusbar_fields)):  
             self.statusbar.SetStatusText(statusbar_fields[i], i)  
 
-    def __do_layout(self):
+    def do_layout(self):
         self.vertical_sizer = wx.BoxSizer(wx.VERTICAL)
         self.vertical_sizer.Add(self.nb, 1, wx.EXPAND, 20)
         self.SetSizer(self.vertical_sizer)
@@ -1225,14 +1311,14 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
 
     @property
     def profile_panels(self):
-        """Return a list of currently available ProfilePanel."""
+        """Return a list of currently available MinerTab."""
         pages = [self.nb.GetPage(i) for i in range(self.nb.GetPageCount())]
         return [p for p in pages if 
                 p != self.console_panel and p != self.summary_panel]
     
     def add_profile(self, data={}):
-        """Add a new ProfilePanel to the list of tabs."""
-        panel = ProfilePanel(self.nb, -1, self.devices, self.servers, 
+        """Add a new MinerTab to the list of tabs."""
+        panel = MinerTab(self.nb, -1, self.devices, self.servers, 
                              self.defaults, self.statusbar, data)
         self.nb.AddPage(panel, panel.name)
         # The newly created profile should have focus.
@@ -1249,13 +1335,33 @@ If you have an AMD/ATI card you may need to install the ATI Stream SDK.""",
         dialog.Destroy()
         return retval
 
-    def name_new_profile(self, event):
+    def name_new_profile(self, event=None, extra_profile_data={}):
         """Prompt for the new miner's name."""
         dialog = wx.TextEntryDialog(self, "Name this miner:", "New miner")
         if dialog.ShowModal() == wx.ID_OK:
             name = dialog.GetValue().strip()
             if not name: name = "Untitled"
-            self.add_profile(dict(name=name))
+            data = extra_profile_data.copy()
+            data['name'] = name
+            self.add_profile(data)
+
+    def new_external_profile(self, event):
+        """Prompt for an external miner path, then create a miner."""               
+        dialog = wx.FileDialog(self,
+                               "Select external miner:",
+                               defaultDir=os.path.join(get_module_path(), 'miners'),
+                               defaultFile="",
+                               wildcard='External miner (*.exe)|*.exe',
+                               style=wx.OPEN)
+        if dialog.ShowModal() == wx.ID_OK:
+            path = os.path.join(dialog.GetDirectory(), dialog.GetFilename())
+            # TODO: if filename isn't in backends, show error dialog 
+            if not os.path.exists(path):
+                return # TODO: should this ever happen?
+        else:
+            return
+        dialog.Destroy()                           
+        self.name_new_profile(extra_profile_data=dict(external_path=path))                     
 
     def get_storage_location(self):
         """Get the folder and filename to store our JSON config."""
@@ -1587,7 +1693,7 @@ if __name__ == "__main__":
     try:
         app = wx.PySimpleApp(0)
         wx.InitAllImageHandlers()
-        frame_1 = PoclbmFrame(None, -1, "")
+        frame_1 = GUIMiner(None, -1, "")
         app.SetTopWindow(frame_1)
         frame_1.Show()
         app.MainLoop()
