@@ -86,17 +86,17 @@ def get_module_path():
     module_name = sys.executable if hasattr(sys, 'frozen') else __file__
     return os.path.dirname(module_name)
 
+def get_icon_bundle():
+    """Return the Bitcoin program icon bundle."""
+    return wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)   
+
 def get_taskbar_icon():
     """Return the taskbar icon.
 
     This works around Window's annoying behavior of ignoring the 16x16 image
     and using nearest neighbour downsampling on the 32x32 image instead."""
-    ib = wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)
+    ib = get_icon_bundle()
     return ib.GetIcon((16,16))
-
-def get_icon_bundle():
-    """Return the Bitcoin program icon bundle."""
-    return wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)    
     
 def mkdir_p(path):
     """If the directory 'path' doesn't exist, create it. Same as mkdir -p."""
