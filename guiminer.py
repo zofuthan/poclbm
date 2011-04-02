@@ -1,4 +1,8 @@
-"""poclbm-gui - GUI miner for poclbm
+"""GUIMiner - graphical frontend to Bitcoin miners.
+
+Currently supports:
+- m0mchil's "poclbm"
+- puddinpop's "rpcminer".
 
 Copyright 2011 Chris MacLeod
 This program is released under the GNU GPL. See LICENSE.txt for details.
