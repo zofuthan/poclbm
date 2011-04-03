@@ -174,7 +174,6 @@ class ConsolePanel(wx.Panel):
         
     def on_focus(self):
         """On focus, clear the status bar."""
-        # TODO: could show something helpful on the statusbar instead
         self.parent.statusbar.SetStatusText("", 0)
         self.parent.statusbar.SetStatusText("", 1)
     
@@ -195,7 +194,7 @@ class SummaryPanel(wx.Panel):
         self.parent = parent
         self.timer = wx.Timer(self)
         self.timer.Start(REFRESH_RATE_MILLIS)
-        self.Bind(wx.EVT_TIMER, self.on_update_tooltip)
+        self.Bind(wx.EVT_TIMER, self.on_timer)
         
         flags = wx.ALIGN_CENTER_HORIZONTAL | wx.ALL
         border = 5
@@ -240,7 +239,8 @@ class SummaryPanel(wx.Panel):
     def on_close(self):
         self.timer.Stop()
     
-    def on_update_tooltip(self, event=None):
+    def on_timer(self, event=None):
+        """Whenever the timer goes off, fefresh the summary data."""
         if self.parent.nb.GetSelection() != self.parent.nb.GetPageIndex(self):
             return 
         
@@ -257,7 +257,7 @@ class SummaryPanel(wx.Panel):
     
     def on_focus(self):
         """On focus, show the statusbar text."""
-        self.on_update_tooltip()
+        self.on_timer()
 
 class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     """Taskbar icon for the GUI.
@@ -277,13 +277,13 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
         self.timer = wx.Timer(self)
         self.timer.Start(REFRESH_RATE_MILLIS)
         self.is_paused = False
-        self.SetIcon(self.icon, "poclbm-gui")
+        self.SetIcon(self.icon, "GUIMiner")
         self.imgidx = 1
         self.Bind(wx.EVT_TASKBAR_LEFT_DCLICK, self.on_taskbar_activate)
         self.Bind(wx.EVT_MENU, self.on_taskbar_activate, id=self.TBMENU_RESTORE)
         self.Bind(wx.EVT_MENU, self.on_taskbar_close, id=self.TBMENU_CLOSE)
         self.Bind(wx.EVT_MENU, self.on_pause, id=self.TBMENU_PAUSE)
-        self.Bind(wx.EVT_TIMER, self.on_update_tooltip)
+        self.Bind(wx.EVT_TIMER, self.on_timer)
 
     def CreatePopupMenu(self):
         """Override from wx.TaskBarIcon. Creates the right-click menu."""
@@ -304,7 +304,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     def on_taskbar_close(self, evt):
         wx.CallAfter(self.frame.Close, force=True)
 
-    def on_update_tooltip(self, event):
+    def on_timer(self, event):
         """Refresh the taskbar icon's status message."""
         objs = self.frame.profile_panels
         if objs:
@@ -319,13 +319,12 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
                 miner.pause()
             else:
                 miner.resume()
-        #event.Skip() # Allow the box to become checked
                 
             
 class MinerListenerThread(threading.Thread):
     LINES = [
-        (r"Target =|average rate", 
-            lambda _: None), # Just ignore this             
+        (r"Target =|average rate|Sending to server|found hash!", 
+            lambda _: None), # Just ignore lines like these         
         (r"accepted|\"result\": true", 
             lambda _: UpdateAcceptedEvent(accepted=True)),
         (r"invalid|stale", lambda _: 
@@ -345,7 +344,7 @@ class MinerListenerThread(threading.Thread):
         self.miner = miner
         
     def run(self):
-        logger.debug('Listener for "%s" started' % self.parent.name)
+        logger.info('Listener for "%s" started' % self.parent.name)
         while not self.shutdown_event.is_set():            
             line = self.miner.stdout.readline().strip()
             logger.debug("Line: %s", line)
@@ -362,7 +361,7 @@ class MinerListenerThread(threading.Thread):
                 event = UpdateStatusEvent(text=line)
                 logger.info('Listener for "%s": %s', self.parent.name, line)
                 wx.PostEvent(self.parent, event)
-        logger.debug('Listener for "%s" shutting down', self.parent.name)
+        logger.info('Listener for "%s" shutting down', self.parent.name)
         
         
 class MinerTab(wx.Panel):
@@ -732,7 +731,7 @@ class MinerTab(wx.Panel):
                                           stdout=subprocess.PIPE,
                                           creationflags=flags)
         except OSError:
-            raise #TODO
+            raise #TODO: the folder or exe could not exist
         self.miner_listener = MinerListenerThread(self, self.miner)
         self.miner_listener.daemon = True
         self.miner_listener.start()
