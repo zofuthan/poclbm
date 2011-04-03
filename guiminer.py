@@ -392,7 +392,8 @@ class MinerTab(wx.Panel):
         self.invalid_times = collections.deque()
         self.last_rate = 0 # units of khash/s
         self.autostart = False
-        self.server_lbl = wx.StaticText(self, -1, _("Server:"))                
+        self.server_lbl = wx.StaticText(self, -1, _("Server:"))
+        self.summary_panel = None # SummaryPanel instance if summary open           
         self.server = wx.ComboBox(self, -1, 
                                   choices=[s['name'] for s in servers], 
                                   style=wx.CB_READONLY)
