@@ -1391,13 +1391,16 @@ SDK, or your GPU may not support OpenCL.
                                defaultFile="",
                                wildcard='External miner (*.exe)|*.exe',
                                style=wx.OPEN)
-        if dialog.ShowModal() == wx.ID_OK:
-            path = os.path.join(dialog.GetDirectory(), dialog.GetFilename())
-            # TODO: if filename isn't in backends, show error dialog 
-            if not os.path.exists(path):
-                return # TODO: should this ever happen?
-        else:
+        if dialog.ShowModal() != wx.ID_OK:
             return
+        
+        if dialog.GetFilename() not in SUPPORTED_BACKENDS:
+            self.message(
+                "Unsupported external miner %s. Supported are: %s" % (
+                    dialog.GetFilename(), '\n'.join(SUPPORTED_BACKENDS)),
+                "Miner not supported", wx.OK | wx.ICON_ERROR)
+            return
+        path = os.path.join(dialog.GetDirectory(), dialog.GetFilename())
         dialog.Destroy()                           
         self.name_new_profile(extra_profile_data=dict(external_path=path))                     
 
@@ -1450,13 +1453,18 @@ SDK, or your GPU may not support OpenCL.
                            profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable)
         logger.debug('Saving: ' + json.dumps(config_data))
-        with open(config_filename, 'w') as f:
-            json.dump(config_data, f, indent=4)
-        self.message("Profiles saved OK to %s." % config_filename,
+        try:        
+            with open(config_filename, 'w') as f:
+                json.dump(config_data, f, indent=4)
+        except IOError:
+            self.message("Couldn't write save file %s."
+                         "\nCheck the location is writable." % config_filename,
+                         "Save unsuccessful", wx.OK | wx.ICON_ERROR)
+        else:
+            self.message("Profiles saved OK to %s." % config_filename,
                       "Save successful", wx.OK | wx.ICON_INFORMATION)
-        for p in self.profile_panels:
-            p.on_saved()
-        # TODO: handle save failed
+            for p in self.profile_panels:
+                p.on_saved()
     
     def load_config(self, event=None):
         """Load JSON profile info from the config file."""
