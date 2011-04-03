@@ -17,7 +17,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-04-02'
+__version__ = '2011-04-03-pre'
 
 ABOUT_TEXT = \
 """GUIMiner
