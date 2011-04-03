@@ -1636,7 +1636,7 @@ SDK, or your GPU may not support OpenCL.
                 "Launch failed", wx.ICON_ERROR | wx.OK)
             return
         self.message(
-            "Client launched ok. You can start a miner now with the solo set to 'server'.",
+            "Client launched ok. You can start a miner now with the server set to 'solo'.",
             "Launched ok.",
             wx.OK)
         
