@@ -27,7 +27,7 @@ socket.socket = socketwrap
 
 VERSION = '201103.beta3'
 
-USER_AGENT = 'poclbm/' + VERSION
+USER_AGENT = 'guiminer/poclbm/' + VERSION
 
 TIME_FORMAT = '%d/%m/%Y %H:%M:%S'
 

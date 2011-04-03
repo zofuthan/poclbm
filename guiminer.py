@@ -48,6 +48,8 @@ SUPPORTED_BACKENDS = [
     #"bitcoin-miner.exe" # Doesn't work yet
 ]
 
+USER_AGENT = "guiminer/" + __version__
+
 # Time constants
 SAMPLE_TIME_SECS = 3600
 REFRESH_RATE_MILLIS = 2000
@@ -347,7 +349,7 @@ class MinerListenerThread(threading.Thread):
         logger.info('Listener for "%s" started' % self.parent.name)
         while not self.shutdown_event.is_set():            
             line = self.miner.stdout.readline().strip()
-            logger.debug("Line: %s", line)
+            #logger.debug("Line: %s", line)
             if not line: continue
             for s, event_func in MinerListenerThread.LINES:
                 match = re.search(s, line, flags=re.I)
@@ -1038,7 +1040,8 @@ class MinerTab(wx.Panel):
              "POST",
              self.server_config['balance_url'] % balance_auth_token,
              json.dumps(post_params),
-             {"Content-type": "application/json; charset=utf-8"}
+             {"Content-type": "application/json; charset=utf-8",
+              "User-Agent": USER_AGENT}
         )
         # TODO: check response code of request
         if not data:
