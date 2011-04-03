@@ -925,32 +925,6 @@ class MinerTab(wx.Panel):
         
         self.update_tab_name()
         
-    def on_balance_refresh(self, event=None, withdraw=False):
-        """Refresh the miner's balance from the server."""
-        host = self.server_config.get("host")
-        
-        HOSTS_REQUIRING_AUTH_TOKEN = ["mining.bitcoin.cz", 
-                                      "btcmine.com", 
-                                      "deepbit.net"]
-        if host in HOSTS_REQUIRING_AUTH_TOKEN:
-            if not self.balance_auth_token:
-                self.prompt_auth_token()
-            if not self.balance_auth_token: # They cancelled the dialog
-                return                        
-            self.http_thread = threading.Thread(
-                target=self.request_balance_get, 
-                args=(self.balance_auth_token,))
-            self.http_thread.start()
-            
-        elif host in ["bitpenny.dyndns.biz"]:
-            self.http_thread = threading.Thread(
-                target=self.request_balance_post, args=(withdraw,))
-            self.http_thread.start()
-            
-        self.balance_refresh.Disable()
-        self.balance_cooldown_seconds = 10
-        self.balance_refresh_timer.Start(1000)
-    
     def on_balance_cooldown_tick(self, event=None):
         """Each second, decrement the cooldown for refreshing balance."""        
         self.balance_cooldown_seconds -= 1
@@ -960,11 +934,13 @@ class MinerTab(wx.Panel):
             self.balance_refresh.Enable()
             self.balance_refresh.SetLabel(_("Refresh balance"))
 
-    def prompt_auth_token(self):
-        """Prompt user for an auth token, returning the token on success.
+    def require_auth_token(self):
+        """Prompt the user for an auth token if they don't have one already.
         
-        On failure, return the empty string.
-        """  
+        Set the result to self.balance_auth_token and return None.
+        """
+        if self.balance_auth_token:
+            return
         url = self.server_config.get('balance_token_url')
         dialog = BalanceAuthRequest(self, url)
         result = dialog.ShowModal()
@@ -974,7 +950,10 @@ class MinerTab(wx.Panel):
         self.balance_auth_token = dialog.get_value() # TODO: validate token?
         
     def request_balance_get(self, balance_auth_token):
-        """Request our balance from the server via HTTP GET and auth token."""
+        """Request our balance from the server via HTTP GET and auth token.
+        
+        This method should be run in its own thread.
+        """
         data = http_request(
             self.server_config['balance_host'],
             "GET",
@@ -987,6 +966,10 @@ class MinerTab(wx.Panel):
                 info = json.loads(data)
                 confirmed = info.get('confirmed_reward') or info.get('confirmed', 0)
                 unconfirmed = info.get('unconfirmed_reward') or info.get('unconformed', 0)
+                if self.server_config.get('host') == "deepbit.net":
+                    ipa = info.get('ipa', False)                    
+                    self.withdraw.Enable(ipa)
+                    
                 data = "%s confirmed" % format_balance(confirmed)
                 if unconfirmed > 0:
                     data += ", %s unconfirmed" % format_balance(unconfirmed)
@@ -994,18 +977,85 @@ class MinerTab(wx.Panel):
                 data = "Bad response from server."
                                             
         wx.CallAfter(self.balance_amt.SetLabel, data)            
-                          
-    def request_balance_post(self, withdraw):
-        """Request our balance from the server via HTTP POST."""
-        server_config = self.server_config
-        # Assume BitPenny for now; support other miners later.
-        post_params = dict(a=self.txt_username.GetValue())
-        if withdraw: post_params['w'] = 1
-            
+                             
+    def on_withdraw(self, event):
+        self.withdraw.Disable()
+        host = self.server_config.get('host')
+        if host == 'bitpenny.dyndns.biz':
+            self.withdraw_bitpenny()
+        elif host == 'deepbit.net':
+            self.withdraw_deepbit()
+        
+    def on_balance_refresh(self, event=None):
+        """Refresh the miner's balance from the server."""
+        host = self.server_config.get("host")
+        
+        HOSTS_REQUIRING_AUTH_TOKEN = ["mining.bitcoin.cz", 
+                                      "btcmine.com", 
+                                      "deepbit.net"]
+        if host in HOSTS_REQUIRING_AUTH_TOKEN:
+            self.require_auth_token()
+            if not self.balance_auth_token: # They cancelled the dialog
+                return                        
+            self.http_thread = threading.Thread(
+                target=self.request_balance_get, 
+                args=(self.balance_auth_token,))
+            self.http_thread.start()
+        elif host == 'bitpenny.dyndns.biz':
+            self.http_thread = threading.Thread(
+            target=self.request_payout_bitpenny, args=(False,))
+            self.http_thread.start() 
+                        
+        self.balance_refresh.Disable()
+        self.balance_cooldown_seconds = 10
+        self.balance_refresh_timer.Start(1000)
+    
+    #################################
+    # Begin server specific HTTP code
+    
+    def withdraw_deepbit(self):
+        """Launch a thread to withdraw from deepbit."""
+        self.require_auth_token()
+        if not self.balance_auth_token: # User refused to provide token
+            return
+        self.http_thread = threading.Thread(
+                target=self.request_payout_deepbit, 
+                args=(self.balance_auth_token,))
+        self.http_thread.start()
+    
+    def withdraw_bitpenny(self):
+        self.http_thread = threading.Thread(
+            target=self.request_payout_bitpenny, args=(True,))
+        self.http_thread.start() # TODO: look at aliasing of this variable    
+    
+    def request_payout_deepbit(self, balance_auth_token):
+        """Request payout from deepbit's server via HTTP POST."""
+        post_params = dict(id=1,
+                           method="request_payout")            
         data = http_request(
-             server_config['balance_host'],
+             self.server_config['balance_host'],
              "POST",
-             server_config['balance_url'],
+             self.server_config['balance_url'] % balance_auth_token,
+             json.dumps(post_params),
+             {"Content-type": "application/json; charset=utf-8"}
+        )
+        # TODO: check response code of request
+        if not data:
+            data = "Connection error"
+        else:
+            data = "Withdraw OK"            
+        wx.CallAfter(self.on_balance_received, data)
+
+    def request_payout_bitpenny(self, withdraw):
+        """Request our balance from BitPenny via HTTP POST.
+        
+        If withdraw is True, also request a withdrawal.
+        """
+        post_params = dict(a=self.txt_username.GetValue(), w=int(withdraw))            
+        data = http_request(
+             self.server_config['balance_host'],
+             "POST",
+             self.server_config['balance_url'],
              urllib.urlencode(post_params),
              {"Content-type": "application/x-www-form-urlencoded"}
         )
@@ -1027,11 +1077,10 @@ class MinerTab(wx.Panel):
             amt_str = format_balance(amt)
             self.balance_amt.SetLabel(amt_str)
         self.Layout()
-    
-    def on_withdraw(self, event):
-        self.withdraw.Disable()
-        self.on_balance_refresh(withdraw=True)
-    
+                
+    # End server specific HTTP code
+    ###############################    
+       
     def set_name(self, name):
         """Set the label on this miner's tab to name."""
         self.name = name
@@ -1212,8 +1261,7 @@ class MinerTab(wx.Panel):
     def layout_deepbit(self):
         """Deepbit uses an email address for a username."""
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
-                                  self.port_lbl, self.txt_port,
-                                  self.withdraw], False)             
+                                  self.port_lbl, self.txt_port], False)             
         row = self.layout_init()
         self.layout_server_and_website(row=row)
         self.layout_user_and_pass(row=row+1)
