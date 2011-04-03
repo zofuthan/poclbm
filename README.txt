@@ -1,16 +1,17 @@
-Python OpenCL Bitcoin Miner GUI (poclbm-gui)
-============================================
+GUIMiner - a graphical interface for mining Bitcoins 
+====================================================
 
 by Chris 'Kiv' MacLeod
-based on "poclbm" by m0mchil
+based on "poclbm" by m0mchil, 'rpcminer' by puddinpop
 
 What is it?
 -----------
 
-poclbm-gui is a GUI front end for the poclbm Bitcoin miner by m0mchil. It
-allows you to use an OpenCL compatible video card to mine Bitcoins, without
-having to use the command line. It supports both pooled mining and solo
-mining.
+GUIMiner is a graphical front end for mining Bitcoins. It provides a more
+convenient way to operate Bitcoin miners without having to use the command
+line. It supports both NVIDIA and ATI GPUs, as well as CPU mining. It 
+supports both pooled mining and solo mining, with a wide list of pool
+servers pre-set with the program.
 
 What is it not?
 ---------------
@@ -33,14 +34,18 @@ Features
 - Supports multiple miners in a tabbed interface.
 - Remembers your login info between sessions.
 - Supports both solo and pooled mining.
+- Supports OpenCL, CUDA, and CPU mining.
 - Minimizes to tray. Hover on tray icon to see status.
-- Displays your accepted and stale/invalid shares over time.    
+- Displays your accepted and stale/invalid shares over time.
+- View your account balance with a pool and/or withdraw funds from
+  the GUI, at participating pools.
 
 Requirements
 ------------
 
-- You need an OpenCL compatible GPU with a working version of OpenCL. If you
-are unsure whether your GPU supports OpenCL, try the GPU Caps Viewer:
+- To mine using an ATI GPU, you need an OpenCL compatible card with a 
+working version of OpenCL installed. If you are unsure whether your GPU
+supports OpenCL, try the GPU Caps Viewer:
 
     http://www.ozone3d.net/gpu_caps_viewer/
     
@@ -48,6 +53,13 @@ For AMD/ATI cards, to get a version of OpenCL you need the Stream SDK which is
 available here:
 
     http://developer.amd.com/gpu/AMDAPPSDK/downloads/pages/AMDAPPSDKDownloadArchive.aspx
+    
+For NVIDIA cards, you can also install OpenCL and mine that way, or you can
+install CUDA and use rpcminer-CUDA which may provide slightly higher performance
+since it is optimized specifically for NVIDIA cards.
+
+For CPU mining, you don't need anything special; you can mine using rpcminer-cpu
+or rpcminer-4way; try both to see which has better performance on your CPU.    
     
 Instructions for Pooled Mining
 ------------------------------
@@ -96,11 +108,11 @@ For solo mining, instead of connecting to a pool server you connect to your own
 local machine's copy of 'bitcoin.exe'. Instead of registering with the pool
 server, you put your login info in a special file called 'bitcoin.conf'. 
 
-poclbm-gui has utilities to help with these tasks. To create the bitcoin.conf,
+GUIMiner has utilities to help with these tasks. To create the bitcoin.conf,
 choose "Solo utilities -> Create solo password..." and create a user and
 password. It should show a message saying that it was successful.
 
-To launch bitcoin.exe in server mode, you might need to point poclbm-gui to
+To launch bitcoin.exe in server mode, you might need to point GUIMiner to
 the location of bitcoin.exe. If you installed Bitcoin in the regular location
 of Program Files/Bitcoin, you can skip this step. Otherwise choose "Solo
 utilities -> Set Bitcoin client path".
@@ -119,10 +131,12 @@ connect and start mining.
 Running From Source
 -------------------
 
-Running poclbm-gui from source requires:
+Running GUIMiner from source requires:
     - Python 2.6 or higher (Python 3 not supported)
-    - PyOpenCL
     - wxPython
+
+Mining using OpenCL with poclbm also requires:    
+    - PyOpenCL    
     - numpy
 
 Once these are installed run "guiminer.py" to start.
