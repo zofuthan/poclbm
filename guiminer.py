@@ -3,7 +3,6 @@
 Currently supports:
 - m0mchil's "poclbm"
 - puddinpop's "rpcminer"
-- ufasoft's "bitcoin-miner" (partial support)
 
 Copyright 2011 Chris MacLeod
 This program is released under the GNU GPL. See LICENSE.txt for details.
@@ -28,7 +27,6 @@ Version: %s
 GUI by Chris 'Kiv' MacLeod
 Original poclbm miner by m0mchil
 Original rpcminer by puddinpop
-Original bitcoin-miner by ufasoft
 
 Get the source code or file issues at GitHub:
     https://github.com/Kiv/poclbm
@@ -47,7 +45,7 @@ SUPPORTED_BACKENDS = [
     "rpcminer-cpu.exe", 
     "rpcminer-cuda.exe",
     "rpcminer-opencl.exe",
-    "bitcoin-miner.exe"
+    #"bitcoin-miner.exe" # Doesn't work yet
 ]
 
 # Time constants
