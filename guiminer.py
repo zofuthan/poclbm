@@ -913,13 +913,12 @@ class MinerTab(wx.Panel):
             self.txt_port.SetValue(str(new_server['port']))
         
         
-        # Call server specific code.
-        # TODO: probably best to use hostname as the unique identifier in code.
-        name = new_server.get('name', 'Other').lower()
-        if name == "slush's pool": self.layout_slush()
-        elif name == "bitpenny": self.layout_bitpenny()
-        elif name == "deepbit": self.layout_deepbit()
-        elif name == "btcmine": self.layout_btcmine()        
+        # Call server specific code.        
+        host = new_server.get('host', "").lower()
+        if host == "mining.bitcoin.cz": self.layout_slush()
+        elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
+        elif host == "deepbit.net": self.layout_deepbit()
+        elif host == "btcmine.com": self.layout_btcmine()        
         else: self.layout_default()
                
         self.Layout()
