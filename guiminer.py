@@ -183,7 +183,7 @@ class ConsolePanel(wx.Panel):
 
     def write(self, text):
         """Forward logging events to our TextCtrl."""
-        wx.CallAfter(self.text.WriteText, text)
+        wx.CallAfter(self.text.AppendText, text)
 
 
 class SummaryPanel(wx.Panel):
