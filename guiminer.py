@@ -2,7 +2,8 @@
 
 Currently supports:
 - m0mchil's "poclbm"
-- puddinpop's "rpcminer".
+- puddinpop's "rpcminer"
+- ufasoft's "bitcoin-miner" (partial support)
 
 Copyright 2011 Chris MacLeod
 This program is released under the GNU GPL. See LICENSE.txt for details.
@@ -26,7 +27,8 @@ Version: %s
 
 GUI by Chris 'Kiv' MacLeod
 Original poclbm miner by m0mchil
-Original rpcminers by puddinpop
+Original rpcminer by puddinpop
+Original bitcoin-miner by ufasoft
 
 Get the source code or file issues at GitHub:
     https://github.com/Kiv/poclbm
@@ -45,6 +47,7 @@ SUPPORTED_BACKENDS = [
     "rpcminer-cpu.exe", 
     "rpcminer-cuda.exe",
     "rpcminer-opencl.exe",
+    "bitcoin-miner.exe"
 ]
 
 # Time constants
@@ -323,16 +326,18 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
             
 class MinerListenerThread(threading.Thread):
     LINES = [
+        (r"Target =|average rate", 
+            lambda _: None), # Just ignore this             
         (r"accepted|\"result\": true", 
             lambda _: UpdateAcceptedEvent(accepted=True)),
         (r"invalid|stale", lambda _: 
             UpdateAcceptedEvent(accepted=False)),
         (r"(\d+) khash/s", lambda match: 
             UpdateHashRateEvent(rate=int(match.group(1)))),
+        (r"(\d+) Mhash/s", lambda match: 
+            UpdateHashRateEvent(rate=int(match.group(1)) * 1000)),            
         (r"checking (\d+)", lambda _: 
             UpdateSoloCheckEvent()),
-        (r"Target =", 
-            lambda _: None) # Just ignore this
     ]
 
     def __init__(self, parent, miner):
@@ -491,6 +496,14 @@ class MinerTab(wx.Panel):
         """Return True if this miner has an external path configured."""
         return self.txt_external.GetValue() != ""
 
+    @property
+    def host_with_http_prefix(self):
+        """Return the host address, with http:// prepended if needed."""
+        host = self.txt_host.GetValue()
+        if not host.startswith("http://"): 
+            host = "http://" + host
+        return host
+
     def pause(self):
         """Pause the miner if we are mining, otherwise do nothing."""
         if self.is_mining:            
@@ -637,7 +650,10 @@ class MinerTab(wx.Panel):
             self.start_mining()        
         self.update_summary()
 
+    #############################
+    # Begin backend specific code
     def configure_subprocess_poclbm(self):
+        """Set up the command line for poclbm."""
         folder = get_module_path()  
         if USE_MOCK:            
             executable = "python mockBitcoinMiner.py"
@@ -658,20 +674,36 @@ class MinerTab(wx.Panel):
         return cmd, folder
 
     def configure_subprocess_rpcminer(self):
-        # TODO: is this true that we always expect HTTP for rpcminer?
-        # If so we should strip it automatically for the other one too
-        host = self.txt_host.GetValue()
-        if not host.startswith("http://"): host = "http://" + host
+        """Set up the command line for rpcminer.
         
+        The hostname must start with http:// for these miners.
+        """     
         cmd = "%s -user=%s -password=%s -url=%s:%s %s" % (
             self.external_path,
             self.txt_username.GetValue(),
             self.txt_pass.GetValue(),
-            host,
+            self.host_with_http_prefix,
             self.txt_port.GetValue(),
             self.txt_flags.GetValue()
         )
         return cmd, os.path.dirname(self.external_path)
+    
+    def configure_subprocess_ufasoft(self):
+        """Set up the command line for ufasoft's SSE2 miner.
+        
+        The hostname must start with http:// for these miners.
+        """
+        cmd = "%s -u %s -p %s -o %s:%s %s" % (
+            self.external_path,
+            self.txt_username.GetValue(),
+            self.txt_pass.GetValue(),
+            self.host_with_http_prefix,
+            self.txt_port.GetValue(),
+            self.txt_flags.GetValue())
+        return cmd, os.path.dirname(self.external_path)
+    
+    # End backend specific code
+    ###########################
     
     def start_mining(self):
         """Launch a miner subprocess and attach a MinerListenerThread."""
@@ -687,10 +719,15 @@ class MinerTab(wx.Panel):
             conf_func = self.configure_subprocess_poclbm
         elif "rpcminer" in self.external_path:
             conf_func = self.configure_subprocess_rpcminer
+        elif "bitcoin-miner" in self.external_path:
+            conf_func = self.configure_subprocess_ufasoft
         else:
-            raise # TODO: handle unrecognized miner 
+            raise ValueError # TODO: handle unrecognized miner 
         cmd, cwd = conf_func()
-                
+        
+        # TODO: ufasoft prints to stderr for some reason and also won't
+        # seem to die - probably we have to get him to change things
+        # so his miner will play nice.        
         try:
             logger.debug('Running command: ' + cmd)
             self.miner = subprocess.Popen(cmd, cwd=cwd, 
