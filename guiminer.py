@@ -343,10 +343,11 @@ class MinerListenerThread(threading.Thread):
         threading.Thread.__init__(self)
         self.shutdown_event = threading.Event()
         self.parent = parent
+        self.parent_name = parent.name
         self.miner = miner
         
     def run(self):
-        logger.info('Listener for "%s" started' % self.parent.name)
+        logger.info('Listener for "%s" started' % self.parent_name)
         while not self.shutdown_event.is_set():            
             line = self.miner.stdout.readline().strip()
             #logger.debug("Line: %s", line)
@@ -361,9 +362,9 @@ class MinerListenerThread(threading.Thread):
             else:
                 # Possible error or new message, just pipe it through
                 event = UpdateStatusEvent(text=line)
-                logger.info('Listener for "%s": %s', self.parent.name, line)
+                logger.info('Listener for "%s": %s', self.parent_name, line)
                 wx.PostEvent(self.parent, event)
-        logger.info('Listener for "%s" shutting down', self.parent.name)
+        logger.info('Listener for "%s" shutting down', self.parent_name)
         
         
 class MinerTab(wx.Panel):
