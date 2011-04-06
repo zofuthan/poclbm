@@ -327,13 +327,13 @@ class MinerListenerThread(threading.Thread):
     LINES = [
         (r"Target =|average rate|Sending to server|found hash!", 
             lambda _: None), # Just ignore lines like these         
-        (r"accepted|\"result\": true", 
+        (r"accepted|\"result\":\s*true", 
             lambda _: UpdateAcceptedEvent(accepted=True)),
         (r"invalid|stale", lambda _: 
             UpdateAcceptedEvent(accepted=False)),
-        (r"(\d+) khash/s", lambda match: 
+        (r"(\d+)\s*khash/s", lambda match: 
             UpdateHashRateEvent(rate=int(match.group(1)))),
-        (r"(\d+) Mhash/s", lambda match: 
+        (r"(\d+)\s*Mhash/s", lambda match: 
             UpdateHashRateEvent(rate=int(match.group(1)) * 1000)),            
         (r"checking (\d+)", lambda _: 
             UpdateSoloCheckEvent()),
