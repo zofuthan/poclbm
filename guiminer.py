@@ -12,6 +12,7 @@ import sys, os, subprocess, errno, re, threading, logging, time, httplib, urllib
 import wx
 import json
 import collections
+import shlex
 
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
@@ -87,7 +88,8 @@ def get_opencl_devices():
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
     module_name = sys.executable if hasattr(sys, 'frozen') else __file__
-    return os.path.dirname(module_name)
+    abs_path = os.path.abspath(module_name)
+    return os.path.dirname(abs_path)
 
 def get_icon_bundle():
     """Return the Bitcoin program icon bundle."""
@@ -428,6 +430,7 @@ class MinerTab(wx.Panel):
         self.labels = [self.server_lbl, self.website_lbl,
                       self.host_lbl, self.port_lbl,
                       self.user_lbl, self.pass_lbl,
+
                       self.device_lbl, self.flags_lbl, 
                       self.balance_lbl]
         self.txts = [self.txt_host, self.txt_port, 
@@ -733,7 +736,8 @@ class MinerTab(wx.Panel):
             logger.debug('Running command: ' + cmd)
             self.miner = subprocess.Popen(cmd, cwd=cwd, 
                                           stdout=subprocess.PIPE,
-                                          creationflags=flags)
+                                          creationflags=flags,
+                                          shell=(sys.platform != 'win32'))
         except OSError:
             raise #TODO: the folder or exe could not exist
         self.miner_listener = MinerListenerThread(self, self.miner)
@@ -1437,17 +1441,22 @@ SDK, or your GPU may not support OpenCL.
             self.add_profile(data)
 
     def new_external_profile(self, event):
-        """Prompt for an external miner path, then create a miner."""               
+        """Prompt for an external miner path, then create a miner.
+
+        On Windows we validate against legal miners; on Linux they can pick
+        whatever they want.
+        """
+        wildcard = 'External miner (*.exe)|*.exe' if sys.platform == 'win32' else '*.*'                
         dialog = wx.FileDialog(self,
                                "Select external miner:",
                                defaultDir=os.path.join(get_module_path(), 'miners'),
                                defaultFile="",
-                               wildcard='External miner (*.exe)|*.exe',
+                               wildcard=wildcard,
                                style=wx.OPEN)
         if dialog.ShowModal() != wx.ID_OK:
             return
         
-        if dialog.GetFilename() not in SUPPORTED_BACKENDS:
+        if sys.platform == 'win32' and dialog.GetFilename() not in SUPPORTED_BACKENDS:
             self.message(
                 "Unsupported external miner %s. Supported are: %s" % (
                     dialog.GetFilename(), '\n'.join(SUPPORTED_BACKENDS)),
