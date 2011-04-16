@@ -12,15 +12,31 @@ import sys, os, subprocess, errno, re, threading, logging, time, httplib, urllib
 import wx
 import json
 import collections
-import shlex
 
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-04-03-pre'
+__version__ = '2011-04-16'
 
-ABOUT_TEXT = \
+def get_module_path():
+    """Return the folder containing this script (or its .exe)."""
+    module_name = sys.executable if hasattr(sys, 'frozen') else __file__
+    abs_path = os.path.abspath(module_name)
+    return os.path.dirname(abs_path)
+
+global USE_MOCK
+USE_MOCK = '--mock' in sys.argv
+# Set up localization; requires the app to be created
+app = wx.PySimpleApp(0)
+wx.InitAllImageHandlers() 
+locale = wx.Locale(wx.LANGUAGE_RUSSIAN)
+locale.AddCatalogLookupPathPrefix(os.path.join(get_module_path(), "locale"))
+locale.AddCatalog("guiminer")
+_ = wx.GetTranslation
+
+
+ABOUT_TEXT = _(
 """GUIMiner
 
 Version: %s
@@ -39,7 +55,19 @@ by donating to:
 
 Even a single Bitcoin is appreciated and helps motivate
 further work on this software.
-"""
+""")
+
+# Translatable strings that are used repeatedly
+STR_NOT_STARTED = _("Not started")
+STR_STARTING = _("Starting...")
+STR_STOPPED = _("Stopped")
+STR_PAUSED = _("Paused")
+STR_MINING = _("%s mining!")
+STR_REFRESH_BALANCE = _("Refresh balance")
+STR_CONNECTION_ERROR = _("Connection error")
+STR_USERNAME = _("Username:")
+STR_PASSWORD = _("Password:")
+
 # Alternate backends that we know how to call
 SUPPORTED_BACKENDS = [
     "rpcminer-4way.exe", 
@@ -85,12 +113,6 @@ def get_opencl_devices():
     return ['[%d] %s' % (i, merge_whitespace(device.name)[:25])
                          for (i, device) in enumerate(devices)]
 
-def get_module_path():
-    """Return the folder containing this script (or its .exe)."""
-    module_name = sys.executable if hasattr(sys, 'frozen') else __file__
-    abs_path = os.path.abspath(module_name)
-    return os.path.dirname(abs_path)
-
 def get_icon_bundle():
     """Return the Bitcoin program icon bundle."""
     return wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)   
@@ -113,19 +135,19 @@ def mkdir_p(path):
         
 def add_tooltip(widget, text):
     """Add a tooltip to widget with the specified text."""
-    tooltip = wx.ToolTip(_(text))
+    tooltip = wx.ToolTip(text)
     widget.SetToolTip(tooltip)
 
 def format_khash(rate):
     """Format rate for display. A rate of 0 means just connected."""
     if rate > 10**6:
-        return "%.1f Ghash/s" % (rate / 1000000.)
+        return _("%.1f Ghash/s") % (rate / 1000000.)
     if rate > 10**3:
-        return "%.1f Mhash/s" % (rate / 1000.)
+        return _("%.1f Mhash/s") % (rate / 1000.)
     elif rate == 0:
-        return "Connecting..."
+        return _("Connecting...")
     else:
-        return "%d khash/s" % rate
+        return _("%d khash/s") % rate
     
 def format_balance(amount):
     """Format a quantity of Bitcoins in BTC."""
@@ -149,11 +171,11 @@ def http_request(hostname, *args):
     """Do a HTTP request and return the response data."""
     try:
         conn = httplib.HTTPConnection(hostname)
-        logger.debug("Requesting balance: %s", str(args))
+        logger.debug(_("Requesting balance: %s"), str(args))
         conn.request(*args)        
         response = conn.getresponse()            
         data = response.read()
-        logger.debug("Server replied: %s, %s", str(response.status), data)
+        logger.debug(_("Server replied: %s, %s"), str(response.status), data)
         return data
     finally:
         conn.close()
@@ -292,10 +314,10 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
     def CreatePopupMenu(self):
         """Override from wx.TaskBarIcon. Creates the right-click menu."""
         menu = wx.Menu()
-        menu.AppendCheckItem(self.TBMENU_PAUSE, "Pause all")
+        menu.AppendCheckItem(self.TBMENU_PAUSE, _("Pause all"))
         menu.Check(self.TBMENU_PAUSE, self.is_paused)
-        menu.Append(self.TBMENU_RESTORE, "Restore")
-        menu.Append(self.TBMENU_CLOSE, "Close")        
+        menu.Append(self.TBMENU_RESTORE, _("Restore"))
+        menu.Append(self.TBMENU_CLOSE, _("Close"))
         return menu
       
     def on_taskbar_activate(self, evt):
@@ -349,7 +371,7 @@ class MinerListenerThread(threading.Thread):
         self.miner = miner
         
     def run(self):
-        logger.info('Listener for "%s" started' % self.parent_name)
+        logger.info(_('Listener for "%s" started') % self.parent_name)
         while not self.shutdown_event.is_set():            
             line = self.miner.stdout.readline().strip()
             #logger.debug("Line: %s", line)
@@ -364,9 +386,9 @@ class MinerListenerThread(threading.Thread):
             else:
                 # Possible error or new message, just pipe it through
                 event = UpdateStatusEvent(text=line)
-                logger.info('Listener for "%s": %s', self.parent_name, line)
+                logger.info(_('Listener for "%s": %s'), self.parent_name, line)
                 wx.PostEvent(self.parent, event)
-        logger.info('Listener for "%s" shutting down', self.parent_name)
+        logger.info(_('Listener for "%s" shutting down'), self.parent_name)
         
         
 class MinerTab(wx.Panel):
@@ -410,18 +432,18 @@ class MinerTab(wx.Panel):
         self.txt_host = wx.TextCtrl(self, -1, "")
         self.port_lbl = wx.StaticText(self, -1, _("Port:"))
         self.txt_port = wx.TextCtrl(self, -1, "")
-        self.user_lbl = wx.StaticText(self, -1, _("Username:"))
+        self.user_lbl = wx.StaticText(self, -1, STR_USERNAME)
         self.txt_username = wx.TextCtrl(self, -1, "")
-        self.pass_lbl = wx.StaticText(self, -1, _("Password:"))
+        self.pass_lbl = wx.StaticText(self, -1, STR_PASSWORD)
         self.txt_pass = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
         self.device_lbl = wx.StaticText(self, -1, _("Device:"))
-        self.device_listbox = wx.ComboBox(self, -1, choices=devices or ["No OpenCL devices"], style=wx.CB_READONLY)
+        self.device_listbox = wx.ComboBox(self, -1, choices=devices or [_("No OpenCL devices")], style=wx.CB_READONLY)
         self.flags_lbl = wx.StaticText(self, -1, _("Extra flags:"))        
         self.txt_flags = wx.TextCtrl(self, -1, "")
         self.extra_info = wx.StaticText(self, -1, "")        
         self.balance_lbl = wx.StaticText(self, -1, _("Balance:"))
         self.balance_amt = wx.StaticText(self, -1, "0")
-        self.balance_refresh = wx.Button(self, -1, _("Refresh balance"))
+        self.balance_refresh = wx.Button(self, -1, STR_REFRESH_BALANCE)
         self.balance_refresh_timer = wx.Timer()
         self.withdraw = wx.Button(self, -1, _("Withdraw"))        
         self.balance_cooldown_seconds = 0
@@ -538,7 +560,7 @@ class MinerTab(wx.Panel):
         self.last_data = data
         default_server_config = self.get_server_by_field(
                                     self.defaults['default_server'], 'name')
-        self.name = (data.get('name') or 'Default')
+        self.name = (data.get('name') or _('Default'))
                 
         # Backwards compatibility: hostname key used to be called server.
         # We only save out hostname now but accept server from old INI files.
@@ -585,7 +607,7 @@ class MinerTab(wx.Panel):
     
     def get_start_stop_state(self):
         """Return appropriate text for the start/stop button."""
-        return "Stop" if self.is_mining else "Start"
+        return _("Stop") if self.is_mining else _("Start")
     
     def update_summary(self):
         """Update our summary fields if possible."""
@@ -594,11 +616,11 @@ class MinerTab(wx.Panel):
         
         self.summary_name.SetLabel(self.name)
         if self.is_paused:
-            text = "Paused"
+            text = STR_PAUSED
         elif not self.is_mining:
-            text = "Stopped"
+            text = STR_STOPPED
         elif self.is_possible_error:
-            text = "Connection problems"
+            text = _("Connection problems")
         else:
             text = format_khash(self.last_rate)        
         self.summary_status.SetLabel(text)
@@ -622,7 +644,7 @@ class MinerTab(wx.Panel):
         self.summary_name = wx.StaticText(summary_panel, -1, self.name)
         self.summary_name.Bind(wx.EVT_LEFT_UP, self.show_this_panel)
                 
-        self.summary_status = wx.StaticText(summary_panel, -1, "Stopped")
+        self.summary_status = wx.StaticText(summary_panel, -1, STR_STOPPED)
         self.summary_shares_accepted = wx.StaticText(summary_panel, -1, "0")
         self.summary_shares_invalid = wx.StaticText(summary_panel, -1, "0")
         self.summary_start =  wx.Button(summary_panel, -1, self.get_start_stop_state(), style=wx.BU_EXACTFIT)
@@ -733,7 +755,7 @@ class MinerTab(wx.Panel):
         # seem to die - probably we have to get him to change things
         # so his miner will play nice.        
         try:
-            logger.debug('Running command: ' + cmd)
+            logger.debug(_('Running command: ') + cmd)
             self.miner = subprocess.Popen(cmd, cwd=cwd, 
                                           stdout=subprocess.PIPE,
                                           creationflags=flags,
@@ -744,8 +766,8 @@ class MinerTab(wx.Panel):
         self.miner_listener.daemon = True
         self.miner_listener.start()
         self.is_mining = True
-        self.set_status("Starting...", 1)
-        self.start.SetLabel("%s mining!" % self.get_start_stop_state())    
+        self.set_status(STR_STARTING, 1)
+        self.start.SetLabel(STR_MINING % self.get_start_stop_state())    
     
     def on_close(self):
         """Prepare to close gracefully."""
@@ -767,8 +789,8 @@ class MinerTab(wx.Panel):
             self.miner_listener = None            
         self.is_mining = False
         self.is_paused = False
-        self.set_status("Stopped", 1)        
-        self.start.SetLabel("%s mining!" % self.get_start_stop_state())
+        self.set_status(STR_STOPPED, 1)        
+        self.start.SetLabel(STR_MINING % self.get_start_stop_state())
           
     def update_khash(self, rate):
         """Update our rate according to a report from the listener thread.
@@ -785,15 +807,15 @@ class MinerTab(wx.Panel):
     def update_statusbar(self):
         """Show the shares or equivalent on the statusbar."""
         if self.is_solo:
-            text = "Difficulty 1 hashes: %d %s" % \
+            text = _("Difficulty 1 hashes: %d %s") % \
                 (self.accepted_shares, self.format_last_update_time())
             if self.solo_blocks_found > 0:
-                block_text = "Blocks: %d, " % self.solo_blocks_found
+                block_text = _("Blocks: %d, ") % self.solo_blocks_found
                 text = block_text + text
         else:
-            text = "Shares: %d accepted" % self.accepted_shares
+            text = _("Shares: %d accepted") % self.accepted_shares
             if self.invalid_shares > 0:
-                text += ", %d stale/invalid" % self.invalid_shares         
+                text += _(", %d stale/invalid") % self.invalid_shares         
             text += " %s" % self.format_last_update_time()
         self.set_status(text, 0) 
 
@@ -815,7 +837,7 @@ class MinerTab(wx.Panel):
         time_fmt = '%I:%M:%S%p'
         if self.last_update_time is None:
             return ""
-        return "- last at %s" % time.strftime(time_fmt, self.last_update_time)
+        return _("- last at %s") % time.strftime(time_fmt, self.last_update_time)
 
     def update_shares(self, accepted):
         """Update our shares with a report from the listener thread."""
@@ -853,14 +875,12 @@ class MinerTab(wx.Panel):
         if self.is_mining:
             self.update_khash(self.last_rate)
         else:
-            self.set_status("Stopped", 1)
+            self.set_status(STR_STOPPED, 1)
 
     def get_taskbar_text(self):
         """Return text for the hover state of the taskbar."""
-        if self.is_mining:
-            return "%s: %s" % (self.name, format_khash(self.last_rate))
-        else:
-            return "%s: Stopped" % self.name
+        rate = format_khash(self.last_rate) if self.is_mining else STR_STOPPED
+        return "%s: %s" % (self.name, rate) 
 
     def update_solo(self):
         """Update our easy hashes with a report from the listener thread."""
@@ -890,14 +910,14 @@ class MinerTab(wx.Panel):
                 w.Hide()        
 
     def set_tooltips(self):
-        add_tooltip(self.server, "Server to connect to. Different servers have different fees and features.\nCheck their websites for full information.")
-        add_tooltip(self.website, "Website of the currently selected server. Click to visit.")
-        add_tooltip(self.device_listbox, "Available OpenCL devices on your system.")
-        add_tooltip(self.txt_host, "Host address, without http:// prefix.")
-        add_tooltip(self.txt_port, "Server port. This is usually 8332.")
-        add_tooltip(self.txt_username, "The miner's username.\nMay be different than your account username.\nExample: Kiv.GPU")
-        add_tooltip(self.txt_pass, "The miner's password.\nMay be different than your account password.")
-        add_tooltip(self.txt_flags, "Extra flags to pass to the miner.\nFor Radeon HD 5xxx series use -v -w128 for best results.\nFor other cards consult the forum.")
+        add_tooltip(self.server, _("Server to connect to. Different servers have different fees and features.\nCheck their websites for full information."))
+        add_tooltip(self.website, _("Website of the currently selected server. Click to visit."))
+        add_tooltip(self.device_listbox, _("Available OpenCL devices on your system."))
+        add_tooltip(self.txt_host, _("Host address, without http:// prefix."))
+        add_tooltip(self.txt_port, _("Server port. This is usually 8332."))
+        add_tooltip(self.txt_username, _("The miner's username.\nMay be different than your account username.\nExample: Kiv.GPU"))
+        add_tooltip(self.txt_pass, _("The miner's password.\nMay be different than your account password."))
+        add_tooltip(self.txt_flags, _("Extra flags to pass to the miner.\nFor Radeon HD 5xxx series use -v -w128 for best results.\nFor other cards consult the forum."))
     
     def change_server(self, new_server):
         """Change the server to new_server, updating fields as needed."""
@@ -940,7 +960,7 @@ class MinerTab(wx.Panel):
         if self.balance_cooldown_seconds <= 0:
             self.balance_refresh_timer.Stop()
             self.balance_refresh.Enable()
-            self.balance_refresh.SetLabel(_("Refresh balance"))
+            self.balance_refresh.SetLabel(STR_REFRESH_BALANCE)
 
     def require_auth_token(self):
         """Prompt the user for an auth token if they don't have one already.
@@ -968,7 +988,7 @@ class MinerTab(wx.Panel):
             self.server_config["balance_url"] % balance_auth_token
         )
         if not data:
-            data = "Connection error"
+            data = STR_CONNECTION_ERROR
         else:
             try:
                 info = json.loads(data)
@@ -978,11 +998,11 @@ class MinerTab(wx.Panel):
                     ipa = info.get('ipa', False)                    
                     self.withdraw.Enable(ipa)
                     
-                data = "%s confirmed" % format_balance(confirmed)
+                data = _("%s confirmed") % format_balance(confirmed)
                 if unconfirmed > 0:
-                    data += ", %s unconfirmed" % format_balance(unconfirmed)
+                    data += _(", %s unconfirmed") % format_balance(unconfirmed)
             except: # TODO: what exception here?
-                data = "Bad response from server."
+                data = _("Bad response from server.")
                                             
         wx.CallAfter(self.balance_amt.SetLabel, data)            
                              
@@ -1050,7 +1070,7 @@ class MinerTab(wx.Panel):
         )
         # TODO: check response code of request
         if not data:
-            data = "Connection error"
+            data = STR_CONNECTION_ERROR
         else:
             data = "Withdraw OK"            
         wx.CallAfter(self.on_balance_received, data)
@@ -1069,9 +1089,9 @@ class MinerTab(wx.Panel):
              {"Content-type": "application/x-www-form-urlencoded"}
         )
         if not data:
-            data = "Connection error"
+            data = STR_CONNECTION_ERROR
         elif withdraw:
-            data = "Withdraw OK"            
+            data = _("Withdraw OK")            
         wx.CallAfter(self.on_balance_received, data)
         
     def on_balance_received(self, balance):
@@ -1188,7 +1208,7 @@ class MinerTab(wx.Panel):
     
     def layout_default(self):
         """Lay out a default miner with no custom changes."""
-        self.user_lbl.SetLabel("Username:")
+        self.user_lbl.SetLabel(STR_USERNAME)
         
         self.set_widgets_visible(self.hidden_widgets, False)        
         self.set_widgets_visible([self.balance_lbl,
@@ -1197,7 +1217,8 @@ class MinerTab(wx.Panel):
                                   self.withdraw], False)
         row = self.layout_init()
         self.layout_server_and_website(row=row)
-        is_custom = self.server.GetStringSelection().lower() in ["other", "solo"]
+        customs = ["other", "solo"]
+        is_custom = self.server.GetStringSelection().lower() in customs
         if is_custom:
             self.layout_host_and_port(row=row+1)
         else:
@@ -1228,11 +1249,11 @@ class MinerTab(wx.Panel):
         self.inner_sizer.Add(self.extra_info,(row+4,0), span=(1,4), flag=wx.ALIGN_CENTER_HORIZONTAL)
         self.layout_finish()
                         
-        self.extra_info.SetLabel("No registration is required - just enter an address and press Start.")
+        self.extra_info.SetLabel(_("No registration is required - just enter an address and press Start."))
         self.txt_pass.SetValue('poclbm-gui')
         self.user_lbl.SetLabel("Address:")
         add_tooltip(self.txt_username,
-            "Your receiving address for Bitcoins.\nE.g.: 1A94cjRpaPBMV9ZNWFihB5rTFEeihBALgc")        
+            _("Your receiving address for Bitcoins.\nE.g.: 1A94cjRpaPBMV9ZNWFihB5rTFEeihBALgc"))        
     
     def layout_slush(self):
         """Slush's pool uses a separate username for each miner."""
@@ -1247,9 +1268,9 @@ class MinerTab(wx.Panel):
         self.layout_finish()
         
         add_tooltip(self.txt_username,
-            "Your miner username (not your account username).\nExample: Kiv.GPU")
+            _("Your miner username (not your account username).\nExample: Kiv.GPU"))
         add_tooltip(self.txt_pass,
-            "Your miner password (not your account password).")
+            _("Your miner password (not your account password)."))
 
     def layout_btcmine(self):
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
@@ -1263,9 +1284,9 @@ class MinerTab(wx.Panel):
         self.layout_finish()        
 
         add_tooltip(self.txt_username,
-            "Your miner username. \nExample: kiv123@kiv123")
+            _("Your miner username. \nExample: kiv123@kiv123"))
         add_tooltip(self.txt_pass,
-            "Your miner password (not your account password).")
+            _("Your miner password (not your account password)."))
 
     def layout_deepbit(self):
         """Deepbit uses an email address for a username."""
@@ -1278,8 +1299,8 @@ class MinerTab(wx.Panel):
         self.layout_balance(row=row+3)
         self.layout_finish()
         add_tooltip(self.txt_username,
-            "The e-mail address you registered with.")
-        self.user_lbl.SetLabel("Email:")
+            _("The e-mail address you registered with."))
+        self.user_lbl.SetLabel(_("Email:"))
         
     # End server specific code
     ##########################
@@ -1294,7 +1315,7 @@ class GUIMiner(wx.Frame):
         # Set up notebook context menu
         notebook_menu = wx.Menu()
         ID_RENAME = wx.NewId()
-        notebook_menu.Append(ID_RENAME, "&Rename...", _("Rename this miner"))
+        notebook_menu.Append(ID_RENAME, _("&Rename..."), _("Rename this miner"))
         self.nb.SetRightClickMenu(notebook_menu)
         self.Bind(wx.EVT_MENU, self.rename_miner, id=ID_RENAME)
                
@@ -1324,15 +1345,15 @@ class GUIMiner(wx.Frame):
 
         ID_SUMMARY, ID_CONSOLE = wx.NewId(), wx.NewId()
         view_menu = wx.Menu()
-        view_menu.Append(ID_SUMMARY, _("Show summary"), "Show summary of all miners", wx.ITEM_NORMAL)
-        view_menu.Append(ID_CONSOLE, _("Show console"), "Show console logs", wx.ITEM_NORMAL)
+        view_menu.Append(ID_SUMMARY, _("Show summary"), _("Show summary of all miners"), wx.ITEM_NORMAL)
+        view_menu.Append(ID_CONSOLE, _("Show console"), _("Show console logs"), wx.ITEM_NORMAL)
         self.menubar.Append(view_menu, _("&View"))
 
         ID_SOLO, ID_PATHS, ID_LAUNCH = wx.NewId(), wx.NewId(), wx.NewId()
         solo_menu = wx.Menu()
-        solo_menu.Append(ID_SOLO, "&Create solo password...", _("Configure a user/pass for solo mining"), wx.ITEM_NORMAL)
-        solo_menu.Append(ID_PATHS, "&Set Bitcoin client path...", _("Set the location of the official Bitcoin client"), wx.ITEM_NORMAL)
-        solo_menu.Append(ID_LAUNCH, "&Launch Bitcoin client as server", _("Launch the official Bitcoin client as a server for solo mining"), wx.ITEM_NORMAL)
+        solo_menu.Append(ID_SOLO, _("&Create solo password..."), _("Configure a user/pass for solo mining"), wx.ITEM_NORMAL)
+        solo_menu.Append(ID_PATHS, _("&Set Bitcoin client path..."), _("Set the location of the official Bitcoin client"), wx.ITEM_NORMAL)
+        solo_menu.Append(ID_LAUNCH, _("&Launch Bitcoin client as server"), _("Launch the official Bitcoin client as a server for solo mining"), wx.ITEM_NORMAL)
         self.menubar.Append(solo_menu, _("&Solo utilities"))
                       
         help_menu = wx.Menu()
@@ -1350,7 +1371,7 @@ class GUIMiner(wx.Frame):
         try:
             self.tbicon = GUIMinerTaskBarIcon(self)
         except:
-            self.tbicon = None # TODO: what happens on Linux?            
+            logging.error(_("Failed to load taskbar icon; continuing."))            
                          
         self.set_properties()
 
@@ -1358,15 +1379,15 @@ class GUIMiner(wx.Frame):
             self.devices = get_opencl_devices()
         except:
             self.devices = []
-            self.message("""No OpenCL devices were found.
+            self.message(_("""No OpenCL devices were found.
 If you only want to mine using CPU or CUDA, you can ignore this message.
 If you want to mine on ATI graphics cards, you may need to install the ATI Stream
 SDK, or your GPU may not support OpenCL.
-""",
-                "No OpenCL devices found.",
+"""),
+                _("No OpenCL devices found."),
                 wx.OK | wx.ICON_INFORMATION)
             file_menu.Enable(wx.ID_NEW, False)
-            file_menu.SetHelpString(wx.ID_NEW, "OpenCL not found - can't add a OpenCL miner")
+            file_menu.SetHelpString(wx.ID_NEW, _("OpenCL not found - can't add a OpenCL miner"))
         
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.new_external_profile, id=ID_NEW_EXTERNAL)
@@ -1390,9 +1411,9 @@ SDK, or your GPU may not support OpenCL.
     
     def set_properties(self):
         self.SetIcons(get_icon_bundle())        
-        self.SetTitle(_("poclbm-gui - v" + __version__))
+        self.SetTitle(_("GUIMiner - v%s") % __version__)
         self.statusbar.SetStatusWidths([-1, 125])
-        statusbar_fields = [_(""), _("Not started")]
+        statusbar_fields = [_(""), STR_NOT_STARTED]
         for i in range(len(statusbar_fields)):  
             self.statusbar.SetStatusText(statusbar_fields[i], i)  
 
@@ -1435,7 +1456,7 @@ SDK, or your GPU may not support OpenCL.
         dialog = wx.TextEntryDialog(self, "Name this miner:", "New miner")
         if dialog.ShowModal() == wx.ID_OK:
             name = dialog.GetValue().strip()
-            if not name: name = "Untitled"
+            if not name: name = _("Untitled")
             data = extra_profile_data.copy()
             data['name'] = name
             self.add_profile(data)
@@ -1446,9 +1467,9 @@ SDK, or your GPU may not support OpenCL.
         On Windows we validate against legal miners; on Linux they can pick
         whatever they want.
         """
-        wildcard = 'External miner (*.exe)|*.exe' if sys.platform == 'win32' else '*.*'                
+        wildcard = _('External miner (*.exe)|*.exe') if sys.platform == 'win32' else '*.*'                
         dialog = wx.FileDialog(self,
-                               "Select external miner:",
+                               _("Select external miner:"),
                                defaultDir=os.path.join(get_module_path(), 'miners'),
                                defaultFile="",
                                wildcard=wildcard,
@@ -1458,9 +1479,9 @@ SDK, or your GPU may not support OpenCL.
         
         if sys.platform == 'win32' and dialog.GetFilename() not in SUPPORTED_BACKENDS:
             self.message(
-                "Unsupported external miner %s. Supported are: %s" % (
+                _("Unsupported external miner %s. Supported are: %s") % (
                     dialog.GetFilename(), '\n'.join(SUPPORTED_BACKENDS)),
-                "Miner not supported", wx.OK | wx.ICON_ERROR)
+                _("Miner not supported"), wx.OK | wx.ICON_ERROR)
             return
         path = os.path.join(dialog.GetDirectory(), dialog.GetFilename())
         dialog.Destroy()                           
@@ -1486,7 +1507,7 @@ SDK, or your GPU may not support OpenCL.
             event.Veto()
         else:
             if any(p.is_modified for p in self.profile_panels):
-                dialog = wx.MessageDialog(self, 'Do you want to save changes?', 'Save', 
+                dialog = wx.MessageDialog(self, _('Do you want to save changes?'), _('Save'), 
                     wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION)
                 retval = dialog.ShowModal()
                 dialog.Destroy()
@@ -1514,17 +1535,17 @@ SDK, or your GPU may not support OpenCL.
                            show_summary=self.is_summary_visible(),
                            profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable)
-        logger.debug('Saving: ' + json.dumps(config_data))
+        logger.debug(_('Saving: ') + json.dumps(config_data))
         try:        
             with open(config_filename, 'w') as f:
                 json.dump(config_data, f, indent=4)
         except IOError:
-            self.message("Couldn't write save file %s."
-                         "\nCheck the location is writable." % config_filename,
-                         "Save unsuccessful", wx.OK | wx.ICON_ERROR)
+            self.message(
+                _("Couldn't write save file %s.\nCheck the location is writable.") % config_filename,
+                _("Save unsuccessful"), wx.OK | wx.ICON_ERROR)
         else:
-            self.message("Profiles saved OK to %s." % config_filename,
-                      "Save successful", wx.OK | wx.ICON_INFORMATION)
+            self.message(_("Profiles saved OK to %s.") % config_filename,
+                      _("Save successful"), wx.OK | wx.ICON_INFORMATION)
             for p in self.profile_panels:
                 p.on_saved()
     
@@ -1532,11 +1553,11 @@ SDK, or your GPU may not support OpenCL.
         """Load JSON profile info from the config file."""
         config_data = {}
         
-        _, config_filename = self.get_storage_location()        
+        config_filename = self.get_storage_location()[1]        
         if os.path.exists(config_filename):
             with open(config_filename) as f:
                 config_data.update(json.load(f))
-            logger.debug('Loaded: ' + json.dumps(config_data))
+            logger.debug(_('Loaded: %s') % json.dumps(config_data))
         
         executable = config_data.get('bitcoin_executable', None)
         if executable is not None:
@@ -1545,8 +1566,8 @@ SDK, or your GPU may not support OpenCL.
         # Shut down any existing miners before they get clobbered
         if(any(p.is_mining for p in self.profile_panels)):
             result = self.message(
-                "Loading profiles will stop any currently running miners. Continue?",
-                "Load profile", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION)
+                _("Loading profiles will stop any currently running miners. Continue?"),
+                _("Load profile"), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION)
             if result == wx.ID_NO:
                 return                      
         for p in reversed(self.profile_panels):            
@@ -1573,10 +1594,11 @@ SDK, or your GPU may not support OpenCL.
                                                        
     def set_official_client_path(self, event):
         """Set the path to the official Bitcoin client."""
+        wildcard = "bitcoin.exe" if sys.platform == 'win32' else '*.*'
         dialog = wx.FileDialog(self,
-                               "Select path to Bitcoin.exe",
+                               _("Select path to Bitcoin.exe"),
                                defaultFile="bitcoin.exe",
-                               wildcard="bitcoin.exe",
+                               wildcard=wildcard,
                                style=wx.OPEN)
         if dialog.ShowModal() == wx.ID_OK:
             path = os.path.join(dialog.GetDirectory(), dialog.GetFilename())
@@ -1586,7 +1608,7 @@ SDK, or your GPU may not support OpenCL.
             
     def show_about_dialog(self, event):
         """Show the 'about' dialog."""
-        dialog = AboutGuiminer(self, -1, 'About')
+        dialog = AboutGuiminer(self, -1, _('About'))
         dialog.ShowModal()
         dialog.Destroy()
         
@@ -1612,7 +1634,8 @@ SDK, or your GPU may not support OpenCL.
                    
         if p.is_mining:
             result = self.message(
-                "Closing this miner will stop it. Continue?", "Close miner",
+                _("Closing this miner will stop it. Continue?"), 
+                _("Close miner"),
                 wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION)
             if result == wx.ID_NO:
                 event.Veto()
@@ -1641,12 +1664,12 @@ SDK, or your GPU may not support OpenCL.
             subprocess.Popen(self.bitcoin_executable + " -server")
         except OSError:
             self.message(
-                "Couldn't find Bitcoin at %s. Is your path set correctly?" % self.bitcoin_executable,
-                "Launch failed", wx.ICON_ERROR | wx.OK)
+                _("Couldn't find Bitcoin at %s. Is your path set correctly?") % self.bitcoin_executable,
+                _("Launch failed"), wx.ICON_ERROR | wx.OK)
             return
         self.message(
-            "Client launched ok. You can start a miner now with the server set to 'solo'.",
-            "Launched ok.",
+            _("Client launched ok. You can start a miner now with the server set to 'solo'."),
+            _("Launched ok."),
             wx.OK)
         
     def create_solo_password(self, event):
@@ -1655,15 +1678,19 @@ SDK, or your GPU may not support OpenCL.
         These are required to connect to the client over JSON-RPC and are
         stored in 'bitcoin.conf'.
         """
-        filename = os.path.join(os.getenv("APPDATA"), "Bitcoin", "bitcoin.conf")
+        if sys.platform == 'win32':
+            filename = os.path.join(os.getenv("APPDATA"), "Bitcoin", "bitcoin.conf")
+        else: # Assume Linux for now TODO test
+            filename = os.path.join(os.getenv('HOME'), ".bitcoin")
         if os.path.exists(filename):
-            result = self.message("%s already exists. Overwrite?" % filename,
-                "bitcoin.conf already exists.",
+            result = self.message(
+                _("%s already exists. Overwrite?") % filename,
+                _("bitcoin.conf already exists."),
                 wx.YES_NO | wx.NO_DEFAULT | wx.ICON_INFORMATION)
             if result == wx.ID_NO:
                 return
 
-        dialog = SoloPasswordRequest(self, 'Enter password')
+        dialog = SoloPasswordRequest(self, _('Enter password'))
         result = dialog.ShowModal()
         dialog.Destroy()
         if result == wx.ID_CANCEL:
@@ -1673,7 +1700,7 @@ SDK, or your GPU may not support OpenCL.
             f.write('\nrpcuser=%s\nrpcpassword=%s' % dialog.get_value())
             f.close()
 
-        self.message("Wrote bitcoin.conf ok.", "Success", wx.OK)
+        self.message(_("Wrote bitcoin config ok."), _("Success"), wx.OK)
 
     def is_console_visible(self):
         """Return True if the console is visible."""
@@ -1684,7 +1711,7 @@ SDK, or your GPU may not support OpenCL.
         if self.is_console_visible():
             return # Console already shown
         self.console_panel = ConsolePanel(self)
-        self.nb.AddPage(self.console_panel, "Console")
+        self.nb.AddPage(self.console_panel, _("Console"))
         self.nb.EnsureVisible(self.nb.GetPageCount() - 1)
     
     def is_summary_visible(self):
@@ -1696,7 +1723,7 @@ SDK, or your GPU may not support OpenCL.
         if self.is_summary_visible():
             return
         self.summary_panel = SummaryPanel(self)
-        self.nb.AddPage(self.summary_panel, "Summary")
+        self.nb.AddPage(self.summary_panel, _("Summary"))
         index = self.nb.GetPageIndex(self.summary_panel)
         self.nb.SetSelection(index)
     
@@ -1709,7 +1736,7 @@ SDK, or your GPU may not support OpenCL.
         if p not in self.profile_panels:
             return
         
-        dialog = wx.TextEntryDialog(self, "Rename to:", "Rename miner")
+        dialog = wx.TextEntryDialog(self, _("Rename to:"), _("Rename miner"))
         if dialog.ShowModal() == wx.ID_OK:                        
             p.set_name(dialog.GetValue().strip())                                                  
 
@@ -1719,9 +1746,9 @@ class SoloPasswordRequest(wx.Dialog):
         style = wx.DEFAULT_DIALOG_STYLE
         vbox = wx.BoxSizer(wx.VERTICAL)
         wx.Dialog.__init__(self, parent, -1, title, style=style)
-        self.user_lbl = wx.StaticText(self, -1, _("Username:"))
+        self.user_lbl = wx.StaticText(self, -1, STR_USERNAME)
         self.txt_username = wx.TextCtrl(self, -1, _(""))
-        self.pass_lbl = wx.StaticText(self, -1, _("Password:"))
+        self.pass_lbl = wx.StaticText(self, -1, STR_PASSWORD)
         self.txt_pass = wx.TextCtrl(self, -1, _(""), style=wx.TE_PASSWORD)
         grid_sizer_1 = wx.FlexGridSizer(2, 2, 5, 5)
         grid_sizer_1.Add(self.user_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
@@ -1741,16 +1768,16 @@ class SoloPasswordRequest(wx.Dialog):
 class BalanceAuthRequest(wx.Dialog):
     """Dialog prompting user for an auth token to refresh their balance."""
     instructions = \
-"""Click the link below to log in to the pool and get a special token. 
+_("""Click the link below to log in to the pool and get a special token. 
 This token lets you securely check your balance.
-To remember this token for the future, save your miner settings."""
+To remember this token for the future, save your miner settings.""")
     def __init__(self, parent, url):
         style = wx.DEFAULT_DIALOG_STYLE
         vbox = wx.BoxSizer(wx.VERTICAL)
-        wx.Dialog.__init__(self, parent, -1, "Refresh balance", style=style)
+        wx.Dialog.__init__(self, parent, -1, STR_REFRESH_BALANCE, style=style)
         self.instructions = wx.StaticText(self, -1, BalanceAuthRequest.instructions)
         self.website = hyperlink.HyperLinkCtrl(self, -1, url)
-        self.txt_token = wx.TextCtrl(self, -1, "(Paste token here)")
+        self.txt_token = wx.TextCtrl(self, -1, _("(Paste token here)"))
         buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
         
         vbox.AddMany([
@@ -1775,7 +1802,7 @@ class AboutGuiminer(wx.Dialog):
 
         text = ABOUT_TEXT % (__version__, AboutGuiminer.donation_address)
         self.about_text = wx.StaticText(self, -1, text)
-        self.copy_btn = wx.Button(self, -1, "Copy address to clipboard")                            
+        self.copy_btn = wx.Button(self, -1, _("Copy address to clipboard"))                            
         vbox.Add(self.about_text)
         vbox.Add(self.copy_btn, 0, wx.ALIGN_BOTTOM | wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.SetSizer(vbox)
@@ -1789,22 +1816,12 @@ class AboutGuiminer(wx.Dialog):
             data.SetText(AboutGuiminer.donation_address)
             wx.TheClipboard.SetData(data)
         wx.TheClipboard.Close()
-        
-
-if __name__ == "__main__":
-    import gettext
-    gettext.install("app") # replace with the appropriate catalog name
-
-    global USE_MOCK
-    USE_MOCK = '--mock' in sys.argv
-
-    try:
-        app = wx.PySimpleApp(0)
-        wx.InitAllImageHandlers()
-        frame_1 = GUIMiner(None, -1, "")
-        app.SetTopWindow(frame_1)
-        frame_1.Show()
-        app.MainLoop()
-    except:
-        logging.exception("Exception:")
-        raise
+          
+try:        
+    frame_1 = GUIMiner(None, -1, "")
+    app.SetTopWindow(frame_1)
+    frame_1.Show()
+    app.MainLoop()
+except:
+    logging.exception("Exception:")
+    raise
