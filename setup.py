@@ -6,7 +6,7 @@ setup(windows=[
          'icon_resources': [(0, "logo.ico")]
         }
       ],
-      console=['poclbm.py'],
+      console=['poclbm.py', 'po_to_mo.py'],
       # OpenCL.dll is vendor specific
       options=dict(py2exe=dict(
           dll_excludes=['OpenCL.dll'],
