@@ -17,7 +17,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-04-19'
+__version__ = '2011-04-20'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
@@ -25,11 +25,11 @@ def get_module_path():
     abs_path = os.path.abspath(module_name)
     return os.path.dirname(abs_path)
 
-global USE_MOCK
 USE_MOCK = '--mock' in sys.argv
 # Set up localization; requires the app to be created
 app = wx.PySimpleApp(0)
-wx.InitAllImageHandlers() 
+wx.InitAllImageHandlers()
+
 locale = wx.Locale(wx.LANGUAGE_RUSSIAN)
 locale.AddCatalogLookupPathPrefix(os.path.join(get_module_path(), "locale"))
 locale.AddCatalog("guiminer")
@@ -39,7 +39,7 @@ _ = wx.GetTranslation
 ABOUT_TEXT = _(
 """GUIMiner
 
-Version: %s
+Version: %(version)s
 
 GUI by Chris 'Kiv' MacLeod
 Original poclbm miner by m0mchil
@@ -51,7 +51,7 @@ Get the source code or file issues at GitHub:
 If you enjoyed this software, support its development
 by donating to:
 
-%s
+%(address)s
 
 Even a single Bitcoin is appreciated and helps motivate
 further work on this software.
@@ -62,11 +62,14 @@ STR_NOT_STARTED = _("Not started")
 STR_STARTING = _("Starting...")
 STR_STOPPED = _("Stopped")
 STR_PAUSED = _("Paused")
-STR_MINING = _("%s mining!")
+STR_START_MINING = _("Start mining!")
+STR_STOP_MINING = _("Stop mining")
 STR_REFRESH_BALANCE = _("Refresh balance")
 STR_CONNECTION_ERROR = _("Connection error")
 STR_USERNAME = _("Username:")
 STR_PASSWORD = _("Password:")
+STR_QUIT = _("Quit this program")
+STR_ABOUT = _("Show about dialog")
 
 # Alternate backends that we know how to call
 SUPPORTED_BACKENDS = [
@@ -171,11 +174,12 @@ def http_request(hostname, *args):
     """Do a HTTP request and return the response data."""
     try:
         conn = httplib.HTTPConnection(hostname)
-        logger.debug(_("Requesting balance: %s"), str(args))
+        logger.debug(_("Requesting balance: %(request)s"), request=args)
         conn.request(*args)        
         response = conn.getresponse()            
         data = response.read()
-        logger.debug(_("Server replied: %s, %s"), str(response.status), data)
+        logger.debug(_("Server replied: %(status)s, %(data)s"), 
+                     status=str(response.status), data=data)
         return data
     finally:
         conn.close()
@@ -386,7 +390,8 @@ class MinerListenerThread(threading.Thread):
             else:
                 # Possible error or new message, just pipe it through
                 event = UpdateStatusEvent(text=line)
-                logger.info(_('Listener for "%s": %s'), self.parent_name, line)
+                logger.info(_('Listener for "%(name)s": %(line)s'), 
+                            name=self.parent_name, line=line)
                 wx.PostEvent(self.parent, event)
         logger.info(_('Listener for "%s" shutting down'), self.parent_name)
         
@@ -467,7 +472,7 @@ class MinerTab(wx.Panel):
                                self.txt_external, 
                                self.external_lbl]
         
-        self.start = wx.Button(self, -1, _("Start mining!"))        
+        self.start = wx.Button(self, -1, STR_START_MINING)        
 
         self.device_listbox.SetSelection(0)
         self.server.SetStringSelection(self.defaults.get('default_server'))
@@ -608,6 +613,9 @@ class MinerTab(wx.Panel):
     def get_start_stop_state(self):
         """Return appropriate text for the start/stop button."""
         return _("Stop") if self.is_mining else _("Start")
+    
+    def get_start_label(self):
+        return STR_STOP_MINING if self.is_mining else STR_START_MINING
     
     def update_summary(self):
         """Update our summary fields if possible."""
@@ -767,7 +775,7 @@ class MinerTab(wx.Panel):
         self.miner_listener.start()
         self.is_mining = True
         self.set_status(STR_STARTING, 1)
-        self.start.SetLabel(STR_MINING % self.get_start_stop_state())    
+        self.start.SetLabel(self.get_start_label())    
     
     def on_close(self):
         """Prepare to close gracefully."""
@@ -790,7 +798,7 @@ class MinerTab(wx.Panel):
         self.is_mining = False
         self.is_paused = False
         self.set_status(STR_STOPPED, 1)        
-        self.start.SetLabel(STR_MINING % self.get_start_stop_state())
+        self.start.SetLabel(self.get_start_label())
           
     def update_khash(self, rate):
         """Update our rate according to a report from the listener thread.
@@ -807,8 +815,9 @@ class MinerTab(wx.Panel):
     def update_statusbar(self):
         """Show the shares or equivalent on the statusbar."""
         if self.is_solo:
-            text = _("Difficulty 1 hashes: %d %s") % \
-                (self.accepted_shares, self.format_last_update_time())
+            text = _("Difficulty 1 hashes: %(nhashes)d %(update_time)s") % \
+                dict(nhashes=self.accepted_shares, 
+                     update_time=self.format_last_update_time())
             if self.solo_blocks_found > 0:
                 block_text = _("Blocks: %d, ") % self.solo_blocks_found
                 text = block_text + text
@@ -1251,7 +1260,7 @@ class MinerTab(wx.Panel):
                         
         self.extra_info.SetLabel(_("No registration is required - just enter an address and press Start."))
         self.txt_pass.SetValue('poclbm-gui')
-        self.user_lbl.SetLabel("Address:")
+        self.user_lbl.SetLabel(_("Address:"))
         add_tooltip(self.txt_username,
             _("Your receiving address for Bitcoins.\nE.g.: 1A94cjRpaPBMV9ZNWFihB5rTFEeihBALgc"))        
     
@@ -1340,7 +1349,7 @@ class GUIMiner(wx.Frame):
         file_menu.Append(ID_NEW_EXTERNAL, _("New &other miner..."), _("Create a CPU or CUDA miner (requires external program)"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_SAVE, _("&Save settings"), _("Save your settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_OPEN, _("&Load settings"), _("Load stored settings"), wx.ITEM_NORMAL)
-        file_menu.Append(wx.ID_EXIT, "", "", wx.ITEM_NORMAL)
+        file_menu.Append(wx.ID_EXIT, "", STR_QUIT, wx.ITEM_NORMAL)
         self.menubar.Append(file_menu, _("&File"))
 
         ID_SUMMARY, ID_CONSOLE = wx.NewId(), wx.NewId()
@@ -1355,9 +1364,9 @@ class GUIMiner(wx.Frame):
         solo_menu.Append(ID_PATHS, _("&Set Bitcoin client path..."), _("Set the location of the official Bitcoin client"), wx.ITEM_NORMAL)
         solo_menu.Append(ID_LAUNCH, _("&Launch Bitcoin client as server"), _("Launch the official Bitcoin client as a server for solo mining"), wx.ITEM_NORMAL)
         self.menubar.Append(solo_menu, _("&Solo utilities"))
-                      
+                             
         help_menu = wx.Menu()
-        help_menu.Append(wx.ID_ABOUT, _("&About/Donate..."), "", wx.ITEM_NORMAL)
+        help_menu.Append(wx.ID_ABOUT, _("&About/Donate..."), STR_ABOUT, wx.ITEM_NORMAL)
         
         self.menubar.Append(help_menu, _("&Help"))
         self.SetMenuBar(self.menubar)  
@@ -1413,7 +1422,7 @@ SDK, or your GPU may not support OpenCL.
         self.SetIcons(get_icon_bundle())        
         self.SetTitle(_("GUIMiner - v%s") % __version__)
         self.statusbar.SetStatusWidths([-1, 125])
-        statusbar_fields = [_(""), STR_NOT_STARTED]
+        statusbar_fields = ["", STR_NOT_STARTED]
         for i in range(len(statusbar_fields)):  
             self.statusbar.SetStatusText(statusbar_fields[i], i)  
 
@@ -1453,7 +1462,7 @@ SDK, or your GPU may not support OpenCL.
 
     def name_new_profile(self, event=None, extra_profile_data={}):
         """Prompt for the new miner's name."""
-        dialog = wx.TextEntryDialog(self, "Name this miner:", "New miner")
+        dialog = wx.TextEntryDialog(self, _("Name this miner:"), _("New miner"))
         if dialog.ShowModal() == wx.ID_OK:
             name = dialog.GetValue().strip()
             if not name: name = _("Untitled")
@@ -1479,8 +1488,8 @@ SDK, or your GPU may not support OpenCL.
         
         if sys.platform == 'win32' and dialog.GetFilename() not in SUPPORTED_BACKENDS:
             self.message(
-                _("Unsupported external miner %s. Supported are: %s") % (
-                    dialog.GetFilename(), '\n'.join(SUPPORTED_BACKENDS)),
+                _("Unsupported external miner %(filename)s. Supported are: %(supported)s") % \
+                  dict(filename=dialog.GetFilename(), supported='\n'.join(SUPPORTED_BACKENDS)),
                 _("Miner not supported"), wx.OK | wx.ICON_ERROR)
             return
         path = os.path.join(dialog.GetDirectory(), dialog.GetFilename())
@@ -1747,9 +1756,9 @@ class SoloPasswordRequest(wx.Dialog):
         vbox = wx.BoxSizer(wx.VERTICAL)
         wx.Dialog.__init__(self, parent, -1, title, style=style)
         self.user_lbl = wx.StaticText(self, -1, STR_USERNAME)
-        self.txt_username = wx.TextCtrl(self, -1, _(""))
+        self.txt_username = wx.TextCtrl(self, -1, "")
         self.pass_lbl = wx.StaticText(self, -1, STR_PASSWORD)
-        self.txt_pass = wx.TextCtrl(self, -1, _(""), style=wx.TE_PASSWORD)
+        self.txt_pass = wx.TextCtrl(self, -1, "", style=wx.TE_PASSWORD)
         grid_sizer_1 = wx.FlexGridSizer(2, 2, 5, 5)
         grid_sizer_1.Add(self.user_lbl, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         grid_sizer_1.Add(self.txt_username, 0, wx.EXPAND, 0)
@@ -1800,7 +1809,8 @@ class AboutGuiminer(wx.Dialog):
         wx.Dialog.__init__(self, parent, id, title)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        text = ABOUT_TEXT % (__version__, AboutGuiminer.donation_address)
+        text = ABOUT_TEXT % dict(version=__version__,
+                                 address=AboutGuiminer.donation_address)
         self.about_text = wx.StaticText(self, -1, text)
         self.copy_btn = wx.Button(self, -1, _("Copy address to clipboard"))                            
         vbox.Add(self.about_text)
