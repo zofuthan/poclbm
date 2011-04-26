@@ -69,11 +69,11 @@ msgstr "Пауза"
 
 #: guiminer.py:65
 msgid "Start mining!"
-msgstr "Старт генерации"
+msgstr "Старт!"
 
 #: guiminer.py:66
 msgid "Stop mining"
-msgstr ""
+msgstr "Стоп!"
 
 #: guiminer.py:67
 msgid "Refresh balance"
@@ -93,11 +93,11 @@ msgstr "Пароль:"
 
 #: guiminer.py:71
 msgid "Quit this program"
-msgstr ""
+msgstr "Выход из программы"
 
 #: guiminer.py:72
 msgid "Show about dialog"
-msgstr ""
+msgstr "Показать информацию о программе"
 
 #: guiminer.py:147
 #, python-format
@@ -205,7 +205,7 @@ msgstr "Устройство:"
 
 #: guiminer.py:445
 msgid "No OpenCL devices"
-msgstr "Нет OPENCL устройств"
+msgstr "Нет OpenCL устройств"
 
 #: guiminer.py:446
 msgid "Extra flags:"
@@ -336,11 +336,11 @@ msgstr "Выплата произведена"
 
 #: guiminer.py:1261
 msgid "No registration is required - just enter an address and press Start."
-msgstr "Регистрации не требуется - введите ваш счет и нажмите Старт."
+msgstr "Регистрации не требуется - введите ваш адрес и нажмите Старт."
 
 #: guiminer.py:1263
 msgid "Address:"
-msgstr ""
+msgstr "Адрес:"
 
 #: guiminer.py:1265
 msgid ""
@@ -436,7 +436,7 @@ msgstr "Показать консоль"
 
 #: guiminer.py:1358
 msgid "Show console logs"
-msgstr "Показывает лог консоли"
+msgstr "Показать лог консоли"
 
 #: guiminer.py:1359
 msgid "&View"
@@ -509,11 +509,11 @@ msgstr "GUIMiner - v%s"
 
 #: guiminer.py:1465
 msgid "Name this miner:"
-msgstr ""
+msgstr "Назовите генератор:"
 
 #: guiminer.py:1465
 msgid "New miner"
-msgstr ""
+msgstr "Новый генератор"
 
 #: guiminer.py:1468
 msgid "Untitled"

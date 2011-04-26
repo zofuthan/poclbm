@@ -174,12 +174,12 @@ def http_request(hostname, *args):
     """Do a HTTP request and return the response data."""
     try:
         conn = httplib.HTTPConnection(hostname)
-        logger.debug(_("Requesting balance: %(request)s"), request=args)
+        logger.debug(_("Requesting balance: %(request)s"), dict(request=args))
         conn.request(*args)        
         response = conn.getresponse()            
         data = response.read()
         logger.debug(_("Server replied: %(status)s, %(data)s"), 
-                     status=str(response.status), data=data)
+                     dict(status=str(response.status), data=data))
         return data
     finally:
         conn.close()
@@ -391,7 +391,7 @@ class MinerListenerThread(threading.Thread):
                 # Possible error or new message, just pipe it through
                 event = UpdateStatusEvent(text=line)
                 logger.info(_('Listener for "%(name)s": %(line)s'), 
-                            name=self.parent_name, line=line)
+                            dict(name=self.parent_name, line=line))
                 wx.PostEvent(self.parent, event)
         logger.info(_('Listener for "%s" shutting down'), self.parent_name)
         
@@ -1349,7 +1349,7 @@ class GUIMiner(wx.Frame):
         file_menu.Append(ID_NEW_EXTERNAL, _("New &other miner..."), _("Create a CPU or CUDA miner (requires external program)"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_SAVE, _("&Save settings"), _("Save your settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_OPEN, _("&Load settings"), _("Load stored settings"), wx.ITEM_NORMAL)
-        file_menu.Append(wx.ID_EXIT, "", STR_QUIT, wx.ITEM_NORMAL)
+        file_menu.Append(wx.ID_EXIT, _("Quit"), STR_QUIT, wx.ITEM_NORMAL)
         self.menubar.Append(file_menu, _("&File"))
 
         ID_SUMMARY, ID_CONSOLE = wx.NewId(), wx.NewId()
