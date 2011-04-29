@@ -20,4 +20,5 @@ setup(windows=[
                     'logo.ico',
                     'LICENSE.txt',
                     'servers.ini',
+                    'README.txt',
                     'defaults.ini'])
