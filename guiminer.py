@@ -17,7 +17,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-04-20'
+__version__ = '2011-04-26'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
@@ -30,11 +30,13 @@ USE_MOCK = '--mock' in sys.argv
 app = wx.PySimpleApp(0)
 wx.InitAllImageHandlers()
 
-locale = wx.Locale(wx.LANGUAGE_RUSSIAN)
-locale.AddCatalogLookupPathPrefix(os.path.join(get_module_path(), "locale"))
-locale.AddCatalog("guiminer")
 _ = wx.GetTranslation
 
+LANGUAGES = {
+    "English": wx.LANGUAGE_ENGLISH,
+    "Russian": wx.LANGUAGE_RUSSIAN 
+}
+LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
 
 ABOUT_TEXT = _(
 """GUIMiner
@@ -1248,6 +1250,7 @@ class MinerTab(wx.Panel):
         invisible = [self.txt_pass, self.txt_host, self.txt_port,
                      self.pass_lbl, self.host_lbl, self.port_lbl]
         self.set_widgets_visible(invisible, False)
+        self.set_widgets_visible([self.extra_info], True)
             
         row = self.layout_init()
         self.layout_server_and_website(row=row)                            
@@ -1268,7 +1271,7 @@ class MinerTab(wx.Panel):
         """Slush's pool uses a separate username for each miner."""
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
                                   self.port_lbl, self.txt_port,
-                                  self.withdraw], False)        
+                                  self.withdraw, self.extra_info], False)        
         row = self.layout_init()
         self.layout_server_and_website(row=row)
         self.layout_user_and_pass(row=row+1)
@@ -1284,7 +1287,7 @@ class MinerTab(wx.Panel):
     def layout_btcmine(self):
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
                                   self.port_lbl, self.txt_port,
-                                  self.withdraw], False)             
+                                  self.withdraw, self.extra_info], False)             
         row = self.layout_init()
         self.layout_server_and_website(row=row)
         self.layout_user_and_pass(row=row+1)
@@ -1300,7 +1303,8 @@ class MinerTab(wx.Panel):
     def layout_deepbit(self):
         """Deepbit uses an email address for a username."""
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
-                                  self.port_lbl, self.txt_port], False)             
+                                  self.port_lbl, self.txt_port,
+                                  self.extra_info], False)             
         row = self.layout_init()
         self.layout_server_and_website(row=row)
         self.layout_user_and_pass(row=row+1)
@@ -1318,6 +1322,10 @@ class MinerTab(wx.Panel):
 class GUIMiner(wx.Frame):
     def __init__(self, *args, **kwds):
         wx.Frame.__init__(self, *args, **kwds)
+        self.locale = None
+        
+        self.load_language()
+       
         style = fnb.FNB_X_ON_TAB | fnb.FNB_FF2 | fnb.FNB_HIDE_ON_SINGLE_TAB
         self.nb = fnb.FlatNotebook(self, -1, style=style)
         
@@ -1364,6 +1372,11 @@ class GUIMiner(wx.Frame):
         solo_menu.Append(ID_PATHS, _("&Set Bitcoin client path..."), _("Set the location of the official Bitcoin client"), wx.ITEM_NORMAL)
         solo_menu.Append(ID_LAUNCH, _("&Launch Bitcoin client as server"), _("Launch the official Bitcoin client as a server for solo mining"), wx.ITEM_NORMAL)
         self.menubar.Append(solo_menu, _("&Solo utilities"))
+        
+        ID_CHANGE_LANGUAGE = wx.NewId()
+        lang_menu = wx.Menu()
+        lang_menu.Append(ID_CHANGE_LANGUAGE, "&Change language...", "", wx.ITEM_NORMAL)
+        self.menubar.Append(lang_menu, _("Language"))
                              
         help_menu = wx.Menu()
         help_menu.Append(wx.ID_ABOUT, _("&About/Donate..."), STR_ABOUT, wx.ITEM_NORMAL)
@@ -1409,6 +1422,7 @@ SDK, or your GPU may not support OpenCL.
         self.Bind(wx.EVT_MENU, self.show_about_dialog, id=wx.ID_ABOUT)
         self.Bind(wx.EVT_MENU, self.create_solo_password, id=ID_SOLO)
         self.Bind(wx.EVT_MENU, self.launch_solo_server, id=ID_LAUNCH)
+        self.Bind(wx.EVT_MENU, self.change_language, id=ID_CHANGE_LANGUAGE)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.Bind(wx.EVT_ICONIZE, lambda event: self.Hide())
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CLOSING, self.on_page_closing)
@@ -1571,7 +1585,7 @@ SDK, or your GPU may not support OpenCL.
         executable = config_data.get('bitcoin_executable', None)
         if executable is not None:
             self.bitcoin_executable = executable
-            
+                       
         # Shut down any existing miners before they get clobbered
         if(any(p.is_mining for p in self.profile_panels)):
             result = self.message(
@@ -1747,7 +1761,70 @@ SDK, or your GPU may not support OpenCL.
         
         dialog = wx.TextEntryDialog(self, _("Rename to:"), _("Rename miner"))
         if dialog.ShowModal() == wx.ID_OK:                        
-            p.set_name(dialog.GetValue().strip())                                                  
+            p.set_name(dialog.GetValue().strip())
+
+    def change_language(self, event):
+        dialog = ChangeLanguageDialog(self, _('Change language'), self.language)
+        result = dialog.ShowModal()
+        dialog.Destroy()
+        if result == wx.ID_CANCEL:
+            return
+        
+        language_name = dialog.get_value()
+        self.update_language(LANGUAGES[language_name])
+        self.save_language()    
+            
+    def update_language(self, language):
+        self.language = language
+        if self.locale:
+            del self.locale
+        
+        self.locale = wx.Locale(language)
+        if self.locale.IsOk():
+            self.locale.AddCatalogLookupPathPrefix(os.path.join(get_module_path(), "locale"))
+            self.locale.AddCatalog("guiminer")
+        else:
+            self.locale = None
+            
+    def load_language(self):
+        language_config = os.path.join(get_module_path(), 'default_language.ini')
+        language_data = dict()        
+        if os.path.exists(language_config):
+            with open(language_config) as f:
+                language_data.update(json.load(f))
+            logger.debug(_('Loaded: %s') % json.dumps(language_data))
+        language_str = language_data.get('language', "English")        
+        self.update_language(LANGUAGES.get(language_str, wx.LANGUAGE_ENGLISH))
+    
+    def save_language(self):
+        language_config = os.path.join(get_module_path(), 'default_language.ini')
+        language_str = LANGUAGES_REVERSE.get(self.language)       
+        with open(language_config, 'w') as f:
+            json.dump(dict(language=language_str), f)        
+
+class ChangeLanguageDialog(wx.Dialog):
+    """Dialog prompting the user to change languages."""
+    def __init__(self, parent, title, current_language):
+        style = wx.DEFAULT_DIALOG_STYLE
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        wx.Dialog.__init__(self, parent, -1, title, style=style)
+        self.lbl = wx.StaticText(self, -1, 
+            _("Choose language (requires restart to take full effect)"))
+        vbox.Add(self.lbl, 0, wx.ALL, 10)        
+        self.language_choices = wx.ComboBox(self, -1, 
+                                            choices=sorted(LANGUAGES.keys()),
+                                            style=wx.CB_READONLY)
+        
+        self.language_choices.SetStringSelection(LANGUAGES_REVERSE[current_language])
+        
+        vbox.Add(self.language_choices, 0, wx.ALL, 10)        
+        buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+        vbox.Add(buttons, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
+        self.SetSizerAndFit(vbox)
+        
+    def get_value(self):
+        return self.language_choices.GetStringSelection()
+        
 
 class SoloPasswordRequest(wx.Dialog):
     """Dialog prompting user for login credentials for solo mining."""
@@ -1826,12 +1903,17 @@ class AboutGuiminer(wx.Dialog):
             data.SetText(AboutGuiminer.donation_address)
             wx.TheClipboard.SetData(data)
         wx.TheClipboard.Close()
-          
-try:        
-    frame_1 = GUIMiner(None, -1, "")
-    app.SetTopWindow(frame_1)
-    frame_1.Show()
-    app.MainLoop()
-except:
-    logging.exception("Exception:")
-    raise
+
+def run():          
+    try:        
+        frame_1 = GUIMiner(None, -1, "")
+        app.SetTopWindow(frame_1)
+        frame_1.Show()
+        app.MainLoop()
+    except:
+        logging.exception("Exception:")
+        raise
+    
+    
+if __name__ == "__main__":
+    run()
