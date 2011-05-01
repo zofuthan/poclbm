@@ -17,7 +17,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-04-28'
+__version__ = '2011-05-01'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
@@ -37,6 +37,38 @@ LANGUAGES = {
     "Russian": wx.LANGUAGE_RUSSIAN 
 }
 LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
+
+locale = None
+language = None
+def update_language(new_language):
+    global locale, language
+    language = new_language
+    if locale:
+        del locale
+    
+    locale = wx.Locale(language)
+    if locale.IsOk():
+        locale.AddCatalogLookupPathPrefix(os.path.join(get_module_path(), "locale"))
+        locale.AddCatalog("guiminer")
+    else:
+        locale = None
+        
+def load_language():
+    language_config = os.path.join(get_module_path(), 'default_language.ini')
+    language_data = dict()        
+    if os.path.exists(language_config):
+        with open(language_config) as f:
+            language_data.update(json.load(f))
+    language_str = language_data.get('language', "English")        
+    update_language(LANGUAGES.get(language_str, wx.LANGUAGE_ENGLISH))
+
+def save_language():
+    language_config = os.path.join(get_module_path(), 'default_language.ini')
+    language_str = LANGUAGES_REVERSE.get(language)       
+    with open(language_config, 'w') as f:
+        json.dump(dict(language=language_str), f)
+        
+load_language()
 
 ABOUT_TEXT = _(
 """GUIMiner
@@ -1321,11 +1353,7 @@ class MinerTab(wx.Panel):
 
 class GUIMiner(wx.Frame):
     def __init__(self, *args, **kwds):
-        wx.Frame.__init__(self, *args, **kwds)
-        self.locale = None
-        
-        self.load_language()
-       
+        wx.Frame.__init__(self, *args, **kwds)  
         style = fnb.FNB_X_ON_TAB | fnb.FNB_FF2 | fnb.FNB_HIDE_ON_SINGLE_TAB
         self.nb = fnb.FlatNotebook(self, -1, style=style)
         
@@ -1375,7 +1403,7 @@ class GUIMiner(wx.Frame):
         
         ID_CHANGE_LANGUAGE = wx.NewId()
         lang_menu = wx.Menu()
-        lang_menu.Append(ID_CHANGE_LANGUAGE, "&Change language...", "", wx.ITEM_NORMAL)
+        lang_menu.Append(ID_CHANGE_LANGUAGE, _("&Change language..."), "", wx.ITEM_NORMAL)
         self.menubar.Append(lang_menu, _("Language"))
                              
         help_menu = wx.Menu()
@@ -1422,7 +1450,7 @@ SDK, or your GPU may not support OpenCL.
         self.Bind(wx.EVT_MENU, self.show_about_dialog, id=wx.ID_ABOUT)
         self.Bind(wx.EVT_MENU, self.create_solo_password, id=ID_SOLO)
         self.Bind(wx.EVT_MENU, self.launch_solo_server, id=ID_LAUNCH)
-        self.Bind(wx.EVT_MENU, self.change_language, id=ID_CHANGE_LANGUAGE)
+        self.Bind(wx.EVT_MENU, self.on_change_language, id=ID_CHANGE_LANGUAGE)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.Bind(wx.EVT_ICONIZE, lambda event: self.Hide())
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CLOSING, self.on_page_closing)
@@ -1763,44 +1791,18 @@ SDK, or your GPU may not support OpenCL.
         if dialog.ShowModal() == wx.ID_OK:                        
             p.set_name(dialog.GetValue().strip())
 
-    def change_language(self, event):
-        dialog = ChangeLanguageDialog(self, _('Change language'), self.language)
+    def on_change_language(self, event):
+        dialog = ChangeLanguageDialog(self, _('Change language'), language)
         result = dialog.ShowModal()
         dialog.Destroy()
         if result == wx.ID_CANCEL:
             return
         
         language_name = dialog.get_value()
-        self.update_language(LANGUAGES[language_name])
-        self.save_language()    
+        update_language(LANGUAGES[language_name])
+        save_language()    
             
-    def update_language(self, language):
-        self.language = language
-        if self.locale:
-            del self.locale
         
-        self.locale = wx.Locale(language)
-        if self.locale.IsOk():
-            self.locale.AddCatalogLookupPathPrefix(os.path.join(get_module_path(), "locale"))
-            self.locale.AddCatalog("guiminer")
-        else:
-            self.locale = None
-            
-    def load_language(self):
-        language_config = os.path.join(get_module_path(), 'default_language.ini')
-        language_data = dict()        
-        if os.path.exists(language_config):
-            with open(language_config) as f:
-                language_data.update(json.load(f))
-            logger.debug(_('Loaded: %s') % json.dumps(language_data))
-        language_str = language_data.get('language', "English")        
-        self.update_language(LANGUAGES.get(language_str, wx.LANGUAGE_ENGLISH))
-    
-    def save_language(self):
-        language_config = os.path.join(get_module_path(), 'default_language.ini')
-        language_str = LANGUAGES_REVERSE.get(self.language)       
-        with open(language_config, 'w') as f:
-            json.dump(dict(language=language_str), f)        
 
 class ChangeLanguageDialog(wx.Dialog):
     """Dialog prompting the user to change languages."""
