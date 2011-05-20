@@ -34,6 +34,7 @@ _ = wx.GetTranslation
 
 LANGUAGES = {
     "English": wx.LANGUAGE_ENGLISH,
+    "Spanish": wx.LANGUAGE_SPANISH,
     "Russian": wx.LANGUAGE_RUSSIAN 
 }
 LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
@@ -1115,7 +1116,7 @@ class MinerTab(wx.Panel):
         if not data:
             data = STR_CONNECTION_ERROR
         else:
-            data = "Withdraw OK"            
+            data = _("Withdraw OK")            
         wx.CallAfter(self.on_balance_received, data)
 
     def request_payout_bitpenny(self, withdraw):
