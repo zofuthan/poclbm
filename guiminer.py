@@ -214,8 +214,8 @@ def http_request(hostname, *args):
         response = conn.getresponse()            
         data = response.read()
         logger.debug(_("Server replied: %(status)s, %(data)s"), 
-                     dict(status=str(response.status), data=data))
-        return data
+                     dict(status=str(response.status), data=data))    
+        return response, data
     finally:
         conn.close()
 
@@ -1030,18 +1030,32 @@ class MinerTab(wx.Panel):
         if result == wx.ID_CANCEL:
             return
         self.balance_auth_token = dialog.get_value() # TODO: validate token?
+    
+    def is_auth_token_rejected(self, response):
+        """If the server rejected our token, reset auth_token and return True.
         
+        Otherwise, return False.
+        """
+        if response.status in [401, 403]: # 401 Unauthorized or 403 Forbidden
+            # Token rejected by the server - reset their token so they'll be
+            # prompted again                   
+            self.balance_auth_token = "" 
+            return True
+        return False
+    
     def request_balance_get(self, balance_auth_token):
         """Request our balance from the server via HTTP GET and auth token.
         
         This method should be run in its own thread.
         """
-        data = http_request(
+        response, data = http_request(
             self.server_config['balance_host'],
             "GET",
             self.server_config["balance_url"] % balance_auth_token
         )
-        if not data:
+        if self.is_auth_token_rejected(response):
+            data = _("Auth token rejected by server.")
+        elif not data:
             data = STR_CONNECTION_ERROR
         else:
             try:
@@ -1114,7 +1128,7 @@ class MinerTab(wx.Panel):
         """Request payout from deepbit's server via HTTP POST."""
         post_params = dict(id=1,
                            method="request_payout")            
-        data = http_request(
+        response, data = http_request(
              self.server_config['balance_host'],
              "POST",
              self.server_config['balance_url'] % balance_auth_token,
@@ -1122,8 +1136,9 @@ class MinerTab(wx.Panel):
              {"Content-type": "application/json; charset=utf-8",
               "User-Agent": USER_AGENT}
         )
-        # TODO: check response code of request
-        if not data:
+        if self.is_auth_token_rejected(response):
+            data = _("Auth token rejected by server.")
+        elif not data:
             data = STR_CONNECTION_ERROR
         else:
             data = _("Withdraw OK")            
@@ -1135,14 +1150,16 @@ class MinerTab(wx.Panel):
         If withdraw is True, also request a withdrawal.
         """
         post_params = dict(a=self.txt_username.GetValue(), w=int(withdraw))            
-        data = http_request(
+        response, data = http_request(
              self.server_config['balance_host'],
              "POST",
              self.server_config['balance_url'],
              urllib.urlencode(post_params),
              {"Content-type": "application/x-www-form-urlencoded"}
         )
-        if not data:
+        if self.is_auth_token_rejected(response):
+            data = _("Auth token rejected by server.")
+        elif not data:
             data = STR_CONNECTION_ERROR
         elif withdraw:
             data = _("Withdraw OK")            
