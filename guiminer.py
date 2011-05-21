@@ -963,8 +963,18 @@ class MinerTab(wx.Panel):
         add_tooltip(self.txt_pass, _("The miner's password.\nMay be different than your account password."))
         add_tooltip(self.txt_flags, _("Extra flags to pass to the miner.\nFor Radeon HD 5xxx series use -v -w128 for best results.\nFor other cards consult the forum."))
     
+    def reset_statistics(self):
+        """Reset our share statistics to zero."""
+        self.solo_blocks_found = 0
+        self.accepted_shares = 0
+        self.accepted_times.clear()
+        self.invalid_shares = 0
+        self.invalid_times.clear()
+        self.update_statusbar()
+    
     def change_server(self, new_server):
         """Change the server to new_server, updating fields as needed."""
+        self.reset_statistics()
         
         # Set defaults before we do server specific code
         self.set_tooltips()
