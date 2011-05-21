@@ -144,7 +144,7 @@ def get_opencl_devices():
     Raises IOError if no OpenCL devices are found.
     """
     import pyopencl
-    platform = pyopencl.get_platforms()[0]
+    platform = pyopencl.get_platforms()[0] #@UndefinedVariable
     devices = platform.get_devices()
     if len(devices) == 0:
         raise IOError
@@ -1378,6 +1378,9 @@ class GUIMiner(wx.Frame):
         defaults_config_path = os.path.join(get_module_path(), 'defaults.ini')
         with open(defaults_config_path) as f:
             self.defaults = json.load(f)
+            
+        self.parse_config()
+        self.do_show_opencl_warning = self.config_data.get('show_opencl_warning', True)
         
         ID_NEW_EXTERNAL = wx.NewId()
         self.menubar = wx.MenuBar()
@@ -1430,15 +1433,13 @@ class GUIMiner(wx.Frame):
             self.devices = get_opencl_devices()
         except:
             self.devices = []
-            self.message(_("""No OpenCL devices were found.
-If you only want to mine using CPU or CUDA, you can ignore this message.
-If you want to mine on ATI graphics cards, you may need to install the ATI Stream
-SDK, or your GPU may not support OpenCL.
-"""),
-                _("No OpenCL devices found."),
-                wx.OK | wx.ICON_INFORMATION)
             file_menu.Enable(wx.ID_NEW, False)
             file_menu.SetHelpString(wx.ID_NEW, _("OpenCL not found - can't add a OpenCL miner"))
+            
+            if self.do_show_opencl_warning:
+                dialog = OpenCLWarningDialog(self)
+                dialog.ShowModal()
+                self.do_show_opencl_warning = not dialog.is_box_checked()
         
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.new_external_profile, id=ID_NEW_EXTERNAL)
@@ -1586,7 +1587,8 @@ SDK, or your GPU may not support OpenCL.
         config_data = dict(show_console=self.is_console_visible(),
                            show_summary=self.is_summary_visible(),
                            profiles=profile_data,
-                           bitcoin_executable=self.bitcoin_executable)
+                           bitcoin_executable=self.bitcoin_executable,
+                           show_opencl_warning=self.do_show_opencl_warning)
         logger.debug(_('Saving: ') + json.dumps(config_data))
         try:        
             with open(config_filename, 'w') as f:
@@ -1601,16 +1603,21 @@ SDK, or your GPU may not support OpenCL.
             for p in self.profile_panels:
                 p.on_saved()
     
-    def load_config(self, event=None):
-        """Load JSON profile info from the config file."""
-        config_data = {}
+    def parse_config(self):
+        """Set self.config_data to a dictionary of config values."""
+        self.config_data = {}
         
         config_filename = self.get_storage_location()[1]        
         if os.path.exists(config_filename):
             with open(config_filename) as f:
-                config_data.update(json.load(f))
-            logger.debug(_('Loaded: %s') % json.dumps(config_data))
+                self.config_data.update(json.load(f))
+            logger.debug(_('Loaded: %s') % json.dumps(self.config_data))
+    
+    def load_config(self, event=None):
+        """Load JSON profile info from the config file."""
+        self.parse_config()
         
+        config_data = self.config_data
         executable = config_data.get('bitcoin_executable', None)
         if executable is not None:
             self.bitcoin_executable = executable
@@ -1906,6 +1913,35 @@ class AboutGuiminer(wx.Dialog):
             data.SetText(AboutGuiminer.donation_address)
             wx.TheClipboard.SetData(data)
         wx.TheClipboard.Close()
+
+
+class OpenCLWarningDialog(wx.Dialog):
+    """Warning dialog when a user does not have OpenCL installed."""
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, -1, _("No OpenCL devices found."))
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        self.message = wx.StaticText(self, -1, 
+ _("""No OpenCL devices were found.
+ If you only want to mine using CPU or CUDA, you can ignore this message.
+ If you want to mine on ATI graphics cards, you may need to install the ATI Stream
+ SDK, or your GPU may not support OpenCL."""))
+        vbox.Add(self.message, 0, wx.ALL, 10)    
+        
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.no_show_chk = wx.CheckBox(self, -1)
+        hbox.Add(self.no_show_chk)
+        self.no_show_txt = wx.StaticText(self, -1, _("Don't show this message again"))
+        hbox.Add((5,0))    
+        hbox.Add(self.no_show_txt)        
+        vbox.Add(hbox, 0, wx.ALL, 10)
+        buttons = self.CreateButtonSizer(wx.OK)
+        vbox.Add(buttons, 0, wx.ALIGN_BOTTOM | wx.ALIGN_CENTER_HORIZONTAL, 0)
+        self.SetSizerAndFit(vbox)
+        
+    def is_box_checked(self):
+        return self.no_show_chk.GetValue()
+        
 
 def run():          
     try:        
