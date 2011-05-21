@@ -1100,7 +1100,11 @@ class MinerTab(wx.Panel):
         if host in HOSTS_REQUIRING_AUTH_TOKEN:
             self.require_auth_token()
             if not self.balance_auth_token: # They cancelled the dialog
-                return                        
+                return
+            try:
+                self.balance_auth_token.decode('ascii')
+            except UnicodeDecodeError:
+                return # Invalid characters in auth token                        
             self.http_thread = threading.Thread(
                 target=self.request_balance_get, 
                 args=(self.balance_auth_token,))
