@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, re, errno
 
 import polib
 
@@ -8,8 +8,34 @@ def get_module_path():
     abs_path = os.path.abspath(module_name)
     return os.path.dirname(abs_path)
 
-po = polib.pofile('guiminer_ru.po')
-path = os.path.join(get_module_path(), 'locale', 'ru', 'LC_MESSAGES', 'guiminer.mo')
+
+def print_usage():
+    """Print usage message and exit."""
+    print 'Usage: po_to_mo <pofile> (or drag pofile onto executable icon).'
+    raw_input()
+    sys.exit(1)
+
+if len(sys.argv) < 2:
+    print_usage()
+
+po_filename = sys.argv[1]
+
+match = re.match(r'guiminer_(\w*).po', po_filename)
+if match is None:
+    print_usage()
+else:
+    language_code = match.group(1)
+
+po = polib.pofile(po_filename)
+
+folder = os.path.join(get_module_path(), 'locale', language_code, 'LC_MESSAGES')
+try:
+    os.makedirs(folder)
+except OSError as exc:
+    if exc.errno != errno.EEXIST:
+        raise
+
+path = os.path.join(folder, 'guiminer.mo')
 try:
     po.save_as_mofile(path)
 except:

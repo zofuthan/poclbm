@@ -1061,7 +1061,7 @@ class MinerTab(wx.Panel):
             try:
                 info = json.loads(data)
                 confirmed = info.get('confirmed_reward') or info.get('confirmed', 0)
-                unconfirmed = info.get('unconfirmed_reward') or info.get('unconformed', 0)
+                unconfirmed = info.get('unconfirmed_reward') or info.get('unconfirmed', 0)
                 if self.server_config.get('host') == "deepbit.net":
                     ipa = info.get('ipa', False)                    
                     self.withdraw.Enable(ipa)
