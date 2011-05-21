@@ -235,6 +235,10 @@ class ConsolePanel(wx.Panel):
         self.SetSizer(vbox)
         
         self.handler = logging.StreamHandler(self)
+        
+        formatter = logging.Formatter("%(asctime)s: %(message)s",
+                                      "%Y-%m-%d %H:%M:%S")
+        self.handler.setFormatter(formatter)        
         logger.addHandler(self.handler)
         
     def on_focus(self):
