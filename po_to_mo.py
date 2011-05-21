@@ -16,11 +16,13 @@ def print_usage():
     sys.exit(1)
 
 if len(sys.argv) < 2:
+    print len(sys.argv)
     print_usage()
 
 po_filename = sys.argv[1]
+print 'Got filename', po_filename
 
-match = re.match(r'guiminer_(\w*).po', po_filename)
+match = re.search(r'guiminer_(\w*).po', po_filename)
 if match is None:
     print_usage()
 else:
