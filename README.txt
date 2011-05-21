@@ -130,12 +130,15 @@ Useful OpenCL flags
 -------------------
 
 These flags can be entered in the Extra Flags field when using the OpenCL
-miner:
+miner to tweak the miner settings:
 
 -v	Enable vectors, which is faster on some cards.
--f60	Set priority to number, a higher number is lower priority. Increase
-        this to reduce desktop lag or to make a miner yield GPU to other
-        miners or games.	
+-f30	Set priority to the specified number (default 30).
+	A higher number is lower priority. Increase this to reduce desktop
+        lag or to make a miner yield GPU control to other miners or games.
+
+These are the most useful flags; for a complete list, see here:
+	http://forum.bitcoin.org/?topic=4122.0
 
 
 Running From Source
