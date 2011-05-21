@@ -1000,7 +1000,8 @@ class MinerTab(wx.Panel):
         if host == "mining.bitcoin.cz": self.layout_slush()
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
         elif host == "deepbit.net": self.layout_deepbit()
-        elif host == "btcmine.com": self.layout_btcmine()        
+        elif host == "btcmine.com": self.layout_btcmine()
+        elif host == "btcguild.com": self.layout_btcguild()
         else: self.layout_default()
                
         self.Layout()
@@ -1060,8 +1061,14 @@ class MinerTab(wx.Panel):
         else:
             try:
                 info = json.loads(data)
-                confirmed = info.get('confirmed_reward') or info.get('confirmed', 0)
-                unconfirmed = info.get('unconfirmed_reward') or info.get('unconfirmed', 0)
+                confirmed = (info.get('confirmed_reward') or 
+                             info.get('confirmed') or
+                             info.get('user', {}).get('confirmed_rewards') or
+                             0)
+                unconfirmed = (info.get('unconfirmed_reward') or 
+                               info.get('unconfirmed') or
+                               info.get('user', {}).get('unconfirmed_rewards') or
+                               0)
                 if self.server_config.get('host') == "deepbit.net":
                     ipa = info.get('ipa', False)                    
                     self.withdraw.Enable(ipa)
@@ -1088,7 +1095,8 @@ class MinerTab(wx.Panel):
         
         HOSTS_REQUIRING_AUTH_TOKEN = ["mining.bitcoin.cz", 
                                       "btcmine.com", 
-                                      "deepbit.net"]
+                                      "deepbit.net",
+                                      "btcguild.com"]
         if host in HOSTS_REQUIRING_AUTH_TOKEN:
             self.require_auth_token()
             if not self.balance_auth_token: # They cancelled the dialog
@@ -1343,6 +1351,10 @@ class MinerTab(wx.Panel):
             _("Your miner username (not your account username).\nExample: Kiv.GPU"))
         add_tooltip(self.txt_pass,
             _("Your miner password (not your account password)."))
+        
+    def layout_btcguild(self):
+        """BTC Guild has the same layout as slush for now."""
+        self.layout_slush()
 
     def layout_btcmine(self):
         self.set_widgets_visible([self.host_lbl, self.txt_host, 
