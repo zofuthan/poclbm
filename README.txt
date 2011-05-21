@@ -126,6 +126,16 @@ option reads "localhost" since the server is on your own machine. Put your
 username and password that you chose earlier. Then press "Start mining!" to 
 connect and start mining.
 
+Useful OpenCL flags
+-------------------
+
+These flags can be entered in the Extra Flags field when using the OpenCL
+miner:
+
+-v	Enable vectors, which is faster on some cards.
+-f60	Set priority to number, a higher number is lower priority. Increase
+        this to reduce desktop lag or to make a miner yield GPU to other
+        miners or games.	
 
 
 Running From Source
