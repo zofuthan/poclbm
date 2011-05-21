@@ -136,6 +136,9 @@ miner to tweak the miner settings:
 -f30	Set priority to the specified number (default 30).
 	A higher number is lower priority. Increase this to reduce desktop
         lag or to make a miner yield GPU control to other miners or games.
+-s0.01  Sleep for the specified number of seconds between iterations (default 0).
+        Increase this to reduce hashing performance if your temperatures are
+        too high.
 
 These are the most useful flags; for a complete list, see here:
 	http://forum.bitcoin.org/?topic=4122.0
