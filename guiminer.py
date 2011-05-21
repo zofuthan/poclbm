@@ -1929,7 +1929,7 @@ class AboutGuiminer(wx.Dialog):
         self.copy_btn = wx.Button(self, -1, _("Copy address to clipboard"))                            
         vbox.Add(self.about_text)
         vbox.Add(self.copy_btn, 0, wx.ALIGN_BOTTOM | wx.ALIGN_CENTER_HORIZONTAL, 0)
-        self.SetSizer(vbox)
+        self.SetSizerAndFit(vbox)
 
         self.copy_btn.Bind(wx.EVT_BUTTON, self.on_copy)        
 
