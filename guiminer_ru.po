@@ -319,7 +319,7 @@ msgstr ""
 
 #: guiminer.py:1058 guiminer.py:1148 guiminer.py:1169
 msgid "Auth token rejected by server."
-msgstr ""
+msgstr "Код авторизации не принят сервером"
 
 #: guiminer.py:1076
 #, python-format
@@ -708,7 +708,7 @@ msgstr ""
 
 #: guiminer.py:1973
 msgid "Don't show this message again"
-msgstr ""
+msgstr "Больше не показывать это сообщение."
 
 #~ msgid "%s mining!"
 #~ msgstr "%s генерации"
