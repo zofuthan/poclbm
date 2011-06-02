@@ -35,7 +35,8 @@ _ = wx.GetTranslation
 LANGUAGES = {
     "English": wx.LANGUAGE_ENGLISH,
     "Spanish": wx.LANGUAGE_SPANISH,
-    "Russian": wx.LANGUAGE_RUSSIAN 
+    "Russian": wx.LANGUAGE_RUSSIAN,
+    "Chinese Simplified": wx.LANGUAGE_CHINESE_CHINA 
 }
 LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
 
