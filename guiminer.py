@@ -17,7 +17,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-05-21'
+__version__ = '2011-06-05'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
@@ -33,10 +33,13 @@ wx.InitAllImageHandlers()
 _ = wx.GetTranslation
 
 LANGUAGES = {
+    "Chinese Simplified": wx.LANGUAGE_CHINESE_SIMPLIFIED,
     "English": wx.LANGUAGE_ENGLISH,
+    "French": wx.LANGUAGE_FRENCH,
+    "German": wx.LANGUAGE_GERMAN,
+    "Hungarian": wx.LANGUAGE_HUNGARIAN,
     "Spanish": wx.LANGUAGE_SPANISH,
-    "Russian": wx.LANGUAGE_RUSSIAN,
-    "Chinese Simplified": wx.LANGUAGE_CHINESE_CHINA 
+    "Russian": wx.LANGUAGE_RUSSIAN,     
 }
 LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
 

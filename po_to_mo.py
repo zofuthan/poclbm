@@ -22,7 +22,7 @@ if len(sys.argv) < 2:
 po_filename = sys.argv[1]
 print 'Got filename', po_filename
 
-match = re.search(r'guiminer_(\w*).po', po_filename)
+match = re.search(r'guiminer_(.*).po', po_filename)
 if match is None:
     print_usage()
 else:
