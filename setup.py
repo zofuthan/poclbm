@@ -6,9 +6,10 @@ setup(windows=[
          'icon_resources': [(0, "logo.ico")]
         }
       ],
-      console=['poclbm.py', 'po_to_mo.py'],
+      console=['miners/phoenix/phoenix.py', 'poclbm.py', 'po_to_mo.py'],
       # OpenCL.dll is vendor specific
       options=dict(py2exe=dict(
+          includes="minerutil, twisted.web.resource, QueueReader",
           dll_excludes=['OpenCL.dll'],
           #bundle_files=1,
           compressed=True,
