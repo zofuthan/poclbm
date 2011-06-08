@@ -17,7 +17,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-06-05'
+__version__ = '2011-06-08'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
@@ -116,7 +116,8 @@ SUPPORTED_BACKENDS = [
     "rpcminer-cpu.exe", 
     "rpcminer-cuda.exe",
     "rpcminer-opencl.exe",
-    #"bitcoin-miner.exe" # Doesn't work yet
+    "phoenix.py",
+    "phoenix.exe"
 ]
 
 USER_AGENT = "guiminer/" + __version__
@@ -427,7 +428,7 @@ class MinerListenerThread(threading.Thread):
             line = self.miner.stdout.readline().strip()
             #logger.debug("Line: %s", line)
             if not line: continue
-            for s, event_func in MinerListenerThread.LINES:
+            for s, event_func in self.LINES: # Use self to allow subclassing
                 match = re.search(s, line, flags=re.I)
                 if match is not None:
                     event = event_func(match)
@@ -442,6 +443,19 @@ class MinerListenerThread(threading.Thread):
                 wx.PostEvent(self.parent, event)
         logger.info(_('Listener for "%s" shutting down'), self.parent_name)
         
+class PhoenixListenerThread(MinerListenerThread):
+    LINES = [
+        (r"Result: .* accepted", 
+            lambda _: UpdateAcceptedEvent(accepted=True)),
+        (r"Result: .* rejected", lambda _: 
+            UpdateAcceptedEvent(accepted=False)),                              
+        (r"(\d+)\.?(\d*) Khash/sec", lambda match:
+            UpdateHashRateEvent(rate=float(match.group(1)+'.'+match.group(2)))),             
+        (r"(\d+)\.?(\d*) Mhash/sec", lambda match:
+            UpdateHashRateEvent(rate=float(match.group(1)+'.'+match.group(2)) * 1000)),
+        (r"Currently on block", 
+            lambda _: None), # Just ignore lines like these                    
+    ]        
         
 class MinerTab(wx.Panel):
     """A tab in the GUI representing a miner instance.
@@ -580,6 +594,14 @@ class MinerTab(wx.Panel):
         host = self.txt_host.GetValue()
         if not host.startswith("http://"): 
             host = "http://" + host
+        return host
+    
+    @property
+    def host_without_http_prefix(self):
+        """Return the host address, with http:// stripped off if needed."""
+        host = self.txt_host.GetValue()
+        if host.startswith("http://"):
+            return host[len('http://'):]
         return host
 
     def pause(self):
@@ -783,6 +805,22 @@ class MinerTab(wx.Panel):
             self.txt_flags.GetValue())
         return cmd, os.path.dirname(self.external_path)
     
+    def configure_subprocess_phoenix(self):
+        """Set up the command line for phoenix miner."""
+        path = self.external_path
+        if path.endswith('.py'):
+            path = "python " + path
+
+        cmd = "%s -u http://%s:%s@%s:%s DEVICE=%d %s" % (
+            path,
+            self.txt_username.GetValue(),
+            self.txt_pass.GetValue(),
+            self.host_without_http_prefix,
+            self.txt_port.GetValue(),
+            self.device_listbox.GetSelection(),
+            self.txt_flags.GetValue())
+        return cmd, os.path.dirname(self.external_path)
+        
     # End backend specific code
     ###########################
     
@@ -796,12 +834,18 @@ class MinerTab(wx.Panel):
         else: flags = win32process.CREATE_NO_WINDOW
 
         # Determine what command line arguments to use
+        
+        listener_cls = MinerListenerThread
         if not self.is_external_miner:
             conf_func = self.configure_subprocess_poclbm
         elif "rpcminer" in self.external_path:
             conf_func = self.configure_subprocess_rpcminer
         elif "bitcoin-miner" in self.external_path:
             conf_func = self.configure_subprocess_ufasoft
+        elif "phoenix" in self.external_path:
+            conf_func = self.configure_subprocess_phoenix
+            listener_cls = PhoenixListenerThread
+            
         else:
             raise ValueError # TODO: handle unrecognized miner 
         cmd, cwd = conf_func()
@@ -817,7 +861,7 @@ class MinerTab(wx.Panel):
                                           shell=(sys.platform != 'win32'))
         except OSError:
             raise #TODO: the folder or exe could not exist
-        self.miner_listener = MinerListenerThread(self, self.miner)
+        self.miner_listener = listener_cls(self, self.miner)
         self.miner_listener.daemon = True
         self.miner_listener.start()
         self.is_mining = True
@@ -1271,16 +1315,16 @@ class MinerTab(wx.Panel):
     def layout_device_and_flags(self, row):
         """Lay out the device and flags widgets in the specified row.
         
-        Hide the device widgets if there's an external miner present.
+        Hide the device dropdown if RPCMiner is present since it doesn't use it. 
         """
-        no_external = not self.is_external_miner
-        self.set_widgets_visible([self.device_lbl, self.device_listbox], no_external)        
-        if no_external:
+        device_visible = 'rpcminer' not in self.external_path
+        self.set_widgets_visible([self.device_lbl, self.device_listbox], device_visible)        
+        if device_visible:
             self.inner_sizer.Add(self.device_lbl, (row,0), flag=LBL_STYLE)
             self.inner_sizer.Add(self.device_listbox, (row,1), flag=wx.EXPAND)
-        col = 2 * (no_external)
+        col = 2 * (device_visible)
         self.inner_sizer.Add(self.flags_lbl, (row,col), flag=LBL_STYLE)
-        span = (1,1) if no_external else (1,4) 
+        span = (1,1) if device_visible else (1,4) 
         self.inner_sizer.Add(self.txt_flags, (row,col+1), span=span, flag=wx.EXPAND)
     
     def layout_balance(self, row):
@@ -1575,7 +1619,7 @@ class GUIMiner(wx.Frame):
         On Windows we validate against legal miners; on Linux they can pick
         whatever they want.
         """
-        wildcard = _('External miner (*.exe)|*.exe') if sys.platform == 'win32' else '*.*'                
+        wildcard = _('External miner (*.exe)|*.exe|(*.py)|*.py') if sys.platform == 'win32' else '*.*'                
         dialog = wx.FileDialog(self,
                                _("Select external miner:"),
                                defaultDir=os.path.join(get_module_path(), 'miners'),
