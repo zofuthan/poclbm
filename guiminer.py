@@ -3,6 +3,8 @@
 Currently supports:
 - m0mchil's "poclbm"
 - puddinpop's "rpcminer"
+- jedi95's "Phoenix"
+- ufasoft's SSE miner
 
 Copyright 2011 Chris MacLeod
 This program is released under the GNU GPL. See LICENSE.txt for details.
