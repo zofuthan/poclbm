@@ -119,7 +119,8 @@ SUPPORTED_BACKENDS = [
     "rpcminer-cuda.exe",
     "rpcminer-opencl.exe",
     "phoenix.py",
-    "phoenix.exe"
+    "phoenix.exe",
+    "bitcoin-miner.exe"
 ]
 
 USER_AGENT = "guiminer/" + __version__
@@ -411,6 +412,8 @@ class MinerListenerThread(threading.Thread):
             UpdateAcceptedEvent(accepted=False)),
         (r"(\d+)\s*khash/s", lambda match: 
             UpdateHashRateEvent(rate=int(match.group(1)))),
+        (r"(\d+\.\d+)\s*Mhash/s", lambda match:
+            UpdateHashRateEvent(rate=float(match.group(1)) * 1000)),
         (r"(\d+)\s*Mhash/s", lambda match: 
             UpdateHashRateEvent(rate=int(match.group(1)) * 1000)),            
         (r"checking (\d+)", lambda _: 
@@ -852,13 +855,15 @@ class MinerTab(wx.Panel):
             raise ValueError # TODO: handle unrecognized miner 
         cmd, cwd = conf_func()
         
-        # TODO: ufasoft prints to stderr for some reason and also won't
-        # seem to die - probably we have to get him to change things
-        # so his miner will play nice.        
+        # for ufasoft:
+        #  redirect stderr to stdout
+        #  use universal_newlines to catch the \r output on Mhash/s lines
         try:
             logger.debug(_('Running command: ') + cmd)
             self.miner = subprocess.Popen(cmd, cwd=cwd, 
                                           stdout=subprocess.PIPE,
+                                          stderr=subprocess.STDOUT,
+                                          universal_newlines=True,
                                           creationflags=flags,
                                           shell=(sys.platform != 'win32'))
         except OSError:
