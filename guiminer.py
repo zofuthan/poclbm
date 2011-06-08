@@ -148,12 +148,16 @@ def get_opencl_devices():
     Raises IOError if no OpenCL devices are found.
     """
     import pyopencl
-    platform = pyopencl.get_platforms()[0] #@UndefinedVariable
-    devices = platform.get_devices()
-    if len(devices) == 0:
-        raise IOError
-    return ['[%d] %s' % (i, merge_whitespace(device.name)[:25])
-                         for (i, device) in enumerate(devices)]
+    device_strings = []
+    platforms = pyopencl.get_platforms() #@UndefinedVariable
+    for i, platform in enumerate(platforms):
+        devices = platform.get_devices()
+        for j, device in enumerate(devices):
+            device_strings.append('[%d-%d] %s' % 
+                (i, j, merge_whitespace(device.name)[:25]))
+    if len(device_strings) == 0:
+        raise IOError            
+    return device_strings
 
 def get_icon_bundle():
     """Return the Bitcoin program icon bundle."""
