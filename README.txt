@@ -2,7 +2,11 @@ GUIMiner - a graphical interface for mining Bitcoins
 ====================================================
 
 by Chris 'Kiv' MacLeod
-based on "poclbm" by m0mchil, 'rpcminer' by puddinpop
+based on:
+- "poclbm" by m0mchil
+- 'rpcminer' by puddinpop
+- "phoenix" by jedi95
+- bitcoin-miner by ufasoft
 
 What is it?
 -----------
@@ -16,7 +20,7 @@ servers pre-set with the program.
 What is it not?
 ---------------
 
-poclbm-gui does not replace the standard Bitcoin client from bitcoin.org - you
+GUIMiner does not replace the standard Bitcoin client from bitcoin.org - you
 still need that program to view your account balance and send transactions.
 It is not a server, so it has to connect either to a mining pool, or to your
 computer's 'bitcoin.exe' if mining solo.

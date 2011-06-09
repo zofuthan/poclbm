@@ -4,7 +4,7 @@ Currently supports:
 - m0mchil's "poclbm"
 - puddinpop's "rpcminer"
 - jedi95's "Phoenix"
-- ufasoft's SSE miner
+- ufasoft's "bitcoin-miner"
 
 Copyright 2011 Chris MacLeod
 This program is released under the GNU GPL. See LICENSE.txt for details.
@@ -608,6 +608,28 @@ class MinerTab(wx.Panel):
         if host.startswith("http://"):
             return host[len('http://'):]
         return host
+    
+    @property
+    def device_index(self):
+        """Return the index of the currently selected OpenCL device."""
+        s = self.device_listbox.GetStringSelection()
+        match = re.search(r'\[(\d+)-(\d+)\]', s)
+        assert match is not None
+        return int(match.group(2))
+    
+    @property
+    def platform_index(self):
+        """Return the index of the currently selected OpenCL platform."""
+        s = self.device_listbox.GetStringSelection()
+        match = re.search(r'\[(\d+)-(\d+)\]', s)
+        assert match is not None
+        return int(match.group(1))
+    
+    @property
+    def is_device_visible(self):
+        """Return True if we are using a backend with device selection."""
+        NO_DEVICE_SELECTION = ['rpcminer', 'bitcoin-miner']
+        return not any(d in self.external_path for d in NO_DEVICE_SELECTION)        
 
     def pause(self):
         """Pause the miner if we are mining, otherwise do nothing."""
@@ -770,13 +792,14 @@ class MinerTab(wx.Panel):
                 executable = "poclbm.exe"
             else:
                 executable = "python poclbm.py"
-        cmd = "%s --user=%s --pass=%s -o %s -p %s -d%d --verbose %s" % (
+        cmd = "%s --user=%s --pass=%s -o %s -p %s --device=%d --platform=%d --verbose %s" % (
                 executable,
                 self.txt_username.GetValue(),
                 self.txt_pass.GetValue(),
                 self.txt_host.GetValue(),
                 self.txt_port.GetValue(),
-                self.device_listbox.GetSelection(),
+                self.device_index,
+                self.platform_index,
                 self.txt_flags.GetValue()
         )
         return cmd, folder
@@ -816,13 +839,14 @@ class MinerTab(wx.Panel):
         if path.endswith('.py'):
             path = "python " + path
 
-        cmd = "%s -u http://%s:%s@%s:%s DEVICE=%d %s" % (
+        cmd = "%s -u http://%s:%s@%s:%s PLATFORM=%d DEVICE=%d %s" % (
             path,
             self.txt_username.GetValue(),
             self.txt_pass.GetValue(),
             self.host_without_http_prefix,
             self.txt_port.GetValue(),
-            self.device_listbox.GetSelection(),
+            self.platform_index,
+            self.device_index,
             self.txt_flags.GetValue())
         return cmd, os.path.dirname(self.external_path)
         
@@ -1324,7 +1348,7 @@ class MinerTab(wx.Panel):
         
         Hide the device dropdown if RPCMiner is present since it doesn't use it. 
         """
-        device_visible = 'rpcminer' not in self.external_path
+        device_visible = self.is_device_visible                          
         self.set_widgets_visible([self.device_lbl, self.device_listbox], device_visible)        
         if device_visible:
             self.inner_sizer.Add(self.device_lbl, (row,0), flag=LBL_STYLE)
