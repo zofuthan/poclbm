@@ -1086,7 +1086,7 @@ class MinerTab(wx.Panel):
         host = new_server.get('host', "").lower()
         if host == "mining.bitcoin.cz": self.layout_slush()
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
-        elif host == "deepbit.net": self.layout_deepbit()
+        elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
         elif host == "btcguild.com": self.layout_btcguild()
         else: self.layout_default()
@@ -1156,7 +1156,7 @@ class MinerTab(wx.Panel):
                                info.get('unconfirmed') or
                                info.get('user', {}).get('unconfirmed_rewards') or
                                0)
-                if self.server_config.get('host') == "deepbit.net":
+                if self.server_config.get('host') == "pit.deepbit.net":
                     ipa = info.get('ipa', False)                    
                     self.withdraw.Enable(ipa)
                     
@@ -1173,7 +1173,7 @@ class MinerTab(wx.Panel):
         host = self.server_config.get('host')
         if host == 'bitpenny.dyndns.biz':
             self.withdraw_bitpenny()
-        elif host == 'deepbit.net':
+        elif host == 'pit.deepbit.net':
             self.withdraw_deepbit()
         
     def on_balance_refresh(self, event=None):
@@ -1182,7 +1182,7 @@ class MinerTab(wx.Panel):
         
         HOSTS_REQUIRING_AUTH_TOKEN = ["mining.bitcoin.cz", 
                                       "btcmine.com", 
-                                      "deepbit.net",
+                                      "pit.deepbit.net",
                                       "btcguild.com"]
         if host in HOSTS_REQUIRING_AUTH_TOKEN:
             self.require_auth_token()
