@@ -1540,6 +1540,12 @@ class GUIMiner(wx.Frame):
         solo_menu.Append(ID_LAUNCH, _("&Launch Bitcoin client as server"), _("Launch the official Bitcoin client as a server for solo mining"), wx.ITEM_NORMAL)
         self.menubar.Append(solo_menu, _("&Solo utilities"))
         
+        ID_START_MINIMIZED = wx.NewId()
+        self.options_menu = wx.Menu()
+        self.start_minimized_chk = self.options_menu.Append(ID_START_MINIMIZED, _("Start &minimized"), _("Start the GUI minimized to the tray."), wx.ITEM_CHECK)
+        self.options_menu.Check(ID_START_MINIMIZED, self.config_data.get('start_minimized', False))
+        self.menubar.Append(self.options_menu, _("&Options")) 
+        
         ID_CHANGE_LANGUAGE = wx.NewId()
         lang_menu = wx.Menu()
         lang_menu.Append(ID_CHANGE_LANGUAGE, _("&Change language..."), "", wx.ITEM_NORMAL)
@@ -1599,6 +1605,9 @@ class GUIMiner(wx.Frame):
 
         self.load_config()           
         self.do_layout()
+        
+        if not self.start_minimized_chk.IsChecked():
+            self.Show()
     
     def set_properties(self):
         self.SetIcons(get_icon_bundle())        
@@ -1741,7 +1750,8 @@ class GUIMiner(wx.Frame):
                            show_summary=self.is_summary_visible(),
                            profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable,
-                           show_opencl_warning=self.do_show_opencl_warning)
+                           show_opencl_warning=self.do_show_opencl_warning,
+                           start_minimized=self.start_minimized_chk.IsChecked())
         logger.debug(_('Saving: ') + json.dumps(config_data))
         try:        
             with open(config_filename, 'w') as f:
@@ -2099,8 +2109,7 @@ class OpenCLWarningDialog(wx.Dialog):
 def run():          
     try:        
         frame_1 = GUIMiner(None, -1, "")
-        app.SetTopWindow(frame_1)
-        frame_1.Show()
+        app.SetTopWindow(frame_1)        
         app.MainLoop()
     except:
         logging.exception("Exception:")
