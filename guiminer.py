@@ -14,12 +14,13 @@ import sys, os, subprocess, errno, re, threading, logging, time, httplib, urllib
 import wx
 import json
 import collections
+import webbrowser
 
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-06-08'
+__version__ = '2011-06-09'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
@@ -44,6 +45,8 @@ LANGUAGES = {
     "Russian": wx.LANGUAGE_RUSSIAN,     
 }
 LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
+
+DONATE_SMALL_URL = 'https://www.mybitcoin.com/sci/paypage.php?t=XFxBkKwtjVYHmQmHzVP1jE_euOoSpMZcXJ5XDtQ1EhISH6nuDWExVwvVYXHQjDC-ApO9Zlwww7tqJnCVP4kBSoaaOdLpyFYSKI9LbTjwnKi-tZEMYKmmfhSqGLWNS_BoVHN0RJFwsQlxKleftmfKG7dpRfQ9or2uX1RE1aWesJA9AsU%2C'
 
 locale = None
 language = None
@@ -1550,9 +1553,14 @@ class GUIMiner(wx.Frame):
         lang_menu = wx.Menu()
         lang_menu.Append(ID_CHANGE_LANGUAGE, _("&Change language..."), "", wx.ITEM_NORMAL)
         self.menubar.Append(lang_menu, _("Language"))
-                             
+        
+        ID_DONATE_SMALL = wx.NewId()
+        donate_menu = wx.Menu()
+        donate_menu.Append(ID_DONATE_SMALL, _("&Donate 99 cents..."), _("Donate $0.99 USD worth of Bitcoins to support GUIMiner development"))
+        self.menubar.Append(donate_menu, _("&Donate"))
+
         help_menu = wx.Menu()
-        help_menu.Append(wx.ID_ABOUT, _("&About/Donate..."), STR_ABOUT, wx.ITEM_NORMAL)
+        help_menu.Append(wx.ID_ABOUT, _("&About..."), STR_ABOUT, wx.ITEM_NORMAL)
         
         self.menubar.Append(help_menu, _("&Help"))
         self.SetMenuBar(self.menubar)  
@@ -1597,6 +1605,7 @@ class GUIMiner(wx.Frame):
         self.Bind(wx.EVT_MENU, self.create_solo_password, id=ID_SOLO)
         self.Bind(wx.EVT_MENU, self.launch_solo_server, id=ID_LAUNCH)
         self.Bind(wx.EVT_MENU, self.on_change_language, id=ID_CHANGE_LANGUAGE)
+        self.Bind(wx.EVT_MENU, self.on_donate, id=ID_DONATE_SMALL)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.Bind(wx.EVT_ICONIZE, lambda event: self.Hide())
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CLOSING, self.on_page_closing)
@@ -1973,7 +1982,8 @@ class GUIMiner(wx.Frame):
         update_language(LANGUAGES[language_name])
         save_language()    
             
-        
+    def on_donate(self, event):
+        webbrowser.open(DONATE_SMALL_URL)
 
 class ChangeLanguageDialog(wx.Dialog):
     """Dialog prompting the user to change languages."""
