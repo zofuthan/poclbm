@@ -1512,11 +1512,16 @@ class GUIMiner(wx.Frame):
         self.parse_config()
         self.do_show_opencl_warning = self.config_data.get('show_opencl_warning', True)
         
-        ID_NEW_EXTERNAL = wx.NewId()
+        ID_NEW_EXTERNAL, ID_NEW_PHOENIX, ID_NEW_CUDA, ID_NEW_UFASOFT  = wx.NewId(), wx.NewId(), wx.NewId(), wx.NewId()
         self.menubar = wx.MenuBar()
-        file_menu = wx.Menu()
-        file_menu.Append(wx.ID_NEW, _("&New OpenCL miner..."), _("Create a new miner profile"), wx.ITEM_NORMAL)
-        file_menu.Append(ID_NEW_EXTERNAL, _("New &other miner..."), _("Create a CPU or CUDA miner (requires external program)"), wx.ITEM_NORMAL)
+        file_menu = wx.Menu()        
+        new_menu = wx.Menu()
+        new_menu.Append(wx.ID_NEW, _("&New OpenCL miner..."), _("Create a new OpenCL miner (default for ATI cards)"), wx.ITEM_NORMAL)
+        new_menu.Append(ID_NEW_PHOENIX, _("New Phoenix miner..."), _("Create a new Phoenix miner (for some ATI cards)"), wx.ITEM_NORMAL)
+        new_menu.Append(ID_NEW_CUDA, _("New CUDA miner..."), _("Create a new CUDA miner (for NVIDIA cards)"), wx.ITEM_NORMAL)
+        new_menu.Append(ID_NEW_UFASOFT, _("New Ufasoft CPU miner..."), _("Create a new Ufasoft miner (for CPUs)"), wx.ITEM_NORMAL)
+        new_menu.Append(ID_NEW_EXTERNAL, _("New &other miner..."), _("Create a new custom miner (requires external program)"), wx.ITEM_NORMAL)        
+        file_menu.AppendMenu(wx.NewId(), 'New miner', new_menu)
         file_menu.Append(wx.ID_SAVE, _("&Save settings"), _("Save your settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_OPEN, _("&Load settings"), _("Load stored settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_EXIT, _("Quit"), STR_QUIT, wx.ITEM_NORMAL)
@@ -1572,6 +1577,9 @@ class GUIMiner(wx.Frame):
                 self.do_show_opencl_warning = not dialog.is_box_checked()
         
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
+        self.Bind(wx.EVT_MENU, self.new_phoenix_profile, id=ID_NEW_PHOENIX)
+        self.Bind(wx.EVT_MENU, self.new_ufasoft_profile, id=ID_NEW_UFASOFT)
+        self.Bind(wx.EVT_MENU, self.new_cuda_profile, id=ID_NEW_CUDA)
         self.Bind(wx.EVT_MENU, self.new_external_profile, id=ID_NEW_EXTERNAL)
         self.Bind(wx.EVT_MENU, self.save_config, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.load_config, id=wx.ID_OPEN)
@@ -1670,6 +1678,21 @@ class GUIMiner(wx.Frame):
         dialog.Destroy()                           
         self.name_new_profile(extra_profile_data=dict(external_path=path))                     
 
+    def new_phoenix_profile(self, event):
+        """Create a new miner using the Phoenix OpenCL miner backend."""
+        path = os.path.join(get_module_path(), 'phoenix.exe')
+        self.name_new_profile(extra_profile_data=dict(external_path=path))
+    
+    def new_ufasoft_profile(self, event):
+        """Create a new miner using the Ufasoft CPU miner backend."""
+        path = os.path.join(get_module_path(), 'miners', 'ufasoft', 'bitcoin-miner.exe')
+        self.name_new_profile(extra_profile_data=dict(external_path=path))
+    
+    def new_cuda_profile(self, event):
+        """Create a new miner using the CUDA GPU miner backend."""
+        path = os.path.join(get_module_path(), 'miners', 'puddinpop', 'rpcminer-cuda.exe')
+        self.name_new_profile(extra_profile_data=dict(external_path=path))
+    
     def get_storage_location(self):
         """Get the folder and filename to store our JSON config."""
         if sys.platform == 'win32':
