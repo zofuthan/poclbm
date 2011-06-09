@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-05-20 23:09-0300\n"
+"POT-Creation-Date: 2011-06-09 13:29-0300\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Dean Lee <xslidian@gmail.com>\n"
 "Language-Team: Chinese Simp <i10n-guiminer@lidian.info>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "X-Poedit-Basepath: /\n"
 "X-Poedit-Language: Chinese\n"
 
-#: guiminer.py:75
+#: guiminer.py:84
 #, python-format
 msgid ""
 "GUIMiner\n"
@@ -53,220 +53,220 @@ msgstr ""
 "每一分 Bitcoin 都欢迎，\n"
 "它们将推动本软件的进一步开发。\n"
 
-#: guiminer.py:96
+#: guiminer.py:105
 msgid "Not started"
 msgstr "未启动"
 
-#: guiminer.py:97
+#: guiminer.py:106
 msgid "Starting..."
 msgstr "正在启动..."
 
-#: guiminer.py:98
+#: guiminer.py:107
 msgid "Stopped"
 msgstr "已停止"
 
-#: guiminer.py:99
+#: guiminer.py:108
 msgid "Paused"
 msgstr "已暂停"
 
-#: guiminer.py:100
+#: guiminer.py:109
 msgid "Start mining!"
 msgstr "开始采矿!"
 
-#: guiminer.py:101
+#: guiminer.py:110
 msgid "Stop mining"
 msgstr "停止采矿"
 
-#: guiminer.py:102
+#: guiminer.py:111
 msgid "Refresh balance"
 msgstr "刷新余额"
 
-#: guiminer.py:103
+#: guiminer.py:112
 msgid "Connection error"
 msgstr "连接错误"
 
-#: guiminer.py:104
+#: guiminer.py:113
 msgid "Username:"
 msgstr "用户名:"
 
-#: guiminer.py:105
+#: guiminer.py:114
 msgid "Password:"
 msgstr "密码:"
 
-#: guiminer.py:106
+#: guiminer.py:115
 msgid "Quit this program"
 msgstr "退出本程序"
 
-#: guiminer.py:107
+#: guiminer.py:116
 msgid "Show about dialog"
 msgstr "显示关于窗口"
 
-#: guiminer.py:182
+#: guiminer.py:197
 #, python-format
 msgid "%.1f Ghash/s"
 msgstr "%.1f Ghash/s"
 
-#: guiminer.py:184
+#: guiminer.py:199
 #, python-format
 msgid "%.1f Mhash/s"
 msgstr "%.1f Mhash/s"
 
-#: guiminer.py:186
+#: guiminer.py:201
 msgid "Connecting..."
 msgstr "正在连接..."
 
-#: guiminer.py:188
+#: guiminer.py:203
 #, python-format
 msgid "%d khash/s"
 msgstr "%d khash/s"
 
-#: guiminer.py:212
+#: guiminer.py:227
 #, python-format
 msgid "Requesting balance: %(request)s"
 msgstr "正在请求余额: %(request)s"
 
-#: guiminer.py:216
+#: guiminer.py:231
 #, python-format
 msgid "Server replied: %(status)s, %(data)s"
 msgstr "服务器回复: %(status)s, %(data)s"
 
-#: guiminer.py:267
+#: guiminer.py:286
 msgid "Miner"
 msgstr "采矿器"
 
-#: guiminer.py:268
+#: guiminer.py:287
 msgid "Speed"
 msgstr "速度"
 
-#: guiminer.py:269
+#: guiminer.py:288
 msgid "Accepted"
 msgstr "已接受"
 
-#: guiminer.py:270
+#: guiminer.py:289
 msgid "Stale"
 msgstr "过时"
 
-#: guiminer.py:271
+#: guiminer.py:290
 msgid "Start/Stop"
 msgstr "启动/停止"
 
-#: guiminer.py:272
+#: guiminer.py:291
 msgid "Autostart"
 msgstr "自动启动"
 
-#: guiminer.py:356
+#: guiminer.py:375
 msgid "Pause all"
 msgstr "全部暂停"
 
-#: guiminer.py:358
+#: guiminer.py:377
 msgid "Restore"
 msgstr "回复"
 
-#: guiminer.py:359
+#: guiminer.py:378
 msgid "Close"
 msgstr "关闭"
 
-#: guiminer.py:413
+#: guiminer.py:434
 #, python-format
 msgid "Listener for \"%s\" started"
 msgstr "\"%s\" 监听器已启动"
 
-#: guiminer.py:428
+#: guiminer.py:449
 #, python-format
 msgid "Listener for \"%(name)s\": %(line)s"
 msgstr "\"%(name)s\" 监听器已启动: %(line)s"
 
-#: guiminer.py:431
+#: guiminer.py:452
 #, python-format
 msgid "Listener for \"%s\" shutting down"
 msgstr "\"%s\" 监听器正在关闭"
 
-#: guiminer.py:462
+#: guiminer.py:496
 msgid "Server:"
 msgstr "服务器:"
 
-#: guiminer.py:467
+#: guiminer.py:501
 msgid "Website:"
 msgstr "网站:"
 
-#: guiminer.py:469
+#: guiminer.py:503
 msgid "Ext. Path:"
 msgstr "外部路径:"
 
-#: guiminer.py:471
+#: guiminer.py:505
 msgid "Host:"
 msgstr "主机:"
 
-#: guiminer.py:473
+#: guiminer.py:507
 msgid "Port:"
 msgstr "端口:"
 
-#: guiminer.py:479
+#: guiminer.py:513
 msgid "Device:"
 msgstr "设备:"
 
-#: guiminer.py:480
+#: guiminer.py:514
 msgid "No OpenCL devices"
 msgstr "无 OpenCL 设备"
 
-#: guiminer.py:481
+#: guiminer.py:515
 msgid "Extra flags:"
 msgstr "附加参数:"
 
-#: guiminer.py:484
+#: guiminer.py:518
 msgid "Balance:"
 msgstr "余额:"
 
-#: guiminer.py:488
+#: guiminer.py:522
 msgid "Withdraw"
 msgstr "取款"
 
-#: guiminer.py:603
+#: guiminer.py:667
 msgid "Default"
 msgstr "默认"
 
-#: guiminer.py:650
+#: guiminer.py:714
 msgid "Start"
 msgstr "启动"
 
-#: guiminer.py:650
+#: guiminer.py:714
 msgid "Stop"
 msgstr "停止"
 
-#: guiminer.py:666
+#: guiminer.py:730
 msgid "Connection problems"
 msgstr "连接问题"
 
-#: guiminer.py:801
+#: guiminer.py:889
 msgid "Running command: "
 msgstr "正在运行命令: "
 
-#: guiminer.py:853
+#: guiminer.py:943
 #, python-format
 msgid "Difficulty 1 hashes: %(nhashes)d %(update_time)s"
 msgstr "难度为 1 的 hash: %(nhashes)d %(update_time)s"
 
-#: guiminer.py:857
+#: guiminer.py:947
 #, python-format
 msgid "Blocks: %d, "
 msgstr "块: %d, "
 
-#: guiminer.py:860
+#: guiminer.py:950
 #, python-format
 msgid "Shares: %d accepted"
 msgstr "贡献: %d 已接受"
 
-#: guiminer.py:862
+#: guiminer.py:952
 #, python-format
 msgid ", %d stale/invalid"
 msgstr ", %d 过时/无效"
 
-#: guiminer.py:884
+#: guiminer.py:974
 #, python-format
 msgid "- last at %s"
 msgstr "- 更新于 %s"
 
-#: guiminer.py:957
+#: guiminer.py:1047
 msgid ""
 "Server to connect to. Different servers have different fees and features.\n"
 "Check their websites for full information."
@@ -274,23 +274,23 @@ msgstr ""
 "要连接到的服务器。不同的服务器有不同的费用与功能。\n"
 "完整信息请查看其网站。"
 
-#: guiminer.py:958
+#: guiminer.py:1048
 msgid "Website of the currently selected server. Click to visit."
 msgstr "当前所选服务器的网站。点击可访问。"
 
-#: guiminer.py:959
+#: guiminer.py:1049
 msgid "Available OpenCL devices on your system."
 msgstr "您系统中可用的 OpenCL 设备。"
 
-#: guiminer.py:960
+#: guiminer.py:1050
 msgid "Host address, without http:// prefix."
 msgstr "主机地址，无需 http:// 前缀。"
 
-#: guiminer.py:961
+#: guiminer.py:1051
 msgid "Server port. This is usually 8332."
 msgstr "服务器端口。通常为 8332。"
 
-#: guiminer.py:962
+#: guiminer.py:1052
 msgid ""
 "The miner's username.\n"
 "May be different than your account username.\n"
@@ -300,7 +300,7 @@ msgstr ""
 "可以与账号用户名不同。\n"
 "示例: Kiv.GPU"
 
-#: guiminer.py:963
+#: guiminer.py:1053
 msgid ""
 "The miner's password.\n"
 "May be different than your account password."
@@ -308,7 +308,7 @@ msgstr ""
 "采矿器的密码。\n"
 "可以与账号密码不同。"
 
-#: guiminer.py:964
+#: guiminer.py:1054
 msgid ""
 "Extra flags to pass to the miner.\n"
 "For Radeon HD 5xxx series use -v -w128 for best results.\n"
@@ -318,40 +318,37 @@ msgstr ""
 "Radeon HD 5xxx 系列可使用 -v -w128 获取最佳效果。\n"
 "其他显卡的参数参见论坛。"
 
-#: guiminer.py:1058
-#: guiminer.py:1148
-#: guiminer.py:1169
+#: guiminer.py:1148 guiminer.py:1242 guiminer.py:1263
 msgid "Auth token rejected by server."
 msgstr "身份认证 token 被服务器拒绝。"
 
-#: guiminer.py:1076
+#: guiminer.py:1166
 #, python-format
 msgid "%s confirmed"
 msgstr "%s 已确认"
 
-#: guiminer.py:1078
+#: guiminer.py:1168
 #, python-format
 msgid ", %s unconfirmed"
 msgstr ", %s 未确认"
 
-#: guiminer.py:1080
+#: guiminer.py:1170
 msgid "Bad response from server."
 msgstr "服务器响应错误。"
 
-#: guiminer.py:1152
-#: guiminer.py:1173
+#: guiminer.py:1246 guiminer.py:1267
 msgid "Withdraw OK"
 msgstr "取款成功"
 
-#: guiminer.py:1332
+#: guiminer.py:1426
 msgid "No registration is required - just enter an address and press Start."
 msgstr "无需注册 - 只需输入地址并按“启动”。"
 
-#: guiminer.py:1334
+#: guiminer.py:1428
 msgid "Address:"
 msgstr "地址:"
 
-#: guiminer.py:1336
+#: guiminer.py:1430
 msgid ""
 "Your receiving address for Bitcoins.\n"
 "E.g.: 1A94cjRpaPBMV9ZNWFihB5rTFEeihBALgc"
@@ -359,7 +356,7 @@ msgstr ""
 "您接收 Bitcoins 的地址。\n"
 "例如: 1A94cjRpaPBMV9ZNWFihB5rTFEeihBALgc"
 
-#: guiminer.py:1351
+#: guiminer.py:1445
 msgid ""
 "Your miner username (not your account username).\n"
 "Example: Kiv.GPU"
@@ -367,12 +364,11 @@ msgstr ""
 "您的采矿器用户名 (不是账号用户名)。\n"
 "示例: Kiv.GPU"
 
-#: guiminer.py:1353
-#: guiminer.py:1373
+#: guiminer.py:1447 guiminer.py:1467
 msgid "Your miner password (not your account password)."
 msgstr "您的采矿器密码 (不是账号密码)。"
 
-#: guiminer.py:1371
+#: guiminer.py:1465
 msgid ""
 "Your miner username. \n"
 "Example: kiv123@kiv123"
@@ -380,181 +376,239 @@ msgstr ""
 "您的采矿器用户名。\n"
 "示例: kiv123@kiv123"
 
-#: guiminer.py:1387
+#: guiminer.py:1481
 msgid "The e-mail address you registered with."
 msgstr "您注册时使用的 e-mail 地址。"
 
-#: guiminer.py:1388
+#: guiminer.py:1482
 msgid "Email:"
 msgstr "Email:"
 
-#: guiminer.py:1403
+#: guiminer.py:1497
 msgid "&Rename..."
 msgstr "重命名(&R)..."
 
-#: guiminer.py:1403
+#: guiminer.py:1497
 msgid "Rename this miner"
 msgstr "重命名该采矿器"
 
-#: guiminer.py:1427
+#: guiminer.py:1522
 msgid "&New OpenCL miner..."
 msgstr "新建 OpenCL 采矿器(&N)..."
 
-#: guiminer.py:1427
-msgid "Create a new miner profile"
+#: guiminer.py:1522
+msgid "Create a new OpenCL miner (default for ATI cards)"
+msgstr ""
+
+#: guiminer.py:1523
+#, fuzzy
+msgid "Create a new Phoenix miner (for some ATI cards)"
 msgstr "创建新的采矿器配置文件"
 
-#: guiminer.py:1428
-msgid "Create a CPU or CUDA miner (requires external program)"
+#: guiminer.py:1523
+#, fuzzy
+msgid "New Phoenix miner..."
+msgstr "新建其他采矿器(&O)..."
+
+#: guiminer.py:1524
+msgid "Create a new CUDA miner (for NVIDIA cards)"
+msgstr ""
+
+#: guiminer.py:1524
+#, fuzzy
+msgid "New CUDA miner..."
+msgstr "新建 OpenCL 采矿器(&N)..."
+
+#: guiminer.py:1525
+#, fuzzy
+msgid "Create a new Ufasoft miner (for CPUs)"
+msgstr "创建新的采矿器配置文件"
+
+#: guiminer.py:1525
+#, fuzzy
+msgid "New Ufasoft CPU miner..."
+msgstr "新建其他采矿器(&O)..."
+
+#: guiminer.py:1526
+#, fuzzy
+msgid "Create a new custom miner (requires external program)"
 msgstr "创建 CPU 或 CUDA 采矿器 (需要外部程序)"
 
-#: guiminer.py:1428
+#: guiminer.py:1526
 msgid "New &other miner..."
 msgstr "新建其他采矿器(&O)..."
 
-#: guiminer.py:1429
+#: guiminer.py:1528
 msgid "&Save settings"
 msgstr "保存设置(&S)"
 
-#: guiminer.py:1429
+#: guiminer.py:1528
 msgid "Save your settings"
 msgstr "保存您的设置"
 
-#: guiminer.py:1430
+#: guiminer.py:1529
 msgid "&Load settings"
 msgstr "加载设置(&L)"
 
-#: guiminer.py:1430
+#: guiminer.py:1529
 msgid "Load stored settings"
 msgstr "加载已储存的设置"
 
-#: guiminer.py:1431
+#: guiminer.py:1530
 msgid "Quit"
 msgstr "退出"
 
-#: guiminer.py:1432
+#: guiminer.py:1531
 msgid "&File"
 msgstr "文件(&F)"
 
-#: guiminer.py:1436
+#: guiminer.py:1535
 msgid "Show summary"
 msgstr "显示概览"
 
-#: guiminer.py:1436
+#: guiminer.py:1535
 msgid "Show summary of all miners"
 msgstr "显示全部采矿器的概览"
 
-#: guiminer.py:1437
+#: guiminer.py:1536
 msgid "Show console"
 msgstr "显示终端"
 
-#: guiminer.py:1437
+#: guiminer.py:1536
 msgid "Show console logs"
 msgstr "显示终端日志"
 
-#: guiminer.py:1438
+#: guiminer.py:1537
 msgid "&View"
 msgstr "查看(&V)"
 
-#: guiminer.py:1442
+#: guiminer.py:1541
 msgid "&Create solo password..."
 msgstr "创建独自采矿密码(&C)..."
 
-#: guiminer.py:1442
+#: guiminer.py:1541
 msgid "Configure a user/pass for solo mining"
 msgstr "配置独自采矿的用户名/密码"
 
-#: guiminer.py:1443
+#: guiminer.py:1542
 msgid "&Set Bitcoin client path..."
 msgstr "设置 Bitcoin 客户端路径(&S)..."
 
-#: guiminer.py:1443
+#: guiminer.py:1542
 msgid "Set the location of the official Bitcoin client"
 msgstr "设置官方 Bitcoin 客户端的位置"
 
-#: guiminer.py:1444
+#: guiminer.py:1543
 msgid "&Launch Bitcoin client as server"
 msgstr "将 Bitcoin 客户端作为服务器启动(&L)"
 
-#: guiminer.py:1444
+#: guiminer.py:1543
 msgid "Launch the official Bitcoin client as a server for solo mining"
 msgstr "将官方 Bitcoin 客户端作为独自采矿的服务器启动"
 
-#: guiminer.py:1445
+#: guiminer.py:1544
 msgid "&Solo utilities"
 msgstr "独自采矿(&S)"
 
-#: guiminer.py:1449
+#: guiminer.py:1548
+#, fuzzy
+msgid "Start &minimized"
+msgstr "开始采矿!"
+
+#: guiminer.py:1548
+msgid "Start the GUI minimized to the tray."
+msgstr ""
+
+#: guiminer.py:1550
+msgid "&Options"
+msgstr ""
+
+#: guiminer.py:1554
 msgid "&Change language..."
 msgstr "更改语言(&C)..."
 
-#: guiminer.py:1450
+#: guiminer.py:1555
 msgid "Language"
 msgstr "语言"
 
-#: guiminer.py:1453
-msgid "&About/Donate..."
+#: guiminer.py:1559
+msgid "&Donate 99 cents..."
+msgstr ""
+
+#: guiminer.py:1559
+msgid "Donate $0.99 USD worth of Bitcoins to support GUIMiner development"
+msgstr ""
+
+#: guiminer.py:1560
+#, fuzzy
+msgid "&Donate"
 msgstr "关于/捐助(&A)..."
 
-#: guiminer.py:1455
+#: guiminer.py:1563
+#, fuzzy
+msgid "&About..."
+msgstr "关于/捐助(&A)..."
+
+#: guiminer.py:1565
 msgid "&Help"
 msgstr "帮助(&H)"
 
-#: guiminer.py:1467
+#: guiminer.py:1577
 msgid "Failed to load taskbar icon; continuing."
 msgstr "无法加载任务栏图标; 正在继续。"
 
-#: guiminer.py:1476
+#: guiminer.py:1586
 msgid "OpenCL not found - can't add a OpenCL miner"
 msgstr "未找到 OpenCL - 无法添加 OpenCL 采矿器"
 
-#: guiminer.py:1506
+#: guiminer.py:1623
 #, python-format
 msgid "GUIMiner - v%s"
 msgstr "GUIMiner - v%s"
 
-#: guiminer.py:1548
+#: guiminer.py:1665
 msgid "Name this miner:"
 msgstr "为该采矿器命名:"
 
-#: guiminer.py:1548
+#: guiminer.py:1665
 msgid "New miner"
 msgstr "新建采矿器"
 
-#: guiminer.py:1551
+#: guiminer.py:1668
 msgid "Untitled"
 msgstr "无标题"
 
-#: guiminer.py:1562
-msgid "External miner (*.exe)|*.exe"
+#: guiminer.py:1679
+#, fuzzy
+msgid "External miner (*.exe)|*.exe|(*.py)|*.py"
 msgstr "外部采矿器 (*.exe)|*.exe"
 
-#: guiminer.py:1564
+#: guiminer.py:1681
 msgid "Select external miner:"
 msgstr "选择外部采矿器:"
 
-#: guiminer.py:1574
+#: guiminer.py:1691
 #, python-format
 msgid "Unsupported external miner %(filename)s. Supported are: %(supported)s"
 msgstr "不支持的外部采矿器 %(filename)s。支持: %(supported)s"
 
-#: guiminer.py:1576
+#: guiminer.py:1693
 msgid "Miner not supported"
 msgstr "采矿器不支持"
 
-#: guiminer.py:1602
+#: guiminer.py:1734
 msgid "Do you want to save changes?"
 msgstr "是否希望保存变更?"
 
-#: guiminer.py:1602
+#: guiminer.py:1734
 msgid "Save"
 msgstr "保存"
 
-#: guiminer.py:1631
+#: guiminer.py:1764
 msgid "Saving: "
 msgstr "正在保存: "
 
-#: guiminer.py:1637
+#: guiminer.py:1770
 #, python-format
 msgid ""
 "Couldn't write save file %s.\n"
@@ -563,111 +617,112 @@ msgstr ""
 "无法写入保存文件 %s。\n"
 "检查其位置是否可写。"
 
-#: guiminer.py:1638
+#: guiminer.py:1771
 msgid "Save unsuccessful"
 msgstr "保存失败"
 
-#: guiminer.py:1640
+#: guiminer.py:1773
 #, python-format
 msgid "Profiles saved OK to %s."
 msgstr "配置文件成功保存于 %s。"
 
-#: guiminer.py:1641
+#: guiminer.py:1774
 msgid "Save successful"
 msgstr "保存成功"
 
-#: guiminer.py:1653
+#: guiminer.py:1786
 #, python-format
 msgid "Loaded: %s"
 msgstr "已加载: %s"
 
-#: guiminer.py:1667
+#: guiminer.py:1800
 msgid "Loading profiles will stop any currently running miners. Continue?"
 msgstr "加载配置文件将停止当前正在运行的全部采矿器。是否继续?"
 
-#: guiminer.py:1668
+#: guiminer.py:1801
 msgid "Load profile"
 msgstr "加载配置文件"
 
-#: guiminer.py:1697
+#: guiminer.py:1830
 msgid "Select path to Bitcoin.exe"
 msgstr "选择 Bitcoin.exe 的路径"
 
-#: guiminer.py:1709
+#: guiminer.py:1842
 msgid "About"
 msgstr "关于"
 
-#: guiminer.py:1735
+#: guiminer.py:1868
 msgid "Closing this miner will stop it. Continue?"
 msgstr "关闭该采矿器将停止其采矿。是否继续?"
 
-#: guiminer.py:1736
+#: guiminer.py:1869
 msgid "Close miner"
 msgstr "关闭采矿器"
 
-#: guiminer.py:1765
+#: guiminer.py:1898
 #, python-format
 msgid "Couldn't find Bitcoin at %s. Is your path set correctly?"
 msgstr "无法在 %s 找到 Bitcoin。您的路径设置是否正确?"
 
-#: guiminer.py:1766
+#: guiminer.py:1899
 msgid "Launch failed"
 msgstr "启动失败"
 
-#: guiminer.py:1769
-msgid "Client launched ok. You can start a miner now with the server set to 'solo'."
+#: guiminer.py:1902
+msgid ""
+"Client launched ok. You can start a miner now with the server set to 'solo'."
 msgstr "客户端启动成功。您现在可以启动服务器设为 'solo' 的采矿器。"
 
-#: guiminer.py:1770
+#: guiminer.py:1903
 msgid "Launched ok."
 msgstr "启动成功。"
 
-#: guiminer.py:1785
+#: guiminer.py:1918
 #, python-format
 msgid "%s already exists. Overwrite?"
 msgstr "%s 已存在。是否覆写?"
 
-#: guiminer.py:1786
+#: guiminer.py:1919
 msgid "bitcoin.conf already exists."
 msgstr "bitcoin.conf 已存在。"
 
-#: guiminer.py:1791
+#: guiminer.py:1924
 msgid "Enter password"
 msgstr "输入密码"
 
-#: guiminer.py:1801
+#: guiminer.py:1934
 msgid "Success"
 msgstr "成功"
 
-#: guiminer.py:1801
+#: guiminer.py:1934
 msgid "Wrote bitcoin config ok."
 msgstr "写入 bitcoin 配置成功。"
 
-#: guiminer.py:1812
+#: guiminer.py:1945
 msgid "Console"
 msgstr "终端"
 
-#: guiminer.py:1824
+#: guiminer.py:1957
 msgid "Summary"
 msgstr "概览"
 
-#: guiminer.py:1837
+#: guiminer.py:1970
 msgid "Rename miner"
 msgstr "重命名采矿器"
 
-#: guiminer.py:1837
+#: guiminer.py:1970
 msgid "Rename to:"
 msgstr "重命名为:"
 
-#: guiminer.py:1842
+#: guiminer.py:1975
 msgid "Change language"
 msgstr "更改语言"
 
-#: guiminer.py:1861
+#: guiminer.py:1995
 msgid "Choose language (requires restart to take full effect)"
 msgstr "选择语言 (需要重新启动方可完全生效)"
 
-#: guiminer.py:1906
+#: guiminer.py:2040
 msgid ""
 "Click the link below to log in to the pool and get a special token. \n"
 "This token lets you securely check your balance.\n"
@@ -677,23 +732,24 @@ msgstr ""
 "该 token 允许您安全地检查余额。\n"
 "要记住该 token 供日后使用，请保存采矿器设置。"
 
-#: guiminer.py:1915
+#: guiminer.py:2049
 msgid "(Paste token here)"
 msgstr "(在此粘贴 token)"
 
-#: guiminer.py:1941
+#: guiminer.py:2075
 msgid "Copy address to clipboard"
 msgstr "复制地址到剪贴板"
 
-#: guiminer.py:1960
+#: guiminer.py:2094
 msgid "No OpenCL devices found."
 msgstr "未找到 OpenCL 设备。"
 
-#: guiminer.py:1963
+#: guiminer.py:2097
 msgid ""
 "No OpenCL devices were found.\n"
 " If you only want to mine using CPU or CUDA, you can ignore this message.\n"
-" If you want to mine on ATI graphics cards, you may need to install the ATI Stream\n"
+" If you want to mine on ATI graphics cards, you may need to install the ATI "
+"Stream\n"
 " SDK, or your GPU may not support OpenCL."
 msgstr ""
 "未找到 OpenCL 设备。\n"
@@ -701,7 +757,6 @@ msgstr ""
 " 如果您想用 ATI 显卡采矿，可能需要安装 ATI Stream SDK，\n"
 " 若已安装，可能您的 GPU 不支持 OpenCL。"
 
-#: guiminer.py:1973
+#: guiminer.py:2107
 msgid "Don't show this message again"
 msgstr "不要再次显示本信息"
-

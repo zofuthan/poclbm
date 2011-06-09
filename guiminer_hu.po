@@ -1,19 +1,13 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-06-09 13:29-0300\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2011-06-04 18:34+0100\n"
+"Last-Translator: Underyx <underer@gmail.com>\n"
+"Language-Team: Español\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: guiminer.py:84
@@ -38,241 +32,258 @@ msgid ""
 "Even a single Bitcoin is appreciated and helps motivate\n"
 "further work on this software.\n"
 msgstr ""
+"GUIMiner\n"
+"\n"
+"verzió: %(version)s\n"
+"\n"
+"GUI készítője: Chris 'Kiv' MacLeod\n"
+"Eredeti poclbm bányászprogram készítője: m0mchil\n"
+"Eredeti rpcminer bányászprogram készítője: puddinpop\n"
+"\n"
+"A forráskód elérhető GitHubon: https://github.com/Kiv/poclbm\n"
+"\n"
+"Ha hasznosnak találtad a programot, kérlek, adományozz a készítőnek:\n"
+"%(address)s\n"
+"\n"
+"Egyetlen bitcoin is nagy motiváció a program továbbfejlesztésére.\n"
 
 #: guiminer.py:105
 msgid "Not started"
-msgstr ""
+msgstr "Nincs elindítva"
 
 #: guiminer.py:106
 msgid "Starting..."
-msgstr ""
+msgstr "Indítás..."
 
 #: guiminer.py:107
 msgid "Stopped"
-msgstr ""
+msgstr "Leállítva"
 
 #: guiminer.py:108
 msgid "Paused"
-msgstr ""
+msgstr "Leállítva"
 
 #: guiminer.py:109
 msgid "Start mining!"
-msgstr ""
+msgstr "Bányászat indítása"
 
 #: guiminer.py:110
 msgid "Stop mining"
-msgstr ""
+msgstr "Bányászat leállítása"
 
 #: guiminer.py:111
 msgid "Refresh balance"
-msgstr ""
+msgstr "Egyenleg frissítése"
 
 #: guiminer.py:112
 msgid "Connection error"
-msgstr ""
+msgstr "Kapcsolódási hiba"
 
 #: guiminer.py:113
 msgid "Username:"
-msgstr ""
+msgstr "Felhasználónév:"
 
 #: guiminer.py:114
 msgid "Password:"
-msgstr ""
+msgstr "Jelszó:"
 
 #: guiminer.py:115
 msgid "Quit this program"
-msgstr ""
+msgstr "Kilépés a programból"
 
 #: guiminer.py:116
 msgid "Show about dialog"
-msgstr ""
+msgstr "Névjegy megjelenítése..."
 
 #: guiminer.py:197
 #, python-format
 msgid "%.1f Ghash/s"
-msgstr ""
+msgstr "%.1f Ghash/s"
 
 #: guiminer.py:199
 #, python-format
 msgid "%.1f Mhash/s"
-msgstr ""
+msgstr "%.1f Mhash/s"
 
 #: guiminer.py:201
 msgid "Connecting..."
-msgstr ""
+msgstr "Kapcsolódás..."
 
 #: guiminer.py:203
 #, python-format
 msgid "%d khash/s"
-msgstr ""
+msgstr "%d khash/s"
 
 #: guiminer.py:227
 #, python-format
 msgid "Requesting balance: %(request)s"
-msgstr ""
+msgstr "Egyenleg lekérése: %(request)s"
 
 #: guiminer.py:231
 #, python-format
 msgid "Server replied: %(status)s, %(data)s"
-msgstr ""
+msgstr "A szerver válasza: %(status)s, %(data)s"
 
 #: guiminer.py:286
 msgid "Miner"
-msgstr ""
+msgstr "Bányász"
 
 #: guiminer.py:287
 msgid "Speed"
-msgstr ""
+msgstr "Sebesség"
 
 #: guiminer.py:288
 msgid "Accepted"
-msgstr ""
+msgstr "Elfogadva"
 
 #: guiminer.py:289
 msgid "Stale"
-msgstr ""
+msgstr "Érvénytelen"
 
 #: guiminer.py:290
 msgid "Start/Stop"
-msgstr ""
+msgstr "Indítás/Leállítás"
 
 #: guiminer.py:291
 msgid "Autostart"
-msgstr ""
+msgstr "Automatikus indítás"
 
 #: guiminer.py:375
 msgid "Pause all"
-msgstr ""
+msgstr "Mind leállítása"
 
 #: guiminer.py:377
 msgid "Restore"
-msgstr ""
+msgstr "Visszaállítás"
 
 #: guiminer.py:378
 msgid "Close"
-msgstr ""
+msgstr "Bezárás"
 
 #: guiminer.py:434
 #, python-format
 msgid "Listener for \"%s\" started"
-msgstr ""
+msgstr "\"%s\" elindult"
 
 #: guiminer.py:449
 #, python-format
 msgid "Listener for \"%(name)s\": %(line)s"
-msgstr ""
+msgstr "Üzenet - \"%(name)s\": %(line)s"
 
 #: guiminer.py:452
 #, python-format
 msgid "Listener for \"%s\" shutting down"
-msgstr ""
+msgstr "\"%s\" leállt"
 
 #: guiminer.py:496
 msgid "Server:"
-msgstr ""
+msgstr "Szerver:"
 
 #: guiminer.py:501
 msgid "Website:"
-msgstr ""
+msgstr "Weboldal:"
 
 #: guiminer.py:503
 msgid "Ext. Path:"
-msgstr ""
+msgstr "Külső útvonal:"
 
 #: guiminer.py:505
 msgid "Host:"
-msgstr ""
+msgstr "Szerver:"
 
 #: guiminer.py:507
 msgid "Port:"
-msgstr ""
+msgstr "Port:"
 
 #: guiminer.py:513
 msgid "Device:"
-msgstr ""
+msgstr "Eszköz:"
 
 #: guiminer.py:514
 msgid "No OpenCL devices"
-msgstr ""
+msgstr "Nincs OpenCL eszközöd"
 
 #: guiminer.py:515
 msgid "Extra flags:"
-msgstr ""
+msgstr "Extra beállítások:"
 
 #: guiminer.py:518
 msgid "Balance:"
-msgstr ""
+msgstr "Egyenleg:"
 
 #: guiminer.py:522
 msgid "Withdraw"
-msgstr ""
+msgstr "Visszavonás"
 
 #: guiminer.py:667
 msgid "Default"
-msgstr ""
+msgstr "Alapértelmezett"
 
 #: guiminer.py:714
 msgid "Start"
-msgstr ""
+msgstr "Indítás"
 
 #: guiminer.py:714
 msgid "Stop"
-msgstr ""
+msgstr "Leállítás"
 
 #: guiminer.py:730
 msgid "Connection problems"
-msgstr ""
+msgstr "Kapcsolódási problémák"
 
 #: guiminer.py:889
 msgid "Running command: "
-msgstr ""
+msgstr "Futtatási parancs: "
 
 #: guiminer.py:943
 #, python-format
 msgid "Difficulty 1 hashes: %(nhashes)d %(update_time)s"
-msgstr ""
+msgstr "Nehézség 1 hash-ek: %(nhashes)d %(update_time)s"
 
 #: guiminer.py:947
 #, python-format
 msgid "Blocks: %d, "
-msgstr ""
+msgstr "Blokkok: %d, "
 
 #: guiminer.py:950
 #, python-format
 msgid "Shares: %d accepted"
-msgstr ""
+msgstr "Részblokkok: %d elfogadva"
 
 #: guiminer.py:952
 #, python-format
 msgid ", %d stale/invalid"
-msgstr ""
+msgstr ", %d érvénytelen"
 
 #: guiminer.py:974
 #, python-format
 msgid "- last at %s"
-msgstr ""
+msgstr "- legutóbbi ekkor: %s"
 
 #: guiminer.py:1047
 msgid ""
 "Server to connect to. Different servers have different fees and features.\n"
 "Check their websites for full information."
 msgstr ""
+"A használandó szerver. Különböző szervereknek különböző díjaik és funkcióik "
+"vannak.\n"
+"További információért nézd meg a weboldalukat."
 
 #: guiminer.py:1048
 msgid "Website of the currently selected server. Click to visit."
-msgstr ""
+msgstr "A kiválasztott szerver weboldala."
 
 #: guiminer.py:1049
 msgid "Available OpenCL devices on your system."
-msgstr ""
+msgstr "A rendszered elérhető OpenCL eszközei."
 
 #: guiminer.py:1050
 msgid "Host address, without http:// prefix."
-msgstr ""
+msgstr "Szerver címe, a http:// nélkül."
 
 #: guiminer.py:1051
 msgid "Server port. This is usually 8332."
-msgstr ""
+msgstr "A szerver portja. Ez általában 8332."
 
 #: guiminer.py:1052
 msgid ""
@@ -280,12 +291,17 @@ msgid ""
 "May be different than your account username.\n"
 "Example: Kiv.GPU"
 msgstr ""
+"A bányász felhasználóneve.\n"
+"Lehet, hogy különbözik a fiókod felhasználónevétől.\n"
+"Például: Kiv.GPU"
 
 #: guiminer.py:1053
 msgid ""
 "The miner's password.\n"
 "May be different than your account password."
 msgstr ""
+"A bányász jelszava.\n"
+"Lehet, hogy különbözik a fiókod jelszavától.\n"
 
 #: guiminer.py:1054
 msgid ""
@@ -293,190 +309,209 @@ msgid ""
 "For Radeon HD 5xxx series use -v -w128 for best results.\n"
 "For other cards consult the forum."
 msgstr ""
+"A bányászprogramnak küldött extra beállítások.\n"
+"Radeon HD 5xxx-es videokártyáknál használd azt, hogy -v -w128.\n"
+"Más videokártyáknál nézz utána a fórumban (forum.bitcoin.org)."
 
 #: guiminer.py:1148 guiminer.py:1242 guiminer.py:1263
 msgid "Auth token rejected by server."
-msgstr ""
+msgstr "Azonosítási kód visszautasítva a szerver által."
 
 #: guiminer.py:1166
 #, python-format
 msgid "%s confirmed"
-msgstr ""
+msgstr "%s visszaigazolt"
 
 #: guiminer.py:1168
 #, python-format
 msgid ", %s unconfirmed"
-msgstr ""
+msgstr ", %s nincs visszaigazolva"
 
 #: guiminer.py:1170
 msgid "Bad response from server."
-msgstr ""
+msgstr "Hibás válasz a szervertől."
 
 #: guiminer.py:1246 guiminer.py:1267
 msgid "Withdraw OK"
-msgstr ""
+msgstr "Sikeres visszavonás"
 
 #: guiminer.py:1426
 msgid "No registration is required - just enter an address and press Start."
 msgstr ""
+"Nem kell regisztrálni - csak írd be a címed és nyomj az Indítás gombra."
 
 #: guiminer.py:1428
 msgid "Address:"
-msgstr ""
+msgstr "Cím:"
 
 #: guiminer.py:1430
 msgid ""
 "Your receiving address for Bitcoins.\n"
 "E.g.: 1A94cjRpaPBMV9ZNWFihB5rTFEeihBALgc"
 msgstr ""
+"A Bitcoin címed, amire a pénz érkezzen.\n"
+"Például: 1A94cjRpaPBMV9ZNWFihB5rTFEeihBALgc"
 
 #: guiminer.py:1445
 msgid ""
 "Your miner username (not your account username).\n"
 "Example: Kiv.GPU"
 msgstr ""
+"A bányász felhasználóneve (nem a fiók felhasználóneve).\n"
+"Például: Kiv.GPU"
 
 #: guiminer.py:1447 guiminer.py:1467
 msgid "Your miner password (not your account password)."
-msgstr ""
+msgstr "A bányász jelszava (nem a fiók jelszava)."
 
 #: guiminer.py:1465
 msgid ""
 "Your miner username. \n"
 "Example: kiv123@kiv123"
 msgstr ""
+"A bányász felhasználóneve. \n"
+"Például: kiv123@kiv123"
 
 #: guiminer.py:1481
 msgid "The e-mail address you registered with."
-msgstr ""
+msgstr "Az e-mail cím, amivel regisztráltál"
 
 #: guiminer.py:1482
 msgid "Email:"
-msgstr ""
+msgstr "E-mail cím:"
 
 #: guiminer.py:1497
 msgid "&Rename..."
-msgstr ""
+msgstr "&Átnevezés..."
 
 #: guiminer.py:1497
 msgid "Rename this miner"
-msgstr ""
+msgstr "Bányász átnevezése"
 
 #: guiminer.py:1522
 msgid "&New OpenCL miner..."
-msgstr ""
+msgstr "&Új OpenCL bányász..."
 
 #: guiminer.py:1522
 msgid "Create a new OpenCL miner (default for ATI cards)"
 msgstr ""
 
 #: guiminer.py:1523
+#, fuzzy
 msgid "Create a new Phoenix miner (for some ATI cards)"
-msgstr ""
+msgstr "Új bányászprofil"
 
 #: guiminer.py:1523
+#, fuzzy
 msgid "New Phoenix miner..."
-msgstr ""
+msgstr "Új külső bányász..."
 
 #: guiminer.py:1524
 msgid "Create a new CUDA miner (for NVIDIA cards)"
 msgstr ""
 
 #: guiminer.py:1524
+#, fuzzy
 msgid "New CUDA miner..."
-msgstr ""
+msgstr "&Új OpenCL bányász..."
 
 #: guiminer.py:1525
+#, fuzzy
 msgid "Create a new Ufasoft miner (for CPUs)"
-msgstr ""
+msgstr "Új bányászprofil"
 
 #: guiminer.py:1525
+#, fuzzy
 msgid "New Ufasoft CPU miner..."
-msgstr ""
+msgstr "Új külső bányász..."
 
 #: guiminer.py:1526
+#, fuzzy
 msgid "Create a new custom miner (requires external program)"
-msgstr ""
+msgstr "Új CPU, vagy CUDA bányász (külső bányászprogrammal)"
 
 #: guiminer.py:1526
 msgid "New &other miner..."
-msgstr ""
+msgstr "Új külső bányász..."
 
 #: guiminer.py:1528
 msgid "&Save settings"
-msgstr ""
+msgstr "&Beállítások mentése"
 
 #: guiminer.py:1528
 msgid "Save your settings"
-msgstr ""
+msgstr "Beállítások mentése"
 
 #: guiminer.py:1529
 msgid "&Load settings"
-msgstr ""
+msgstr "&Beállítások betöltése"
 
 #: guiminer.py:1529
 msgid "Load stored settings"
-msgstr ""
+msgstr "Elmentett beállítások betöltése"
 
 #: guiminer.py:1530
 msgid "Quit"
-msgstr ""
+msgstr "Kilépés"
 
 #: guiminer.py:1531
 msgid "&File"
-msgstr ""
+msgstr "&Fájl"
 
 #: guiminer.py:1535
 msgid "Show summary"
-msgstr ""
+msgstr "Összegzés megjelenítése"
 
 #: guiminer.py:1535
 msgid "Show summary of all miners"
-msgstr ""
+msgstr "Minden bányász összegsésének megjelenítése"
 
 #: guiminer.py:1536
 msgid "Show console"
-msgstr ""
+msgstr "Konzol megjelenítése..."
 
 #: guiminer.py:1536
 msgid "Show console logs"
-msgstr ""
+msgstr "Konzolnaplók megjelenítése..."
 
 #: guiminer.py:1537
 msgid "&View"
-msgstr ""
+msgstr "&Nézet"
 
 #: guiminer.py:1541
 msgid "&Create solo password..."
-msgstr ""
+msgstr "&Szóló jelszó készítése..."
 
 #: guiminer.py:1541
 msgid "Configure a user/pass for solo mining"
-msgstr ""
+msgstr "Felhasználónév és jelszó beállítása szóló bányászathoz"
 
 #: guiminer.py:1542
 msgid "&Set Bitcoin client path..."
-msgstr ""
+msgstr "&Bitcoin kliens helyének megadása..."
 
 #: guiminer.py:1542
 msgid "Set the location of the official Bitcoin client"
-msgstr ""
+msgstr "Add meg a hivatalos Bitcoin kliens helyét"
 
 #: guiminer.py:1543
 msgid "&Launch Bitcoin client as server"
-msgstr ""
+msgstr "&Bitcoin kliens indítása szerverként"
 
 #: guiminer.py:1543
 msgid "Launch the official Bitcoin client as a server for solo mining"
 msgstr ""
+"Szóló bányászathoz indítsd el a hivatalos Bitcoin bányászprogramot "
+"szerverként"
 
 #: guiminer.py:1544
 msgid "&Solo utilities"
-msgstr ""
+msgstr "&Szóló eszközök"
 
 #: guiminer.py:1548
+#, fuzzy
 msgid "Start &minimized"
-msgstr ""
+msgstr "Bányászat indítása"
 
 #: guiminer.py:1548
 msgid "Start the GUI minimized to the tray."
@@ -488,11 +523,11 @@ msgstr ""
 
 #: guiminer.py:1554
 msgid "&Change language..."
-msgstr ""
+msgstr "&Nyelv változtatása..."
 
 #: guiminer.py:1555
 msgid "Language"
-msgstr ""
+msgstr "Nyelv"
 
 #: guiminer.py:1559
 msgid "&Donate 99 cents..."
@@ -503,70 +538,75 @@ msgid "Donate $0.99 USD worth of Bitcoins to support GUIMiner development"
 msgstr ""
 
 #: guiminer.py:1560
+#, fuzzy
 msgid "&Donate"
-msgstr ""
+msgstr "&Névjegy/Adományok..."
 
 #: guiminer.py:1563
+#, fuzzy
 msgid "&About..."
-msgstr ""
+msgstr "&Névjegy/Adományok..."
 
 #: guiminer.py:1565
 msgid "&Help"
-msgstr ""
+msgstr "&Segítség"
 
 #: guiminer.py:1577
 msgid "Failed to load taskbar icon; continuing."
-msgstr ""
+msgstr "Tálcaikon betöltése sikertelen; folytatás..."
 
 #: guiminer.py:1586
 msgid "OpenCL not found - can't add a OpenCL miner"
-msgstr ""
+msgstr "Az OpenCL nem található - nem lehet OpenCL bányászt indítani"
 
 #: guiminer.py:1623
 #, python-format
 msgid "GUIMiner - v%s"
-msgstr ""
+msgstr "GUIMiner - v%s"
 
 #: guiminer.py:1665
 msgid "Name this miner:"
-msgstr ""
+msgstr "Bányász neve:"
 
 #: guiminer.py:1665
 msgid "New miner"
-msgstr ""
+msgstr "Új bányász"
 
 #: guiminer.py:1668
 msgid "Untitled"
-msgstr ""
+msgstr "Névtelen"
 
 #: guiminer.py:1679
+#, fuzzy
 msgid "External miner (*.exe)|*.exe|(*.py)|*.py"
-msgstr ""
+msgstr "Külső bányászprogram (*.exe)|*.exe"
 
 #: guiminer.py:1681
 msgid "Select external miner:"
-msgstr ""
+msgstr "Válaszd ki a külső bányászprogramot:"
 
 #: guiminer.py:1691
-#, python-format
+#, fuzzy, python-format
 msgid "Unsupported external miner %(filename)s. Supported are: %(supported)s"
 msgstr ""
+"A külső bányászprogram (%(filename)s) nem támogatott. A következőket "
+"használhatod: %(supported)"
 
 #: guiminer.py:1693
 msgid "Miner not supported"
-msgstr ""
+msgstr "A bányászprogram nem támogatott"
 
 #: guiminer.py:1734
 msgid "Do you want to save changes?"
-msgstr ""
+msgstr "Elmented a változtatásokat?"
 
 #: guiminer.py:1734
 msgid "Save"
-msgstr ""
+msgstr "Mentés"
 
 #: guiminer.py:1764
 msgid "Saving: "
-msgstr ""
+msgstr "Mentés:"
 
 #: guiminer.py:1770
 #, python-format
@@ -574,110 +614,117 @@ msgid ""
 "Couldn't write save file %s.\n"
 "Check the location is writable."
 msgstr ""
+"Nem sikerült ide menteni: %s.\n"
+"Ellenőrizd le hogy írható-e a mappa!"
 
 #: guiminer.py:1771
 msgid "Save unsuccessful"
-msgstr ""
+msgstr "Sikertelen mentés"
 
 #: guiminer.py:1773
 #, python-format
 msgid "Profiles saved OK to %s."
-msgstr ""
+msgstr "Profil sikeresen elmentve ide: %s."
 
 #: guiminer.py:1774
 msgid "Save successful"
-msgstr ""
+msgstr "Sikeres mentés"
 
 #: guiminer.py:1786
 #, python-format
 msgid "Loaded: %s"
-msgstr ""
+msgstr "Betöltve: %s"
 
 #: guiminer.py:1800
 msgid "Loading profiles will stop any currently running miners. Continue?"
 msgstr ""
+"Egy profil betöltése le fogja állítani a jelenleg futó bányászokat. Biztos "
+"ezt akarod?"
 
 #: guiminer.py:1801
 msgid "Load profile"
-msgstr ""
+msgstr "Profil betöltve"
 
 #: guiminer.py:1830
 msgid "Select path to Bitcoin.exe"
-msgstr ""
+msgstr "Válaszd ki a Bitcoin.exe programfájlt"
 
 #: guiminer.py:1842
 msgid "About"
-msgstr ""
+msgstr "Névjegy"
 
 #: guiminer.py:1868
 msgid "Closing this miner will stop it. Continue?"
-msgstr ""
+msgstr "A bányász bezárásával leállítod azt. Biztos bezárod?"
 
 #: guiminer.py:1869
 msgid "Close miner"
-msgstr ""
+msgstr "Bányász bezárása"
 
 #: guiminer.py:1898
 #, python-format
 msgid "Couldn't find Bitcoin at %s. Is your path set correctly?"
-msgstr ""
+msgstr "A Bitcoin nem található itt: %s. Biztos ez a helyes útvonal?"
 
 #: guiminer.py:1899
 msgid "Launch failed"
-msgstr ""
+msgstr "Indítás sikertelen"
 
 #: guiminer.py:1902
-msgid "Client launched ok. You can start a miner now with the server set to 'solo'."
+msgid ""
+"Client launched ok. You can start a miner now with the server set to 'solo'."
 msgstr ""
+"A kliens sikeresen elindult. Most már elkezdhetsz bányászni úgy, hogy a "
+"szerver \"Szóló\"-ra van állítva."
 
 #: guiminer.py:1903
 msgid "Launched ok."
-msgstr ""
+msgstr "Sikeres indítás"
 
 #: guiminer.py:1918
 #, python-format
 msgid "%s already exists. Overwrite?"
-msgstr ""
+msgstr "%s már létezik. Felülírja?"
 
 #: guiminer.py:1919
 msgid "bitcoin.conf already exists."
-msgstr ""
+msgstr "A bitcoin.conf fájl már létezik."
 
 #: guiminer.py:1924
 msgid "Enter password"
-msgstr ""
+msgstr "Írd be a jelszavad"
 
 #: guiminer.py:1934
 msgid "Success"
-msgstr ""
+msgstr "Sikerült"
 
 #: guiminer.py:1934
 msgid "Wrote bitcoin config ok."
-msgstr ""
+msgstr "Bitcoin konfiguráció sikeresen megírva."
 
 #: guiminer.py:1945
 msgid "Console"
-msgstr ""
+msgstr "Konzol"
 
 #: guiminer.py:1957
 msgid "Summary"
-msgstr ""
+msgstr "Összegzés"
 
 #: guiminer.py:1970
 msgid "Rename miner"
-msgstr ""
+msgstr "Bányász átnevezése"
 
 #: guiminer.py:1970
 msgid "Rename to:"
-msgstr ""
+msgstr "Átnevezés erre:"
 
 #: guiminer.py:1975
 msgid "Change language"
-msgstr ""
+msgstr "Nyelv változtatása"
 
 #: guiminer.py:1995
 msgid "Choose language (requires restart to take full effect)"
-msgstr ""
+msgstr "Válassz nyelvet (a beállítás a program újraindításakor lép érvénybe)"
 
 #: guiminer.py:2040
 msgid ""
@@ -685,27 +732,38 @@ msgid ""
 "This token lets you securely check your balance.\n"
 "To remember this token for the future, save your miner settings."
 msgstr ""
+"Kattints a lenti linkre hogy a bányászcsapat oldalán kapj egy kódot.\n"
+"Ez a kód fogja lehetővé tenni, hogy a program lekérdezhesse az egyenleged.\n"
+"Mentsd el a program beállításait majd, hogy ne kelljen később újra beírnod a "
+"kódot."
 
 #: guiminer.py:2049
 msgid "(Paste token here)"
-msgstr ""
+msgstr "(Írd be ide a kódot)"
 
 #: guiminer.py:2075
 msgid "Copy address to clipboard"
-msgstr ""
+msgstr "Cím másolása vágólapra"
 
 #: guiminer.py:2094
 msgid "No OpenCL devices found."
-msgstr ""
+msgstr "Nem található OpenCL eszköz."
 
 #: guiminer.py:2097
 msgid ""
 "No OpenCL devices were found.\n"
 " If you only want to mine using CPU or CUDA, you can ignore this message.\n"
-" If you want to mine on ATI graphics cards, you may need to install the ATI Stream\n"
+" If you want to mine on ATI graphics cards, you may need to install the ATI "
+"Stream\n"
 " SDK, or your GPU may not support OpenCL."
 msgstr ""
+"Nem található OpenCL eszköz.\n"
+"Ha csak CPU-val vagy CUDA-val akarsz bányászni, hagyd figyelmen kívül ezt az "
+"üzenetet.\n"
+"Ha ATI videokártyával akarsz bányászni, lehet, hogy fel kell telepítened az "
+"ATI Stream SDK-t,\n"
+"vagy pedig a videokártyád nem támogatja az OpenCL-t.\n"
 
 #: guiminer.py:2107
 msgid "Don't show this message again"
-msgstr ""
+msgstr "Ne mutasd ezt többször"
