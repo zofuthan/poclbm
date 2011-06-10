@@ -173,7 +173,7 @@ def get_opencl_devices():
 
 def get_icon_bundle():
     """Return the Bitcoin program icon bundle."""
-    return wx.IconBundleFromFile("logo.ico", wx.BITMAP_TYPE_ICO)
+    return wx.IconBundleFromFile(os.path.join(get_module_path(), "logo.ico"), wx.BITMAP_TYPE_ICO)
 
 def get_taskbar_icon():
     """Return the taskbar icon.
