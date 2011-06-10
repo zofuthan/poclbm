@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-09 13:29-0300\n"
+"POT-Creation-Date: 2011-06-10 12:41-0300\n"
 "PO-Revision-Date: 2011-05-20 00:00-0000\n"
 "Last-Translator: Bitcoins Wallet <www.bitcoinswallet.com>\n"
 "Language-Team: Español\n"
@@ -433,6 +433,11 @@ msgstr "Crear un nuevo minero CPU o CUDA (requiere un programa externo)"
 #: guiminer.py:1526
 msgid "New &other miner..."
 msgstr "Nuevo minero diferente..."
+
+#: guiminer.py:1527
+#, fuzzy
+msgid "&New miner"
+msgstr "Nuevo minero"
 
 #: guiminer.py:1528
 msgid "&Save settings"

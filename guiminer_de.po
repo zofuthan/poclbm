@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-09 13:29-0300\n"
+"POT-Creation-Date: 2011-06-10 12:41-0300\n"
 "PO-Revision-Date: 2011-06-05 16:30+0100\n"
 "Last-Translator: Liikaa <failbox@tyfoo.org>\n"
 "Language-Team: German\n"
@@ -445,6 +445,11 @@ msgstr "Neuen CPU- oder CUDA-Miner erstellen (erfordert externe Anwendung)"
 #: guiminer.py:1526
 msgid "New &other miner..."
 msgstr "Neuen &externen Miner..."
+
+#: guiminer.py:1527
+#, fuzzy
+msgid "&New miner"
+msgstr "Neuer Miner"
 
 #: guiminer.py:1528
 msgid "&Save settings"

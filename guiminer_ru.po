@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-09 13:29-0300\n"
-"PO-Revision-Date: 2011-04-20 19:55-0400\n"
+"POT-Creation-Date: 2011-06-10 12:41-0300\n"
+"PO-Revision-Date: 2011-06-10 12:42-0400\n"
 "Last-Translator: Chris MacLeod <ChrisM6794@gmail.com>\n"
 "Language-Team: Russian\n"
 "MIME-Version: 1.0\n"
@@ -48,7 +48,7 @@ msgstr ""
 "\n"
 "%(address)s\n"
 "\n"
-"Даже один Биткоин полезен и помогает мотивировать\n"
+"Даже один битцент полезен, и помогает мотивировать\n"
 "дальнейшую работу над этой программой.\n"
 
 #: guiminer.py:105
@@ -269,8 +269,7 @@ msgid ""
 "Server to connect to. Different servers have different fees and features.\n"
 "Check their websites for full information."
 msgstr ""
-"Сервер для подключения. Разные серверы имеют разные возможности и взимаемый "
-"процент.\n"
+"Сервер для подключения. Разные серверы имеют разные возможности и взимаемый процент.\n"
 "Подробней смотрите на их сайтах."
 
 #: guiminer.py:1048
@@ -314,10 +313,12 @@ msgid ""
 "For other cards consult the forum."
 msgstr ""
 "Доп. параметры передаваемые генератору.\n"
-"Для лучших результатов на Радеонах HD 5xxx серий, используйте -v -w128.\n"
+"Для лучших результатов на Радеонах HD 5xxx серий, под OpenCL, используйте -v -w128.\n"
 "По поводу других видеокарт - проверьте форум."
 
-#: guiminer.py:1148 guiminer.py:1242 guiminer.py:1263
+#: guiminer.py:1148
+#: guiminer.py:1242
+#: guiminer.py:1263
 msgid "Auth token rejected by server."
 msgstr "Код авторизации не принят сервером"
 
@@ -335,7 +336,8 @@ msgstr ", %s не подтверждено"
 msgid "Bad response from server."
 msgstr "Неправильный ответ сервера."
 
-#: guiminer.py:1246 guiminer.py:1267
+#: guiminer.py:1246
+#: guiminer.py:1267
 msgid "Withdraw OK"
 msgstr "Выплата произведена"
 
@@ -363,7 +365,8 @@ msgstr ""
 "Логин генератора (miner username), может отличаться от логина аккаунта.\n"
 "Пример: Kiv.GPU"
 
-#: guiminer.py:1447 guiminer.py:1467
+#: guiminer.py:1447
+#: guiminer.py:1467
 msgid "Your miner password (not your account password)."
 msgstr "Пароль генератора, может отличаться от пароля аккаунта ."
 
@@ -397,45 +400,43 @@ msgstr "&Создать OpenCL генератор..."
 
 #: guiminer.py:1522
 msgid "Create a new OpenCL miner (default for ATI cards)"
-msgstr ""
+msgstr "Создать новый OpenCL генератор (по умолчанию для карт ATI)"
 
 #: guiminer.py:1523
-#, fuzzy
 msgid "Create a new Phoenix miner (for some ATI cards)"
-msgstr "Создать новый профиль генератора"
+msgstr "Создать новый Phoenix генератор (для некоторых ATI карт)"
 
 #: guiminer.py:1523
-#, fuzzy
 msgid "New Phoenix miner..."
-msgstr "Создать &другой генератор..."
+msgstr "Создать Phoenix генератор..."
 
 #: guiminer.py:1524
 msgid "Create a new CUDA miner (for NVIDIA cards)"
-msgstr ""
+msgstr "Создать CUDA генератор (для карт NVIDIA)"
 
 #: guiminer.py:1524
-#, fuzzy
 msgid "New CUDA miner..."
-msgstr "&Создать OpenCL генератор..."
+msgstr "Создать CUDA генератор..."
 
 #: guiminer.py:1525
-#, fuzzy
 msgid "Create a new Ufasoft miner (for CPUs)"
-msgstr "Создать новый профиль генератора"
+msgstr "Создать Ufasoft генератор (для CPU)"
 
 #: guiminer.py:1525
-#, fuzzy
 msgid "New Ufasoft CPU miner..."
-msgstr "Создать &другой генератор..."
+msgstr "Создать Ufasoft генератор..."
 
 #: guiminer.py:1526
-#, fuzzy
 msgid "Create a new custom miner (requires external program)"
-msgstr "Создать CPU или CUDA генератор (требуется дополнительный софт)"
+msgstr "Создать генератор использующий другой движок (требуется дополнительный софт)"
 
 #: guiminer.py:1526
 msgid "New &other miner..."
 msgstr "Создать &другой генератор..."
+
+#: guiminer.py:1527
+msgid "&New miner"
+msgstr "&Новый генератор"
 
 #: guiminer.py:1528
 msgid "&Save settings"
@@ -503,30 +504,27 @@ msgstr "&Запустить Bitcoin клиент как сервер"
 
 #: guiminer.py:1543
 msgid "Launch the official Bitcoin client as a server for solo mining"
-msgstr ""
-"Запустить официальный Bitcoin клиент в режиме сервера для одиночного "
-"генерирования"
+msgstr "Запустить официальный Bitcoin клиент в режиме сервера для одиночного генерирования"
 
 #: guiminer.py:1544
 msgid "&Solo utilities"
 msgstr "&Соло режим"
 
 #: guiminer.py:1548
-#, fuzzy
 msgid "Start &minimized"
-msgstr "Старт!"
+msgstr "Запускать в трее"
 
 #: guiminer.py:1548
 msgid "Start the GUI minimized to the tray."
-msgstr ""
+msgstr "Запускает GUI свернутым в трей"
 
 #: guiminer.py:1550
 msgid "&Options"
-msgstr ""
+msgstr "&Настройки"
 
 #: guiminer.py:1554
 msgid "&Change language..."
-msgstr "Изменить язык..."
+msgstr "&Изменить язык..."
 
 #: guiminer.py:1555
 msgid "Language"
@@ -534,21 +532,19 @@ msgstr "Язык"
 
 #: guiminer.py:1559
 msgid "&Donate 99 cents..."
-msgstr ""
+msgstr "&99 центов автору"
 
 #: guiminer.py:1559
 msgid "Donate $0.99 USD worth of Bitcoins to support GUIMiner development"
-msgstr ""
+msgstr "Пожертвовать автору сумму BTC, равную по курсу 0,99$, чтобы поддержать развитие GUIminer"
 
 #: guiminer.py:1560
-#, fuzzy
 msgid "&Donate"
-msgstr "&О программе/Помочь..."
+msgstr "&Помочь"
 
 #: guiminer.py:1563
-#, fuzzy
 msgid "&About..."
-msgstr "&О программе/Помочь..."
+msgstr "&О программе"
 
 #: guiminer.py:1565
 msgid "&Help"
@@ -573,16 +569,15 @@ msgstr "Назовите генератор:"
 
 #: guiminer.py:1665
 msgid "New miner"
-msgstr "Новый генератор"
+msgstr "&Новый генератор"
 
 #: guiminer.py:1668
 msgid "Untitled"
 msgstr "Без имени"
 
 #: guiminer.py:1679
-#, fuzzy
 msgid "External miner (*.exe)|*.exe|(*.py)|*.py"
-msgstr "Внешний генератор (*.exe)|*.exe"
+msgstr "Внешний генератор (*.exe)|*.exe|(*.py)|*.py"
 
 #: guiminer.py:1681
 msgid "Select external miner:"
@@ -591,9 +586,7 @@ msgstr "Выберите внешний генератор:"
 #: guiminer.py:1691
 #, python-format
 msgid "Unsupported external miner %(filename)s. Supported are: %(supported)s"
-msgstr ""
-"Неподдерживаемый внешний генератор %(filename)s. Поддерживаемые: %(supported)"
-"s"
+msgstr "Неподдерживаемый внешний генератор %(filename)s. Поддерживаемые: %(supported)s"
 
 #: guiminer.py:1693
 msgid "Miner not supported"
@@ -672,11 +665,8 @@ msgid "Launch failed"
 msgstr "Сбой запуска"
 
 #: guiminer.py:1902
-msgid ""
-"Client launched ok. You can start a miner now with the server set to 'solo'."
-msgstr ""
-"Клиент успешно запущен. Можно запустить генератор с указанием на \"Соло\" "
-"сервер."
+msgid "Client launched ok. You can start a miner now with the server set to 'solo'."
+msgstr "Клиент успешно запущен. Можно запустить генератор с указанием на \"Соло\" сервер."
 
 #: guiminer.py:1903
 msgid "Launched ok."
@@ -733,8 +723,7 @@ msgid ""
 "This token lets you securely check your balance.\n"
 "To remember this token for the future, save your miner settings."
 msgstr ""
-"Нажмите ссылку ниже, чтобы войти в пул и получить специальный код (API "
-"token). \n"
+"Нажмите ссылку ниже, чтобы войти в пул и получить специальный код (API token). \n"
 "Этот код позволяет проверять состояние баланса.\n"
 "При сохранении настроек, код сохраняется."
 
@@ -754,13 +743,11 @@ msgstr "Не обнаружено OpenCL устройств."
 msgid ""
 "No OpenCL devices were found.\n"
 " If you only want to mine using CPU or CUDA, you can ignore this message.\n"
-" If you want to mine on ATI graphics cards, you may need to install the ATI "
-"Stream\n"
+" If you want to mine on ATI graphics cards, you may need to install the ATI Stream\n"
 " SDK, or your GPU may not support OpenCL."
 msgstr ""
 "Не обнаружено OpenCL устройств.\n"
-"Если вы собирались генерировать используя CPU или CUDA, игнорируйте это "
-"сообщение.\n"
+"Если вы собирались генерировать используя CPU или CUDA, игнорируйте это сообщение.\n"
 "Если вы хотите генерировать на видеокартах ATI, нужно установить ATI Stream\n"
 "SDK. Или возможно, ваша карта не поддерживает OpenCL.\n"
 

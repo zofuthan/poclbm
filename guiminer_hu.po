@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-09 13:29-0300\n"
+"POT-Creation-Date: 2011-06-10 12:41-0300\n"
 "PO-Revision-Date: 2011-06-04 18:34+0100\n"
 "Last-Translator: Underyx <underer@gmail.com>\n"
 "Language-Team: Español\n"
@@ -433,6 +433,11 @@ msgstr "Új CPU, vagy CUDA bányász (külső bányászprogrammal)"
 #: guiminer.py:1526
 msgid "New &other miner..."
 msgstr "Új külső bányász..."
+
+#: guiminer.py:1527
+#, fuzzy
+msgid "&New miner"
+msgstr "Új bányász"
 
 #: guiminer.py:1528
 msgid "&Save settings"

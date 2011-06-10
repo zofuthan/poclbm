@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-09 13:29-0300\n"
+"POT-Creation-Date: 2011-06-10 12:41-0300\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Dean Lee <xslidian@gmail.com>\n"
 "Language-Team: Chinese Simp <i10n-guiminer@lidian.info>\n"
@@ -437,6 +437,11 @@ msgstr "创建 CPU 或 CUDA 采矿器 (需要外部程序)"
 #: guiminer.py:1526
 msgid "New &other miner..."
 msgstr "新建其他采矿器(&O)..."
+
+#: guiminer.py:1527
+#, fuzzy
+msgid "&New miner"
+msgstr "新建采矿器"
 
 #: guiminer.py:1528
 msgid "&Save settings"

@@ -1524,7 +1524,7 @@ class GUIMiner(wx.Frame):
         new_menu.Append(ID_NEW_CUDA, _("New CUDA miner..."), _("Create a new CUDA miner (for NVIDIA cards)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_UFASOFT, _("New Ufasoft CPU miner..."), _("Create a new Ufasoft miner (for CPUs)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_EXTERNAL, _("New &other miner..."), _("Create a new custom miner (requires external program)"), wx.ITEM_NORMAL)        
-        file_menu.AppendMenu(wx.NewId(), 'New miner', new_menu)
+        file_menu.AppendMenu(wx.NewId(), _('&New miner'), new_menu)
         file_menu.Append(wx.ID_SAVE, _("&Save settings"), _("Save your settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_OPEN, _("&Load settings"), _("Load stored settings"), wx.ITEM_NORMAL)
         file_menu.Append(wx.ID_EXIT, _("Quit"), STR_QUIT, wx.ITEM_NORMAL)
