@@ -16,6 +16,11 @@ import json
 import collections
 import webbrowser
 
+try:
+    import win32api, win32con, win32process
+except ImportError:
+    pass
+
 from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
@@ -233,7 +238,19 @@ def http_request(hostname, *args):
         return response, data
     finally:
         conn.close()
-
+       
+def get_process_affinity(pid):
+    """Return the affinity mask for the specified process."""
+    flags = win32con.PROCESS_QUERY_INFORMATION
+    handle = win32api.OpenProcess(flags, 0, pid)
+    return win32process.GetProcessAffinityMask(handle)[0]
+            
+def set_process_affinity(pid, mask):
+    """Set the affinity for process to mask."""    
+    flags = win32con.PROCESS_QUERY_INFORMATION | win32con.PROCESS_SET_INFORMATION
+    handle = win32api.OpenProcess(flags, 0, pid)
+    win32process.SetProcessAffinityMask(handle, mask)
+    
 class ConsolePanel(wx.Panel):
     """Panel that displays logging events.
     
@@ -493,6 +510,8 @@ class MinerTab(wx.Panel):
         self.invalid_times = collections.deque()
         self.last_rate = 0 # units of khash/s
         self.autostart = False
+        self.num_processors = int(os.getenv('NUMBER_OF_PROCESSORS', 1))
+        self.affinity_mask = 0
         self.server_lbl = wx.StaticText(self, -1, _("Server:"))
         self.summary_panel = None # SummaryPanel instance if summary open           
         self.server = wx.ComboBox(self, -1, 
@@ -514,7 +533,10 @@ class MinerTab(wx.Panel):
         self.device_listbox = wx.ComboBox(self, -1, choices=devices or [_("No OpenCL devices")], style=wx.CB_READONLY)
         self.flags_lbl = wx.StaticText(self, -1, _("Extra flags:"))        
         self.txt_flags = wx.TextCtrl(self, -1, "")
-        self.extra_info = wx.StaticText(self, -1, "")        
+        self.extra_info = wx.StaticText(self, -1, "")
+        self.affinity_lbl = wx.StaticText(self, -1, _("CPU Affinity:"))
+        self.affinity_chks = [wx.CheckBox(self, label='%d ' % i) 
+                              for i in range(self.num_processors)]                
         self.balance_lbl = wx.StaticText(self, -1, _("Balance:"))
         self.balance_amt = wx.StaticText(self, -1, "0")
         self.balance_refresh = wx.Button(self, -1, STR_REFRESH_BALANCE)
@@ -536,7 +558,7 @@ class MinerTab(wx.Panel):
                             self.device_listbox,
                             self.balance_amt,
                             self.balance_refresh, 
-                            self.withdraw] + self.labels + self.txts
+                            self.withdraw] + self.labels + self.txts + self.affinity_chks
         self.hidden_widgets = [self.extra_info, 
                                self.txt_external, 
                                self.external_lbl]
@@ -557,6 +579,8 @@ class MinerTab(wx.Panel):
         self.balance_refresh_timer.Bind(wx.EVT_TIMER, self.on_balance_cooldown_tick)
         self.balance_refresh.Bind(wx.EVT_BUTTON, self.on_balance_refresh)
         self.withdraw.Bind(wx.EVT_BUTTON, self.on_withdraw)
+        for chk in self.affinity_chks:
+            chk.Bind(EVT_CHECKBOX, self.on_affinity_check)
         self.Bind(EVT_UPDATE_HASHRATE, lambda event: self.update_khash(event.rate))
         self.Bind(EVT_UPDATE_ACCEPTED, lambda event: self.update_shares(event.accepted))
         self.Bind(EVT_UPDATE_STATUS, lambda event: self.update_status(event.text))
@@ -634,6 +658,18 @@ class MinerTab(wx.Panel):
         NO_DEVICE_SELECTION = ['rpcminer', 'bitcoin-miner']
         return not any(d in self.external_path for d in NO_DEVICE_SELECTION)        
 
+    def on_affinity_check(self, event):
+        """Set the affinity mask to the selected value."""
+        self.affinity_mask = 0
+        for i in range(self.num_processors):
+            is_checked = self.affinity_chks[i].GetValue()
+            self.affinity_mask += (is_checked << i)
+        if self.is_mining:
+            try:
+                set_process_affinity(self.miner.pid, self.affinity_mask)
+            except:
+                pass # TODO: test on Linux
+
     def pause(self):
         """Pause the miner if we are mining, otherwise do nothing."""
         if self.is_mining:            
@@ -656,6 +692,7 @@ class MinerTab(wx.Panel):
                     device=self.device_listbox.GetSelection(),
                     flags=self.txt_flags.GetValue(),
                     autostart=self.autostart,
+                    affinity_mask=self.affinity_mask,
                     balance_auth_token=self.balance_auth_token,
                     external_path=self.external_path)
 
@@ -689,6 +726,10 @@ class MinerTab(wx.Panel):
                 
         self.txt_flags.SetValue(data.get('flags', ''))
         self.autostart = data.get('autostart', False)
+        self.affinity_mask = data.get('affinity_mask', (1 << self.num_processors) - 1)
+        for i in range(self.num_processors):
+            self.affinity_chks[i].SetValue((self.affinity_mask >> i) & 1)
+        
         self.txt_external.SetValue(data.get('external_path', ''))    
 
         # Handle case where they removed devices since last run.
@@ -900,8 +941,13 @@ class MinerTab(wx.Panel):
         self.miner_listener.start()
         self.is_mining = True
         self.set_status(STR_STARTING, 1)
-        self.start.SetLabel(self.get_start_label())    
-    
+        self.start.SetLabel(self.get_start_label())
+        
+        try:
+            set_process_affinity(self.miner.pid, self.affinity_mask)
+        except:
+            pass # TODO: test on Linux
+            
     def on_close(self):
         """Prepare to close gracefully."""
         self.stop_mining()
@@ -1052,6 +1098,8 @@ class MinerTab(wx.Panel):
         add_tooltip(self.txt_username, _("The miner's username.\nMay be different than your account username.\nExample: Kiv.GPU"))
         add_tooltip(self.txt_pass, _("The miner's password.\nMay be different than your account password."))
         add_tooltip(self.txt_flags, _("Extra flags to pass to the miner.\nFor Radeon HD 5xxx series use -v -w128 for best results.\nFor other cards consult the forum."))
+        for chk in self.affinity_chks:
+            add_tooltip(chk, _("CPU cores used for mining.\nUnchecking some cores can reduce high CPU usage in some systems."))
     
     def reset_statistics(self):
         """Reset our share statistics to zero."""
@@ -1360,6 +1408,15 @@ class MinerTab(wx.Panel):
         self.inner_sizer.Add(self.flags_lbl, (row,col), flag=LBL_STYLE)
         span = (1,1) if device_visible else (1,4) 
         self.inner_sizer.Add(self.txt_flags, (row,col+1), span=span, flag=wx.EXPAND)
+        
+    def layout_affinity(self, row):
+        """Lay out the affinity checkboxes in the specified row."""
+        self.inner_sizer.Add(self.affinity_lbl, (row,0))
+        
+        affinity_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        for chk in self.affinity_chks:
+            affinity_sizer.Add(chk)
+        self.inner_sizer.Add(affinity_sizer, (row,1))    
     
     def layout_balance(self, row):
         """Lay out the balance widgets in the specified row."""
@@ -1368,7 +1425,8 @@ class MinerTab(wx.Panel):
         
     def layout_finish(self):
         """Lay out the buttons and fit the sizer to the window."""
-        self.frame_sizer.Add(self.inner_sizer, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)        
+        self.frame_sizer.Add(self.inner_sizer, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+        self.frame_sizer.Add(self.advanced_sizer, 0)        
         self.frame_sizer.Add(self.button_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL)                    
         self.inner_sizer.AddGrowableCol(1)
         self.inner_sizer.AddGrowableCol(3)   
@@ -1376,7 +1434,7 @@ class MinerTab(wx.Panel):
             self.button_sizer.Add(btn, 0, BTN_STYLE, 5)
         
         self.set_widgets_visible([self.external_lbl, self.txt_external],
-                                 self.is_external_miner)
+                                 self.is_external_miner)        
         self.SetSizerAndFit(self.frame_sizer)    
     
     def layout_default(self):
@@ -1400,6 +1458,7 @@ class MinerTab(wx.Panel):
             
         self.layout_user_and_pass(row=row + 1 + int(is_custom))
         self.layout_device_and_flags(row=row + 2 + int(is_custom))
+        self.layout_affinity(row=row + 3 + int(is_custom))
         self.layout_finish()
     
     ############################            
@@ -1418,9 +1477,10 @@ class MinerTab(wx.Panel):
         self.layout_server_and_website(row=row)                            
         self.inner_sizer.Add(self.user_lbl, (row+1,0), flag=LBL_STYLE)
         self.inner_sizer.Add(self.txt_username, (row+1,1), span=(1,3), flag=wx.EXPAND)        
-        self.layout_device_and_flags(row=row+2)        
-        self.layout_balance(row=row+3)
-        self.inner_sizer.Add(self.extra_info,(row+4,0), span=(1,4), flag=wx.ALIGN_CENTER_HORIZONTAL)
+        self.layout_device_and_flags(row=row+2)
+        self.layout_affinity(row=row+3)        
+        self.layout_balance(row=row+4)
+        self.inner_sizer.Add(self.extra_info,(row+5,0), span=(1,4), flag=wx.ALIGN_CENTER_HORIZONTAL)
         self.layout_finish()
                         
         self.extra_info.SetLabel(_("No registration is required - just enter an address and press Start."))
@@ -1438,7 +1498,8 @@ class MinerTab(wx.Panel):
         self.layout_server_and_website(row=row)
         self.layout_user_and_pass(row=row+1)
         self.layout_device_and_flags(row=row+2)
-        self.layout_balance(row=row+3)
+        self.layout_affinity(row=row+3)
+        self.layout_balance(row=row+4)
         self.layout_finish()
         
         add_tooltip(self.txt_username,
@@ -1458,7 +1519,8 @@ class MinerTab(wx.Panel):
         self.layout_server_and_website(row=row)
         self.layout_user_and_pass(row=row+1)
         self.layout_device_and_flags(row=row+2)
-        self.layout_balance(row=row+3)
+        self.layout_affinity(row=row+3)
+        self.layout_balance(row=row+4)
         self.layout_finish()        
 
         add_tooltip(self.txt_username,
@@ -1475,7 +1537,8 @@ class MinerTab(wx.Panel):
         self.layout_server_and_website(row=row)
         self.layout_user_and_pass(row=row+1)
         self.layout_device_and_flags(row=row+2)
-        self.layout_balance(row=row+3)
+        self.layout_affinity(row=row+3)
+        self.layout_balance(row=row+4)
         self.layout_finish()
         add_tooltip(self.txt_username,
             _("The e-mail address you registered with."))
