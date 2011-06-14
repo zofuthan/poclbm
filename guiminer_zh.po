@@ -160,7 +160,7 @@ msgstr "全部暂停"
 
 #: guiminer.py:394
 msgid "Restore"
-msgstr "回复"
+msgstr "恢复"
 
 #: guiminer.py:395
 msgid "Close"
@@ -322,6 +322,7 @@ msgstr ""
 "Radeon HD 5xxx 系列可使用 -v -w128 获取最佳效果。\n"
 "其他显卡的参数参见论坛。"
 
+<<<<<<< HEAD
 #: guiminer.py:1102
 msgid ""
 "CPU cores used for mining.\n"
@@ -329,6 +330,11 @@ msgid ""
 msgstr ""
 
 #: guiminer.py:1196 guiminer.py:1290 guiminer.py:1311
+=======
+#: guiminer.py:1148
+#: guiminer.py:1242
+#: guiminer.py:1263
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "Auth token rejected by server."
 msgstr "身份认证 token 被服务器拒绝。"
 
@@ -346,7 +352,12 @@ msgstr ", %s 未确认"
 msgid "Bad response from server."
 msgstr "服务器响应错误。"
 
+<<<<<<< HEAD
 #: guiminer.py:1294 guiminer.py:1315
+=======
+#: guiminer.py:1246
+#: guiminer.py:1267
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "Withdraw OK"
 msgstr "取款成功"
 
@@ -374,7 +385,12 @@ msgstr ""
 "您的采矿器用户名 (不是账号用户名)。\n"
 "示例: Kiv.GPU"
 
+<<<<<<< HEAD
 #: guiminer.py:1507 guiminer.py:1528
+=======
+#: guiminer.py:1447
+#: guiminer.py:1467
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "Your miner password (not your account password)."
 msgstr "您的采矿器密码 (不是账号密码)。"
 
@@ -408,41 +424,65 @@ msgstr "新建 OpenCL 采矿器(&N)..."
 
 #: guiminer.py:1584
 msgid "Create a new OpenCL miner (default for ATI cards)"
-msgstr ""
+msgstr "创建一个新的 OpenCL 采矿器 (默认为 ATI 显卡)"
 
+<<<<<<< HEAD
 #: guiminer.py:1585
 #, fuzzy
+=======
+#: guiminer.py:1523
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "Create a new Phoenix miner (for some ATI cards)"
-msgstr "创建新的采矿器配置文件"
+msgstr "创建一个新的 Phoenix 采矿器(部分 ATI 显卡)"
 
+<<<<<<< HEAD
 #: guiminer.py:1585
 #, fuzzy
+=======
+#: guiminer.py:1523
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "New Phoenix miner..."
-msgstr "新建其他采矿器(&O)..."
+msgstr "新建 Phoenix 采矿器..."
 
 #: guiminer.py:1586
 msgid "Create a new CUDA miner (for NVIDIA cards)"
-msgstr ""
+msgstr "创建一个新的 CUDA 采矿器 (NVIDIA 显卡)"
 
+<<<<<<< HEAD
 #: guiminer.py:1586
 #, fuzzy
+=======
+#: guiminer.py:1524
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "New CUDA miner..."
-msgstr "新建 OpenCL 采矿器(&N)..."
+msgstr "新建 CUDA 采矿器..."
 
+<<<<<<< HEAD
 #: guiminer.py:1587
 #, fuzzy
+=======
+#: guiminer.py:1525
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "Create a new Ufasoft miner (for CPUs)"
-msgstr "创建新的采矿器配置文件"
+msgstr "创建一个新的 Ufasoft 采矿器 (CPU)"
 
+<<<<<<< HEAD
 #: guiminer.py:1587
 #, fuzzy
+=======
+#: guiminer.py:1525
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "New Ufasoft CPU miner..."
-msgstr "新建其他采矿器(&O)..."
+msgstr "新建 Ufasoft CPU 采矿器..."
 
+<<<<<<< HEAD
 #: guiminer.py:1588
 #, fuzzy
+=======
+#: guiminer.py:1526
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "Create a new custom miner (requires external program)"
-msgstr "创建 CPU 或 CUDA 采矿器 (需要外部程序)"
+msgstr "创建一个新的自定义采矿器 (需要外部程序)"
 
 #: guiminer.py:1588
 msgid "New &other miner..."
@@ -525,18 +565,22 @@ msgstr "将官方 Bitcoin 客户端作为独自采矿的服务器启动"
 msgid "&Solo utilities"
 msgstr "独自采矿(&S)"
 
+<<<<<<< HEAD
 #: guiminer.py:1610
 #, fuzzy
+=======
+#: guiminer.py:1548
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "Start &minimized"
-msgstr "开始采矿!"
+msgstr "启动时最小化(&M)"
 
 #: guiminer.py:1610
 msgid "Start the GUI minimized to the tray."
-msgstr ""
+msgstr "启动 GUI 时最小化到托盘区。"
 
 #: guiminer.py:1612
 msgid "&Options"
-msgstr ""
+msgstr "选项(&O)"
 
 #: guiminer.py:1616
 msgid "&Change language..."
@@ -548,21 +592,29 @@ msgstr "语言"
 
 #: guiminer.py:1621
 msgid "&Donate 99 cents..."
-msgstr ""
+msgstr "捐助 99 美分(&D)..."
 
 #: guiminer.py:1621
 msgid "Donate $0.99 USD worth of Bitcoins to support GUIMiner development"
-msgstr ""
+msgstr "捐助 $0.99 美元的 Bitcoins 以支持 GUIMiner 的开发"
 
+<<<<<<< HEAD
 #: guiminer.py:1622
 #, fuzzy
+=======
+#: guiminer.py:1560
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "&Donate"
-msgstr "关于/捐助(&A)..."
+msgstr "捐助(&D)"
 
+<<<<<<< HEAD
 #: guiminer.py:1625
 #, fuzzy
+=======
+#: guiminer.py:1563
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "&About..."
-msgstr "关于/捐助(&A)..."
+msgstr "关于(&A)..."
 
 #: guiminer.py:1627
 msgid "&Help"
@@ -593,10 +645,14 @@ msgstr "新建采矿器"
 msgid "Untitled"
 msgstr "无标题"
 
+<<<<<<< HEAD
 #: guiminer.py:1741
 #, fuzzy
+=======
+#: guiminer.py:1679
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 msgid "External miner (*.exe)|*.exe|(*.py)|*.py"
-msgstr "外部采矿器 (*.exe)|*.exe"
+msgstr "外部采矿器 (*.exe)|*.exe|(*.py)|*.py"
 
 #: guiminer.py:1743
 msgid "Select external miner:"
@@ -683,12 +739,18 @@ msgstr "无法在 %s 找到 Bitcoin。您的路径设置是否正确?"
 msgid "Launch failed"
 msgstr "启动失败"
 
+<<<<<<< HEAD
 #: guiminer.py:1964
 msgid ""
 "The Bitcoin client will now launch in server mode.\n"
 "Once it connects to the network and downloads the block chain, you can start "
 "a miner in 'solo' mode."
 msgstr ""
+=======
+#: guiminer.py:1902
+msgid "Client launched ok. You can start a miner now with the server set to 'solo'."
+msgstr "客户端启动成功。您现在可以启动服务器设为 'solo' 的采矿器。"
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0
 
 #: guiminer.py:1965
 msgid "Launched ok."
@@ -765,8 +827,7 @@ msgstr "未找到 OpenCL 设备。"
 msgid ""
 "No OpenCL devices were found.\n"
 " If you only want to mine using CPU or CUDA, you can ignore this message.\n"
-" If you want to mine on ATI graphics cards, you may need to install the ATI "
-"Stream\n"
+" If you want to mine on ATI graphics cards, you may need to install the ATI Stream\n"
 " SDK, or your GPU may not support OpenCL."
 msgstr ""
 "未找到 OpenCL 设备。\n"
@@ -778,7 +839,10 @@ msgstr ""
 msgid "Don't show this message again"
 msgstr "不要再次显示本信息"
 
+<<<<<<< HEAD
 #~ msgid ""
 #~ "Client launched ok. You can start a miner now with the server set to "
 #~ "'solo'."
 #~ msgstr "客户端启动成功。您现在可以启动服务器设为 'solo' 的采矿器。"
+=======
+>>>>>>> e1ad76cc4a7ea7608e855727902b1c7297dff3f0

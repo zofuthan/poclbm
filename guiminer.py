@@ -46,6 +46,7 @@ LANGUAGES = {
     "French": wx.LANGUAGE_FRENCH,
     "German": wx.LANGUAGE_GERMAN,
     "Hungarian": wx.LANGUAGE_HUNGARIAN,
+    "Italian": wx.LANGUAGE_ITALIAN,
     "Spanish": wx.LANGUAGE_SPANISH,
     "Russian": wx.LANGUAGE_RUSSIAN,
 }
