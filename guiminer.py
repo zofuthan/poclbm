@@ -25,7 +25,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-06-09'
+__version__ = '2011-06-14'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
@@ -1136,7 +1136,7 @@ class MinerTab(wx.Panel):
 
         # Call server specific code.
         host = new_server.get('host', "").lower()
-        if host == "mining.bitcoin.cz": self.layout_slush()
+        if host == "api.bitcoin.cz": self.layout_slush()
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
@@ -1232,7 +1232,7 @@ class MinerTab(wx.Panel):
         """Refresh the miner's balance from the server."""
         host = self.server_config.get("host")
 
-        HOSTS_REQUIRING_AUTH_TOKEN = ["mining.bitcoin.cz",
+        HOSTS_REQUIRING_AUTH_TOKEN = ["api.bitcoin.cz",
                                       "btcmine.com",
                                       "pit.deepbit.net",
                                       "btcguild.com"]

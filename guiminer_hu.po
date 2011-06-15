@@ -573,10 +573,6 @@ msgstr "GUIMiner - v%s"
 msgid "Name this miner:"
 msgstr "Bányász neve:"
 
-#: guiminer.py:1728
-msgid "New miner"
-msgstr "Új bányász"
-
 #: guiminer.py:1731
 msgid "Untitled"
 msgstr "Névtelen"
