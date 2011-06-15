@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-06-14 22:43-0300\n"
-"PO-Revision-Date: 2011-05-24 18:37+0100\n"
-"Last-Translator: Cramoisan Florian <florian.cramoisan@gmail.com>\n"
+"PO-Revision-Date: 2011-06-14 23:00-0400\n"
+"Last-Translator: Chris MacLeod <ChrisM6794@gmail.com>\n"
 "Language-Team: Russian\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -283,8 +283,7 @@ msgid ""
 "Server to connect to. Different servers have different fees and features.\n"
 "Check their websites for full information."
 msgstr ""
-"Serveur auquel se connecter. Chaque serveur à des différentes taxes et "
-"options.\n"
+"Serveur auquel se connecter. Chaque serveur à des différentes taxes et options.\n"
 "Regardez leur site pour plus d'informations."
 
 #: guiminer.py:1095
@@ -328,8 +327,7 @@ msgid ""
 "For other cards consult the forum."
 msgstr ""
 "Paramètres supplémentaires à passer au miner.\n"
-"Pour les ATI Radéon HD série 5xxx utiliser -v -w128 afin d'optimiser le "
-"rendement.\n"
+"Pour les ATI Radéon HD série 5xxx utiliser -v -w128 afin d'optimiser le rendement.\n"
 "Pour les autres cartes, consultez le forum."
 
 #: guiminer.py:1103
@@ -338,7 +336,9 @@ msgid ""
 "Unchecking some cores can reduce high CPU usage in some systems."
 msgstr ""
 
-#: guiminer.py:1197 guiminer.py:1291 guiminer.py:1312
+#: guiminer.py:1197
+#: guiminer.py:1291
+#: guiminer.py:1312
 msgid "Auth token rejected by server."
 msgstr ""
 
@@ -356,15 +356,14 @@ msgstr ", %s n'a pas été confirmé"
 msgid "Bad response from server."
 msgstr "Mauvaise réponse du serveur."
 
-#: guiminer.py:1295 guiminer.py:1316
+#: guiminer.py:1295
+#: guiminer.py:1316
 msgid "Withdraw OK"
 msgstr "Retiré"
 
 #: guiminer.py:1486
 msgid "No registration is required - just enter an address and press Start."
-msgstr ""
-"Aucun enregistrement requis, entrez seulement une adresse et cliquez sur "
-"Démarrer"
+msgstr "Aucun enregistrement requis, entrez seulement une adresse et cliquez sur Démarrer"
 
 #: guiminer.py:1488
 msgid "Address:"
@@ -386,7 +385,8 @@ msgstr ""
 "Votre nom d'utilisateur de miner (pas celui de votre compte). \n"
 "Example:kiv.GPU"
 
-#: guiminer.py:1508 guiminer.py:1529
+#: guiminer.py:1508
+#: guiminer.py:1529
 msgid "Your miner password (not your account password)."
 msgstr "Votre mot de passe de miner (pas celui de votre compte)."
 
@@ -423,45 +423,38 @@ msgid "Create a new OpenCL miner (default for ATI cards)"
 msgstr ""
 
 #: guiminer.py:1586
-#, fuzzy
 msgid "Create a new Phoenix miner (for some ATI cards)"
-msgstr "Créer un profil avec un nouveau miner"
+msgstr ""
 
 #: guiminer.py:1586
-#, fuzzy
 msgid "New Phoenix miner..."
-msgstr "N&ouveau miner..."
+msgstr ""
 
 #: guiminer.py:1587
 msgid "Create a new CUDA miner (for NVIDIA cards)"
 msgstr ""
 
 #: guiminer.py:1587
-#, fuzzy
 msgid "New CUDA miner..."
-msgstr "&Nouveau miner OpenCL..."
+msgstr ""
 
 #: guiminer.py:1588
-#, fuzzy
 msgid "Create a new Ufasoft miner (for CPUs)"
-msgstr "Créer un profil avec un nouveau miner"
+msgstr ""
 
 #: guiminer.py:1588
-#, fuzzy
 msgid "New Ufasoft CPU miner..."
-msgstr "N&ouveau miner..."
+msgstr ""
 
 #: guiminer.py:1589
-#, fuzzy
 msgid "Create a new custom miner (requires external program)"
-msgstr "Créer un miner CPU ou CUDA (nécessite un programme externe)"
+msgstr ""
 
 #: guiminer.py:1589
 msgid "New &other miner..."
 msgstr "N&ouveau miner..."
 
 #: guiminer.py:1590
-#, fuzzy
 msgid "&New miner"
 msgstr "Nouveau miner"
 
@@ -538,9 +531,8 @@ msgid "&Solo utilities"
 msgstr "&Outils solo"
 
 #: guiminer.py:1611
-#, fuzzy
 msgid "Start &minimized"
-msgstr "Commencer le minage!"
+msgstr ""
 
 #: guiminer.py:1611
 msgid "Start the GUI minimized to the tray."
@@ -567,14 +559,12 @@ msgid "Donate $0.99 USD worth of Bitcoins to support GUIMiner development"
 msgstr ""
 
 #: guiminer.py:1623
-#, fuzzy
 msgid "&Donate"
-msgstr "&A propos/Faire un Don ..."
+msgstr "Faire un Don"
 
 #: guiminer.py:1626
-#, fuzzy
 msgid "&About..."
-msgstr "&A propos/Faire un Don ..."
+msgstr "A propos"
 
 #: guiminer.py:1628
 msgid "&Help"
@@ -606,9 +596,8 @@ msgid "Untitled"
 msgstr "Sans titre"
 
 #: guiminer.py:1742
-#, fuzzy
 msgid "External miner (*.exe)|*.exe|(*.py)|*.py"
-msgstr "Miner externe (*.exe)|*.exe"
+msgstr "Miner externe (*.exe)|*.exe|(*.py)|*.py"
 
 #: guiminer.py:1744
 msgid "Select external miner:"
@@ -617,9 +606,7 @@ msgstr "Choisissez un miner externe:"
 #: guiminer.py:1754
 #, python-format
 msgid "Unsupported external miner %(filename)s. Supported are: %(supported)s"
-msgstr ""
-"Miner externe non supporté %(filename)s. Les miners actuellement supportés "
-"sont: %(supported)s"
+msgstr "Miner externe non supporté %(filename)s. Les miners actuellement supportés sont: %(supported)s"
 
 #: guiminer.py:1756
 msgid "Miner not supported"
@@ -691,9 +678,7 @@ msgstr "Fermer le miner"
 #: guiminer.py:1961
 #, python-format
 msgid "Couldn't find Bitcoin at %s. Is your path set correctly?"
-msgstr ""
-"Impossible de trouver bitcoin au chemin %s. Vérifiez que le chemin a bien "
-"été paramétré."
+msgstr "Impossible de trouver bitcoin au chemin %s. Vérifiez que le chemin a bien été paramétré."
 
 #: guiminer.py:1962
 msgid "Launch failed"
@@ -702,8 +687,7 @@ msgstr "Erreur de lancement"
 #: guiminer.py:1965
 msgid ""
 "The Bitcoin client will now launch in server mode.\n"
-"Once it connects to the network and downloads the block chain, you can start "
-"a miner in 'solo' mode."
+"Once it connects to the network and downloads the block chain, you can start a miner in 'solo' mode."
 msgstr ""
 
 #: guiminer.py:1966
@@ -775,20 +759,16 @@ msgid "No OpenCL devices found."
 msgstr "Aucun périphérique OpenCL touvé."
 
 #: guiminer.py:2160
-#, fuzzy
 msgid ""
 "No OpenCL devices were found.\n"
 " If you only want to mine using CPU or CUDA, you can ignore this message.\n"
-" If you want to mine on ATI graphics cards, you may need to install the ATI "
-"Stream\n"
+" If you want to mine on ATI graphics cards, you may need to install the ATI Stream\n"
 " SDK, or your GPU may not support OpenCL."
 msgstr ""
 "Aucun périphérique OpenCL n'a été trouvé.\n"
 "   Si vous souhaitez seulement miner avec CPU ou CUDA, ignorez ce message.\n"
-"   Si vous souhaitez miner avec une carte ATI, vous devez installer ATI "
-"Stream\n"
-"   SDK (2.1 de préférence), sinon il se peut que votre GPU ne supporte pas "
-"OpenCL.\n"
+"   Si vous souhaitez miner avec une carte ATI, vous devez installer ATI Stream\n"
+"   SDK (2.1 de préférence), sinon il se peut que votre GPU ne supporte pas OpenCL."
 
 #: guiminer.py:2170
 msgid "Don't show this message again"

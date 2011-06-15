@@ -407,46 +407,39 @@ msgid "Create a new OpenCL miner (default for ATI cards)"
 msgstr ""
 
 #: guiminer.py:1586
-#, fuzzy
 msgid "Create a new Phoenix miner (for some ATI cards)"
-msgstr "Új bányászprofil"
+msgstr ""
 
 #: guiminer.py:1586
-#, fuzzy
 msgid "New Phoenix miner..."
-msgstr "Új külső bányász..."
+msgstr ""
 
 #: guiminer.py:1587
 msgid "Create a new CUDA miner (for NVIDIA cards)"
 msgstr ""
 
 #: guiminer.py:1587
-#, fuzzy
 msgid "New CUDA miner..."
-msgstr "&Új OpenCL bányász..."
+msgstr ""
 
 #: guiminer.py:1588
-#, fuzzy
 msgid "Create a new Ufasoft miner (for CPUs)"
-msgstr "Új bányászprofil"
+msgstr ""
 
 #: guiminer.py:1588
-#, fuzzy
 msgid "New Ufasoft CPU miner..."
-msgstr "Új külső bányász..."
+msgstr ""
 
 #: guiminer.py:1589
-#, fuzzy
 msgid "Create a new custom miner (requires external program)"
-msgstr "Új CPU, vagy CUDA bányász (külső bányászprogrammal)"
+msgstr ""
 
 #: guiminer.py:1589
 msgid "New &other miner..."
 msgstr "Új külső bányász..."
 
 #: guiminer.py:1590
-#, fuzzy
-msgid "&New miner"
+msgid "New miner"
 msgstr "Új bányász"
 
 #: guiminer.py:1591
@@ -524,9 +517,8 @@ msgid "&Solo utilities"
 msgstr "&Szóló eszközök"
 
 #: guiminer.py:1611
-#, fuzzy
 msgid "Start &minimized"
-msgstr "Bányászat indítása"
+msgstr ""
 
 #: guiminer.py:1611
 msgid "Start the GUI minimized to the tray."
@@ -553,14 +545,12 @@ msgid "Donate $0.99 USD worth of Bitcoins to support GUIMiner development"
 msgstr ""
 
 #: guiminer.py:1623
-#, fuzzy
 msgid "&Donate"
-msgstr "&Névjegy/Adományok..."
+msgstr "Adományok"
 
 #: guiminer.py:1626
-#, fuzzy
 msgid "&About..."
-msgstr "&Névjegy/Adományok..."
+msgstr "&Névjegy"
 
 #: guiminer.py:1628
 msgid "&Help"
@@ -592,20 +582,17 @@ msgid "Untitled"
 msgstr "Névtelen"
 
 #: guiminer.py:1742
-#, fuzzy
 msgid "External miner (*.exe)|*.exe|(*.py)|*.py"
-msgstr "Külső bányászprogram (*.exe)|*.exe"
+msgstr "Külső bányászprogram (*.exe)|*.exe|(*.py)|*.py"
 
 #: guiminer.py:1744
 msgid "Select external miner:"
 msgstr "Válaszd ki a külső bányászprogramot:"
 
 #: guiminer.py:1754
-#, fuzzy, python-format
+#, python-format
 msgid "Unsupported external miner %(filename)s. Supported are: %(supported)s"
 msgstr ""
-"A külső bányászprogram (%(filename)s) nem támogatott. A következőket "
-"használhatod: %(supported)"
 
 #: guiminer.py:1756
 msgid "Miner not supported"
