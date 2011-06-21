@@ -1141,6 +1141,7 @@ class MinerTab(wx.Panel):
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
         elif host == "btcguild.com": self.layout_btcguild()
+		elif host == "bitcoin.lc": self.layout_bitcoinlc()
         else: self.layout_default()
 
         self.Layout()
@@ -1544,6 +1545,25 @@ class MinerTab(wx.Panel):
             _("The e-mail address you registered with."))
         self.user_lbl.SetLabel(_("Email:"))
 
+	def layout_bitcoinclc(self):
+		""" bitcoin.lc has a non-standard port."""
+		self.set_widgets_visible([self.host_lbl, self.txt_host,
+						  self.port_lbl, self.txt_port,
+						  self.withdraw, self.extra_info], False)
+		self.txt_port.SetValue('8080')
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
+        self.layout_user_and_pass(row=row+1)
+        self.layout_device_and_flags(row=row+2)
+        self.layout_affinity(row=row+3)
+        self.layout_balance(row=row+4)
+        self.layout_finish()
+
+        add_tooltip(self.txt_username,
+            _("Your miner username (not your account username).\nExample: Kiv.GPU"))
+        add_tooltip(self.txt_pass,
+            _("Your miner password (not your account password)."))
+		
     # End server specific code
     ##########################
 
