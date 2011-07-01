@@ -226,10 +226,11 @@ def init_logger():
 
 logger, formatter = init_logger()
 
-def http_request(hostname, *args):
+def http_request(hostname, *args, **kwargs):
     """Do a HTTP request and return the response data."""
-    try:
-        conn = httplib.HTTPConnection(hostname)
+    conn_cls = httplib.HTTPSConnection if kwargs.get('use_https') else httplib.HTTPConnection        
+    conn = conn_cls(hostname) 
+    try:        
         logger.debug(_("Requesting balance: %(request)s"), dict(request=args))
         conn.request(*args)
         response = conn.getresponse()
@@ -650,7 +651,7 @@ class MinerTab(wx.Panel):
         """Return the index of the currently selected OpenCL platform."""
         s = self.device_listbox.GetStringSelection()
         match = re.search(r'\[(\d+)-(\d+)\]', s)
-        try: return int(match.group(2))
+        try: return int(match.group(1))
         except: return 0
 
     @property
@@ -1136,7 +1137,7 @@ class MinerTab(wx.Panel):
 
         # Call server specific code.
         host = new_server.get('host', "").lower()
-        if host == "api.bitcoin.cz": self.layout_slush()
+        if host == "api.bitcoin.cz" or host == "mtred.com": self.layout_slush()
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
@@ -1184,7 +1185,7 @@ class MinerTab(wx.Panel):
             return True
         return False
 
-    def request_balance_get(self, balance_auth_token):
+    def request_balance_get(self, balance_auth_token, use_https=False):
         """Request our balance from the server via HTTP GET and auth token.
 
         This method should be run in its own thread.
@@ -1192,7 +1193,8 @@ class MinerTab(wx.Panel):
         response, data = http_request(
             self.server_config['balance_host'],
             "GET",
-            self.server_config["balance_url"] % balance_auth_token
+            self.server_config["balance_url"] % balance_auth_token,
+            use_https=use_https
         )
         if self.is_auth_token_rejected(response):
             data = _("Auth token rejected by server.")
@@ -1231,7 +1233,7 @@ class MinerTab(wx.Panel):
             self.withdraw_deepbit()
 
     def requires_auth_token(self, host):
-        """Return True if the specified host name requires an auth token."""
+        """Return True if the specified host requires an auth token for balance update."""
         HOSTS_REQUIRING_AUTH_TOKEN = ["api.bitcoin.cz",
                                       "btcmine.com",
                                       "pit.deepbit.net",
@@ -1240,6 +1242,10 @@ class MinerTab(wx.Panel):
         if host in HOSTS_REQUIRING_AUTH_TOKEN: return True        
         if "btcguild" in host: return True    
         return False
+    
+    def requires_https(self, host):
+        """Return True if the specified host requires HTTPs for balance update."""
+        return host == "mtred.com"
     
     def on_balance_refresh(self, event=None):
         """Refresh the miner's balance from the server."""
@@ -1254,7 +1260,8 @@ class MinerTab(wx.Panel):
                 return # Invalid characters in auth token
             self.http_thread = threading.Thread(
                 target=self.request_balance_get,
-                args=(self.balance_auth_token,))
+                args=(self.balance_auth_token,),
+                kwargs=dict(use_https=self.requires_https(host)))
             self.http_thread.start()
         elif host == 'bitpenny.dyndns.biz':
             self.http_thread = threading.Thread(
