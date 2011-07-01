@@ -17,6 +17,9 @@ parser.add_option('-a', '--askrate',  dest='askrate',  default=5,           help
 parser.add_option('-w', '--worksize', dest='worksize', default=-1,          help='work group size, default is maximum returned by opencl', type='int')
 parser.add_option('-v', '--vectors',  dest='vectors',  action='store_true', help='use vectors')
 parser.add_option('-s', '--sleep',    dest='frameSleep', default=0,         help='sleep per frame in seconds, default 0', type='float')
+parser.add_option('--backup',         dest='backup',   default=None,        help='use fallback pools: user:pass@host:port[,user:pass@host:port]')
+parser.add_option('--tolerance',      dest='tolerance',default=2,           help='use fallback pool only after N consecutive connection errors, default 2', type='int')
+parser.add_option('--failback',       dest='failback', default=2,           help='attempt to fail back to the primary pool every N getworks, default 2', type='int')
 parser.add_option('--verbose',        dest='verbose',  action='store_true', help='verbose output, suitable for redirection to log file')
 parser.add_option('--platform',       dest='platform', default=-1,          help='use platform by id', type='int')
 (options, args) = parser.parse_args()
@@ -47,6 +50,9 @@ if (options.device == -1 or options.device >= len(devices)):
 miner = None
 try:
 	miner = BitcoinMiner(	devices[options.device],
+							options.backup,
+							options.tolerance,
+							options.failback,
 							options.host,
 							options.user,
 							options.password,
