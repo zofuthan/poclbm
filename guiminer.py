@@ -1828,7 +1828,8 @@ class GUIMiner(wx.Frame):
                            profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable,
                            show_opencl_warning=self.do_show_opencl_warning,
-                           start_minimized=self.start_minimized_chk.IsChecked())
+                           start_minimized=self.start_minimized_chk.IsChecked(),
+                           window_position=list(self.GetRect()))
         logger.debug(_('Saving: ') + json.dumps(config_data))
         try:
             with open(config_filename, 'w') as f:
@@ -1891,6 +1892,10 @@ class GUIMiner(wx.Frame):
 
         if config_data.get('show_console', False):
             self.show_console()
+            
+        window_position = config_data.get('window_position')
+        if window_position:
+            self.SetRect(window_position)
 
         for p in self.profile_panels:
             if p.autostart:
