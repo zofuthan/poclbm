@@ -1847,11 +1847,16 @@ class GUIMiner(wx.Frame):
         """Set self.config_data to a dictionary of config values."""
         self.config_data = {}
 
-        config_filename = self.get_storage_location()[1]
-        if os.path.exists(config_filename):
-            with open(config_filename) as f:
-                self.config_data.update(json.load(f))
-            logger.debug(_('Loaded: %s') % json.dumps(self.config_data))
+        try:
+            config_filename = self.get_storage_location()[1]
+            if os.path.exists(config_filename):
+                with open(config_filename) as f:
+                    self.config_data.update(json.load(f))
+                logger.debug(_('Loaded: %s') % json.dumps(self.config_data))
+        except ValueError:
+            self.message(
+                _("Your settings saved at:\n %s\nare corrupt or could not be read.\nDeleting this file or saving over it may solve the problem." % config_filename),
+                _("Error"), wx.ICON_ERROR)
 
     def load_config(self, event=None):
         """Load JSON profile info from the config file."""
