@@ -1140,7 +1140,7 @@ class MinerTab(wx.Panel):
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
-        elif host == "btcguild.com": self.layout_btcguild()
+        elif "btcguild.com" in host: self.layout_btcguild()
         elif host == "pit.x8s.de": self.layout_x8s()
         else: self.layout_default()
 
@@ -1229,16 +1229,20 @@ class MinerTab(wx.Panel):
         elif host == 'pit.deepbit.net':
             self.withdraw_deepbit()
 
-    def on_balance_refresh(self, event=None):
-        """Refresh the miner's balance from the server."""
-        host = self.server_config.get("host")
-
+    def requires_auth_token(self, host):
+        """Return True if the specified host name requires an auth token."""
         HOSTS_REQUIRING_AUTH_TOKEN = ["api.bitcoin.cz",
                                       "btcmine.com",
                                       "pit.deepbit.net",
-                                      "pit.x8s.de",
-                                      "btcguild.com"]
-        if host in HOSTS_REQUIRING_AUTH_TOKEN:
+                                      "pit.x8s.de"]
+        if host in HOSTS_REQUIRING_AUTH_TOKEN: return True        
+        if "btcguild" in host: return True    
+        return False
+    
+    def on_balance_refresh(self, event=None):
+        """Refresh the miner's balance from the server."""
+        host = self.server_config.get("host")
+        if self.requires_auth_token(host):
             self.require_auth_token()
             if not self.balance_auth_token: # They cancelled the dialog
                 return
