@@ -642,16 +642,16 @@ class MinerTab(wx.Panel):
         """Return the index of the currently selected OpenCL device."""
         s = self.device_listbox.GetStringSelection()
         match = re.search(r'\[(\d+)-(\d+)\]', s)
-        assert match is not None
-        return int(match.group(2))
+        try: return int(match.group(2))
+        except: return 0
 
     @property
     def platform_index(self):
         """Return the index of the currently selected OpenCL platform."""
         s = self.device_listbox.GetStringSelection()
         match = re.search(r'\[(\d+)-(\d+)\]', s)
-        assert match is not None
-        return int(match.group(1))
+        try: return int(match.group(2))
+        except: return 0
 
     @property
     def is_device_visible(self):
