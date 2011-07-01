@@ -215,7 +215,7 @@ msgstr "附加参数:"
 
 #: guiminer.py:538
 msgid "CPU Affinity:"
-msgstr ""
+msgstr "CPU 关联:"
 
 #: guiminer.py:541
 msgid "Balance:"
@@ -327,10 +327,14 @@ msgid ""
 "CPU cores used for mining.\n"
 "Unchecking some cores can reduce high CPU usage in some systems."
 msgstr ""
+"用于采矿的 CPU 核心。\n"
+"取消选中部分核心可降低部分系统的高额 CPU 使用。"
 
-#: guiminer.py:1197 guiminer.py:1291 guiminer.py:1312
+#: guiminer.py:1197
+#: guiminer.py:1291
+#: guiminer.py:1312
 msgid "Auth token rejected by server."
-msgstr "身份认证 token 被服务器拒绝。"
+msgstr "身份认证令牌被服务器拒绝。"
 
 #: guiminer.py:1215
 #, python-format
@@ -346,7 +350,8 @@ msgstr ", %s 未确认"
 msgid "Bad response from server."
 msgstr "服务器响应错误。"
 
-#: guiminer.py:1295 guiminer.py:1316
+#: guiminer.py:1295
+#: guiminer.py:1316
 msgid "Withdraw OK"
 msgstr "取款成功"
 
@@ -374,7 +379,8 @@ msgstr ""
 "您的采矿器用户名 (不是账号用户名)。\n"
 "示例: Kiv.GPU"
 
-#: guiminer.py:1508 guiminer.py:1529
+#: guiminer.py:1508
+#: guiminer.py:1529
 msgid "Your miner password (not your account password)."
 msgstr "您的采矿器密码 (不是账号密码)。"
 
@@ -412,7 +418,7 @@ msgstr "创建一个新的 OpenCL 采矿器 (默认为 ATI 显卡)"
 
 #: guiminer.py:1586
 msgid "Create a new Phoenix miner (for some ATI cards)"
-msgstr "创建一个新的 Phoenix 采矿器(部分 ATI 显卡)"
+msgstr "创建一个新的 Phoenix 采矿器 (部分 ATI 显卡)"
 
 #: guiminer.py:1586
 msgid "New Phoenix miner..."
@@ -444,7 +450,7 @@ msgstr "新建其他采矿器(&O)..."
 
 #: guiminer.py:1590
 msgid "&New miner"
-msgstr ""
+msgstr "新建采矿器(&N)"
 
 #: guiminer.py:1591
 msgid "&Save settings"
@@ -675,9 +681,10 @@ msgstr "启动失败"
 #: guiminer.py:1965
 msgid ""
 "The Bitcoin client will now launch in server mode.\n"
-"Once it connects to the network and downloads the block chain, you can start "
-"a miner in 'solo' mode."
+"Once it connects to the network and downloads the block chain, you can start a miner in 'solo' mode."
 msgstr ""
+"Bitcoin 客户端将以服务器模式启动。\n"
+"让它连接到网络并下载块链，您就可以以“独自采矿”模式启动采矿器了。"
 
 #: guiminer.py:1966
 msgid "Launched ok."
@@ -734,10 +741,13 @@ msgid ""
 "This token lets you securely check your balance.\n"
 "To remember this token for the future, save your miner settings."
 msgstr ""
+"点击下面的链接登录矿场获取特别的令牌。\n"
+"该令牌允许您获取检测余额。\n"
+"要记住该令牌供日后使用，请保存您的采矿器设置。"
 
 #: guiminer.py:2112
 msgid "(Paste token here)"
-msgstr "(在此粘贴 token)"
+msgstr "(在此粘贴令牌)"
 
 #: guiminer.py:2138
 msgid "Copy address to clipboard"
@@ -751,8 +761,7 @@ msgstr "未找到 OpenCL 设备。"
 msgid ""
 "No OpenCL devices were found.\n"
 " If you only want to mine using CPU or CUDA, you can ignore this message.\n"
-" If you want to mine on ATI graphics cards, you may need to install the ATI "
-"Stream\n"
+" If you want to mine on ATI graphics cards, you may need to install the ATI Stream\n"
 " SDK, or your GPU may not support OpenCL."
 msgstr ""
 "未找到 OpenCL 设备。\n"
