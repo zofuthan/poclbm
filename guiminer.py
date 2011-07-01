@@ -727,7 +727,7 @@ class MinerTab(wx.Panel):
 
         self.txt_flags.SetValue(data.get('flags', ''))
         self.autostart = data.get('autostart', False)
-        self.affinity_mask = data.get('affinity_mask', (1 << self.num_processors) - 1)
+        self.affinity_mask = data.get('affinity_mask', 1)
         for i in range(self.num_processors):
             self.affinity_chks[i].SetValue((self.affinity_mask >> i) & 1)
 
