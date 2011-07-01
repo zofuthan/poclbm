@@ -17,7 +17,7 @@ setup(windows=[
           excludes = ["Tkconstants", "Tkinter", "tcl"],
       )), 
       data_files = ['msvcp90.dll',
-                    'BitcoinMiner.cl',
+                    'phatk.cl',
                     'logo.ico',
                     'LICENSE.txt',
                     'servers.ini',
