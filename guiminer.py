@@ -1141,6 +1141,7 @@ class MinerTab(wx.Panel):
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
         elif host == "btcguild.com": self.layout_btcguild()
+        elif host == "pit.x8s.de": self.layout_x8s()
         else: self.layout_default()
 
         self.Layout()
@@ -1235,6 +1236,7 @@ class MinerTab(wx.Panel):
         HOSTS_REQUIRING_AUTH_TOKEN = ["api.bitcoin.cz",
                                       "btcmine.com",
                                       "pit.deepbit.net",
+                                      "pit.x8s.de",
                                       "btcguild.com"]
         if host in HOSTS_REQUIRING_AUTH_TOKEN:
             self.require_auth_token()
@@ -1543,6 +1545,10 @@ class MinerTab(wx.Panel):
         add_tooltip(self.txt_username,
             _("The e-mail address you registered with."))
         self.user_lbl.SetLabel(_("Email:"))
+
+    def layout_x8s(self):
+        """x8s has the same layout as slush for now."""
+        self.layout_slush()
     # End server specific code
     ##########################
 
