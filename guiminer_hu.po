@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: guiminer\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-14 22:43-0300\n"
+"POT-Creation-Date: 2011-06-14 23:10-0300\n"
 "PO-Revision-Date: 2011-06-04 18:34+0100\n"
 "Last-Translator: Underyx <underer@gmail.com>\n"
 "Language-Team: Español\n"
@@ -439,8 +439,8 @@ msgid "New &other miner..."
 msgstr "Új külső bányász..."
 
 #: guiminer.py:1590
-msgid "New miner"
-msgstr "Új bányász"
+msgid "&New miner"
+msgstr ""
 
 #: guiminer.py:1591
 msgid "&Save settings"
@@ -572,6 +572,10 @@ msgstr "GUIMiner - v%s"
 #: guiminer.py:1728
 msgid "Name this miner:"
 msgstr "Bányász neve:"
+
+#: guiminer.py:1728
+msgid "New miner"
+msgstr "Új bányász"
 
 #: guiminer.py:1731
 msgid "Untitled"
