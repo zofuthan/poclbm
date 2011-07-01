@@ -200,7 +200,7 @@ def add_tooltip(widget, text):
 def format_khash(rate):
     """Format rate for display. A rate of 0 means just connected."""
     if rate > 10**6:
-        return _("%.1f Ghash/s") % (rate / 1000000.)
+        return _("%.3f Ghash/s") % (rate / 1000000.)
     if rate > 10**3:
         return _("%.1f Mhash/s") % (rate / 1000.)
     elif rate == 0:
