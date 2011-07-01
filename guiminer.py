@@ -1203,6 +1203,7 @@ class MinerTab(wx.Panel):
                 info = json.loads(data)
                 confirmed = (info.get('confirmed_reward') or
                              info.get('confirmed') or
+                             info.get('balance') or
                              info.get('user', {}).get('confirmed_rewards') or
                              0)
                 unconfirmed = (info.get('unconfirmed_reward') or
@@ -1234,7 +1235,8 @@ class MinerTab(wx.Panel):
         HOSTS_REQUIRING_AUTH_TOKEN = ["api.bitcoin.cz",
                                       "btcmine.com",
                                       "pit.deepbit.net",
-                                      "pit.x8s.de"]
+                                      "pit.x8s.de",
+                                      "mtred.com"]
         if host in HOSTS_REQUIRING_AUTH_TOKEN: return True        
         if "btcguild" in host: return True    
         return False
