@@ -426,7 +426,7 @@ class GUIMinerTaskBarIcon(wx.TaskBarIcon):
 
 class MinerListenerThread(threading.Thread):
     LINES = [
-        (r"Target =|average rate|Sending to server|found hash!",
+        (r"Target =|average rate|Sending to server|found hash|connected to|Setting server",
             lambda _: None), # Just ignore lines like these
         (r"accepted|\"result\":\s*true",
             lambda _: UpdateAcceptedEvent(accepted=True)),
@@ -434,6 +434,8 @@ class MinerListenerThread(threading.Thread):
             UpdateAcceptedEvent(accepted=False)),
         (r"(\d+)\s*khash/s", lambda match:
             UpdateHashRateEvent(rate=int(match.group(1)))),
+        (r"(\d+\.\d+)\s*MH/s", lambda match:
+            UpdateHashRateEvent(rate=float(match.group(1)) * 1000)),            
         (r"(\d+\.\d+)\s*Mhash/s", lambda match:
             UpdateHashRateEvent(rate=float(match.group(1)) * 1000)),
         (r"(\d+)\s*Mhash/s", lambda match:
@@ -838,7 +840,7 @@ class MinerTab(wx.Panel):
                 executable = "poclbm.exe"
             else:
                 executable = "python poclbm.py"
-        cmd = "%s --user=%s --pass=%s -o %s -p %s --device=%d --platform=%d --verbose %s" % (
+        cmd = "%s %s:%s@%s:%s --device=%d --platform=%d %s" % (
                 executable,
                 self.txt_username.GetValue(),
                 self.txt_pass.GetValue(),
