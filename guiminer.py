@@ -253,14 +253,23 @@ def set_process_affinity(pid, mask):
     handle = win32api.OpenProcess(flags, 0, pid)
     win32process.SetProcessAffinityMask(handle, mask)
 
+def find_nth(haystack, needle, n):
+    """Return the index of the nth occurrence of needle in haystack."""
+    start = haystack.find(needle)
+    while start >= 0 and n > 1:
+        start = haystack.find(needle, start+len(needle))
+        n -= 1
+    return start
+
 class ConsolePanel(wx.Panel):
     """Panel that displays logging events.
 
     Uses with a StreamHandler to log events to a TextCtrl. Thread-safe.
     """
-    def __init__(self, parent):
+    def __init__(self, parent, n_max_lines):
         wx.Panel.__init__(self, parent, -1)
         self.parent = parent
+        self.n_max_lines = n_max_lines
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         style = wx.TE_MULTILINE | wx.TE_READONLY | wx.HSCROLL
@@ -284,9 +293,17 @@ class ConsolePanel(wx.Panel):
         """On closing, stop handling logging events."""
         logger.removeHandler(self.handler)
 
+    def append_text(self, text):
+        self.text.AppendText(text)
+        lines_to_cut = self.text.GetNumberOfLines() - self.n_max_lines 
+        if lines_to_cut > 0:
+            contents = self.text.GetValue()
+            position = find_nth(contents, '\n', lines_to_cut)
+            self.text.ChangeValue(contents[position+1:])                        
+
     def write(self, text):
         """Forward logging events to our TextCtrl."""
-        wx.CallAfter(self.text.AppendText, text)
+        wx.CallAfter(self.append_text, text)
 
 
 class SummaryPanel(wx.Panel):
@@ -1597,6 +1614,7 @@ class GUIMiner(wx.Frame):
 
         self.parse_config()
         self.do_show_opencl_warning = self.config_data.get('show_opencl_warning', True)
+        self.console_max_lines = self.config_data.get('console_max_lines', 500)
 
         ID_NEW_EXTERNAL, ID_NEW_PHOENIX, ID_NEW_CUDA, ID_NEW_UFASOFT  = wx.NewId(), wx.NewId(), wx.NewId(), wx.NewId()
         self.menubar = wx.MenuBar()
@@ -2034,7 +2052,7 @@ class GUIMiner(wx.Frame):
         """Show the console log in its own tab."""
         if self.is_console_visible():
             return # Console already shown
-        self.console_panel = ConsolePanel(self)
+        self.console_panel = ConsolePanel(self, self.console_max_lines)
         self.nb.AddPage(self.console_panel, _("Console"))
         self.nb.EnsureVisible(self.nb.GetPageCount() - 1)
 
