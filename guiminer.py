@@ -1707,8 +1707,8 @@ class GUIMiner(wx.Frame):
         self.Bind(wx.EVT_MENU, self.launch_solo_server, id=ID_LAUNCH)
         self.Bind(wx.EVT_MENU, self.on_change_language, id=ID_CHANGE_LANGUAGE)
         self.Bind(wx.EVT_MENU, self.on_donate, id=ID_DONATE_SMALL)
-        self.Bind(wx.EVT_CLOSE, self.on_close)
-        self.Bind(wx.EVT_ICONIZE, lambda event: self.Hide())
+        self.Bind(wx.EVT_CLOSE, self.on_close)        
+        self.Bind(wx.EVT_ICONIZE, self.on_iconize)
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CLOSING, self.on_page_closing)
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CLOSED, self.on_page_closed)
         self.Bind(fnb.EVT_FLATNOTEBOOK_PAGE_CHANGED, self.on_page_changed)
@@ -1717,6 +1717,12 @@ class GUIMiner(wx.Frame):
         self.do_layout()
 
         if not self.start_minimized_chk.IsChecked():
+            self.Show()
+            
+    def on_iconize(self, event):
+        if event.Iconized() and sys.platform == 'win32':
+            self.Hide() # On minimize, hide from taskbar.
+        else:
             self.Show()
 
     def set_properties(self):
