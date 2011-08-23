@@ -52,8 +52,7 @@ LANGUAGES = {
 }
 LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
 
-DONATE_SMALL_URL = 'https://www.mybitcoin.com/sci/paypage.php?t=XFxBkKwtjVYHmQmHzVP1jE_euOoSpMZcXJ5XDtQ1EhISH6nuDWExVwvVYXHQjDC-ApO9Zlwww7tqJnCVP4kBSoaaOdLpyFYSKI9LbTjwnKi-tZEMYKmmfhSqGLWNS_BoVHN0RJFwsQlxKleftmfKG7dpRfQ9or2uX1RE1aWesJA9AsU%2C'
-
+DONATION_ADDRESS = "1MDDh2h4cAZDafgc94mr9q95dhRYcJbNQo"
 locale = None
 language = None
 def update_language(new_language):
@@ -1658,7 +1657,7 @@ class GUIMiner(wx.Frame):
 
         ID_DONATE_SMALL = wx.NewId()
         donate_menu = wx.Menu()
-        donate_menu.Append(ID_DONATE_SMALL, _("&Donate 99 cents..."), _("Donate $0.99 USD worth of Bitcoins to support GUIMiner development"))
+        donate_menu.Append(ID_DONATE_SMALL, _("&Donate..."), _("Donate Bitcoins to support GUIMiner development"))
         self.menubar.Append(donate_menu, _("&Donate"))
 
         help_menu = wx.Menu()
@@ -2095,7 +2094,35 @@ class GUIMiner(wx.Frame):
         save_language()
 
     def on_donate(self, event):
-        webbrowser.open(DONATE_SMALL_URL)
+        dialog = DonateDialog(self, -1, _('Donate'))
+        dialog.ShowModal()
+        dialog.Destroy()
+
+class DonateDialog(wx.Dialog):
+    """About dialog for the app with a donation address."""
+    DONATE_TEXT = "If this software helped you, please consider contributing to its development." \
+                  "\nSend donations to:  %(address)s"
+    def __init__(self, parent, id, title):
+        wx.Dialog.__init__(self, parent, id, title)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+
+        text = DonateDialog.DONATE_TEXT % dict(address=DONATION_ADDRESS)
+        self.about_text = wx.StaticText(self, -1, text)
+        self.copy_btn = wx.Button(self, -1, _("Copy address to clipboard"))
+        vbox.Add(self.about_text, 0, wx.ALL, 10)
+        vbox.Add(self.copy_btn, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
+        self.SetSizerAndFit(vbox)
+
+        self.copy_btn.Bind(wx.EVT_BUTTON, self.on_copy)
+
+    def on_copy(self, event):
+        """Copy the donation address to the clipboard."""
+        if wx.TheClipboard.Open():
+            data = wx.TextDataObject()
+            data.SetText(DONATION_ADDRESS)
+            wx.TheClipboard.SetData(data)
+        wx.TheClipboard.Close()
+        
 
 class ChangeLanguageDialog(wx.Dialog):
     """Dialog prompting the user to change languages."""
@@ -2176,13 +2203,13 @@ To remember this token for the future, save your miner settings.""")
 
 class AboutGuiminer(wx.Dialog):
     """About dialog for the app with a donation address."""
-    donation_address = "1MDDh2h4cAZDafgc94mr9q95dhRYcJbNQo"
+    
     def __init__(self, parent, id, title):
         wx.Dialog.__init__(self, parent, id, title)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
         text = ABOUT_TEXT % dict(version=__version__,
-                                 address=AboutGuiminer.donation_address)
+                                 address=DONATION_ADDRESS)
         self.about_text = wx.StaticText(self, -1, text)
         self.copy_btn = wx.Button(self, -1, _("Copy address to clipboard"))
         vbox.Add(self.about_text)
@@ -2195,7 +2222,7 @@ class AboutGuiminer(wx.Dialog):
         """Copy the donation address to the clipboard."""
         if wx.TheClipboard.Open():
             data = wx.TextDataObject()
-            data.SetText(AboutGuiminer.donation_address)
+            data.SetText(DONATION_ADDRESS)
             wx.TheClipboard.SetData(data)
         wx.TheClipboard.Close()
 
