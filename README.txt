@@ -125,6 +125,14 @@ Then make sure bitcoin.exe is not running already and choose "Solo
 utilities -> Launch Bitcoin client". This should bring up the official
 Bitcoin client. You will need to leave this open while you are solo mining.
 
+You will need to be connected to the Bitcoin network before you can mine;
+in the official client this is shown in the status bar as "6 connections"
+or similar. 
+
+If this is the first time you've launched the official Bitcoin client, you
+will also need to wait while the block chain is downloaded. This can take
+a long time on slower computers.
+
 Now you can enter your information in the text boxes. Make sure the "Host" 
 option reads "localhost" since the server is on your own machine. Put your 
 username and password that you chose earlier. Then press "Start mining!" to 
