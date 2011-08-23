@@ -14,7 +14,6 @@ import sys, os, subprocess, errno, re, threading, logging, time, httplib, urllib
 import wx
 import json
 import collections
-import webbrowser
 
 try:
     import win32api, win32con, win32process
@@ -25,7 +24,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-07-01'
+__version__ = '2011-08-23'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
