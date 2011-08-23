@@ -1615,7 +1615,7 @@ class GUIMiner(wx.Frame):
 
         self.parse_config()
         self.do_show_opencl_warning = self.config_data.get('show_opencl_warning', True)
-        self.console_max_lines = self.config_data.get('console_max_lines', 500)
+        self.console_max_lines = self.config_data.get('console_max_lines', 5000)
 
         ID_NEW_EXTERNAL, ID_NEW_PHOENIX, ID_NEW_CUDA, ID_NEW_UFASOFT  = wx.NewId(), wx.NewId(), wx.NewId(), wx.NewId()
         self.menubar = wx.MenuBar()
