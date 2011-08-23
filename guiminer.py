@@ -1593,10 +1593,12 @@ class GUIMiner(wx.Frame):
 
         # Set up notebook context menu
         notebook_menu = wx.Menu()
-        ID_RENAME = wx.NewId()
+        ID_RENAME, ID_DUPLICATE = wx.NewId(), wx.NewId()
         notebook_menu.Append(ID_RENAME, _("&Rename..."), _("Rename this miner"))
+        notebook_menu.Append(ID_DUPLICATE, _("&Duplicate...", _("Duplicate this miner")))
         self.nb.SetRightClickMenu(notebook_menu)
         self.Bind(wx.EVT_MENU, self.rename_miner, id=ID_RENAME)
+        self.Bind(wx.EVT_MENU, self.duplicate_miner, id=ID_DUPLICATE)
 
         self.console_panel = None
         self.summary_panel = None
@@ -2087,6 +2089,13 @@ class GUIMiner(wx.Frame):
         dialog = wx.TextEntryDialog(self, _("Rename to:"), _("Rename miner"))
         if dialog.ShowModal() == wx.ID_OK:
             p.set_name(dialog.GetValue().strip())
+
+    def duplicate_miner(self, event):
+        """Duplicate the current miner to another miner."""
+        p = self.nb.GetPage(self.nb.GetSelection())
+        if p not in self.profile_panels:
+            return        
+        self.name_new_profile(event=None, extra_profile_data=p.get_data())
 
     def on_change_language(self, event):
         dialog = ChangeLanguageDialog(self, _('Change language'), language)
