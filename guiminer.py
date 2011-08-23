@@ -1186,6 +1186,7 @@ class MinerTab(wx.Panel):
             return
         url = self.server_config.get('balance_token_url')
         dialog = BalanceAuthRequest(self, url)
+        dialog.txt_token.SetFocus()
         result = dialog.ShowModal()
         dialog.Destroy()
         if result == wx.ID_CANCEL:
