@@ -1869,6 +1869,7 @@ class GUIMiner(wx.Frame):
                            bitcoin_executable=self.bitcoin_executable,
                            show_opencl_warning=self.do_show_opencl_warning,
                            start_minimized=self.start_minimized_chk.IsChecked(),
+                           console_max_lines=self.console_max_lines,
                            window_position=list(self.GetRect()))
         logger.debug(_('Saving: ') + json.dumps(config_data))
         try:
