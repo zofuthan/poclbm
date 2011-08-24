@@ -21,7 +21,9 @@ class BitcoinMiner():
 		self.defines += (' -DOUTPUT_MASK=' + str(self.output_size - 1))
 
 		self.device = device
-		self.options.rate = if_else(self.options.verbose, max(self.options.rate, 60), max(self.options.rate, 0.1))
+
+		# GUIMiner: need to report at 1 Hz even in verbose mode.
+		#self.options.rate = if_else(self.options.verbose, max(self.options.rate, 60), max(self.options.rate, 0.1))          
 		self.options.askrate = max(self.options.askrate, 1)
 		self.options.askrate = min(self.options.askrate, 10)
 		self.options.frames = max(self.options.frames, 3)

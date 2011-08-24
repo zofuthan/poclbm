@@ -855,7 +855,7 @@ class MinerTab(wx.Panel):
                 executable = "poclbm.exe"
             else:
                 executable = "python poclbm.py"
-        cmd = "%s %s:%s@%s:%s --device=%d --platform=%d %s" % (
+        cmd = "%s %s:%s@%s:%s --device=%d --platform=%d --verbose %s" % (
                 executable,
                 self.txt_username.GetValue(),
                 self.txt_pass.GetValue(),
