@@ -24,7 +24,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-08-23'
+__version__ = '2011-08-24'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
