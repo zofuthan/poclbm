@@ -1141,7 +1141,7 @@ class MinerTab(wx.Panel):
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
         elif "btcguild.com" in host: self.layout_btcguild()
-        elif "www.bitcoin-server.de" in host: self.layout_bitcoinserver
+        elif host == "bitcoin-server.de": self.layout_bitcoinserver
         elif host == "pit.x8s.de": self.layout_x8s()
         else: self.layout_default()
 
@@ -1237,10 +1237,10 @@ class MinerTab(wx.Panel):
                                       "btcmine.com",
                                       "pit.deepbit.net",
                                       "pit.x8s.de",
-                                      "mtred.com"]
+                                      "mtred.com",
+                                      "bitcoin-server.de"]
         if host in HOSTS_REQUIRING_AUTH_TOKEN: return True        
-        if "btcguild" in host: return True    
-        if "www.bitcoin-server.de" in host: return True    
+        if "btcguild" in host: return True      
         return False
     
     def on_balance_refresh(self, event=None):
