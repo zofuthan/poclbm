@@ -1154,7 +1154,7 @@ class MinerTab(wx.Panel):
 
         # Call server specific code.
         host = new_server.get('host', "").lower()
-        if host == "api.bitcoin.cz" or host == "mtred.com": self.layout_slush()
+        if host == "api2.bitcoin.cz" or host == "mtred.com": self.layout_slush()
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
@@ -1252,7 +1252,7 @@ class MinerTab(wx.Panel):
 
     def requires_auth_token(self, host):
         """Return True if the specified host requires an auth token for balance update."""
-        HOSTS_REQUIRING_AUTH_TOKEN = ["api.bitcoin.cz",
+        HOSTS_REQUIRING_AUTH_TOKEN = ["api2.bitcoin.cz",
                                       "btcmine.com",
                                       "pit.deepbit.net",
                                       "pit.x8s.de",
