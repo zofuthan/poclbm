@@ -1159,6 +1159,7 @@ class MinerTab(wx.Panel):
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
         elif "btcguild.com" in host: self.layout_btcguild()
+        elif host == "bitcoin-server.de": self.layout_bitcoinserver
         elif host == "pit.x8s.de": self.layout_x8s()
         else: self.layout_default()
 
@@ -1256,9 +1257,10 @@ class MinerTab(wx.Panel):
                                       "btcmine.com",
                                       "pit.deepbit.net",
                                       "pit.x8s.de",
-                                      "mtred.com"]
+                                      "mtred.com",
+                                      "bitcoin-server.de"]
         if host in HOSTS_REQUIRING_AUTH_TOKEN: return True        
-        if "btcguild" in host: return True    
+        if "btcguild" in host: return True      
         return False
     
     def requires_https(self, host):
@@ -1542,6 +1544,10 @@ class MinerTab(wx.Panel):
 
     def layout_btcguild(self):
         """BTC Guild has the same layout as slush for now."""
+        self.layout_slush()
+
+    def layout_bitcoinserver(self):
+        """Bitcoin-Server.de has the same layout as slush for now."""
         self.layout_slush()
 
     def layout_btcmine(self):
