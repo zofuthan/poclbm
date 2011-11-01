@@ -48,6 +48,7 @@ LANGUAGES = {
     "Italian": wx.LANGUAGE_ITALIAN,
     "Spanish": wx.LANGUAGE_SPANISH,
     "Russian": wx.LANGUAGE_RUSSIAN,
+	"Dutch": wx.LANGUAGE_DUTCH,
 }
 LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
 
