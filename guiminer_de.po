@@ -703,7 +703,7 @@ msgstr "bitcoin.conf existiert bereits."
 
 #: guiminer.py:1987
 msgid "Enter password"
-msgstr "PAsswort eingeben"
+msgstr "Passwort eingeben"
 
 #: guiminer.py:1997
 msgid "Success"
