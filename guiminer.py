@@ -510,7 +510,7 @@ class CgListenerThread(MinerListenerThread):
             lambda _: UpdateAcceptedEvent(accepted=False)),
         (r"\(\d+s\):(\d+)\.?(\d*) .* Mh/s", lambda match:
             UpdateHashRateEvent(rate=float(match.group(1) + '.' + match.group(2)) * 1000)),
-        (r"GPU \d+",
+        (r"^GPU\s*\d+",
             lambda _: None), # Just ignore lines like these
     ]
     
@@ -933,13 +933,19 @@ class MinerTab(wx.Panel):
         if path.endswith('.py'):
             path = "python " + path
 
-        cmd = "%s -u %s -p %s -o http://@%s:%s -d %s -l 3 -T %s" % (
+        # Command line arguments for cgminer here:
+        # -u <username>
+        # -p <password>
+        # -o <http://server.ip:port>
+        # -d <device appear in pyopencl>
+        # -l <log message period in second>
+        # -T <disable curses interface and output to console (stdout)>
+        cmd = "%s -u %s -p %s -o http://%s:%s -d %s -l 1 -T %s" % (
             path,
             self.txt_username.GetValue(),
             self.txt_pass.GetValue(),
             self.host_without_http_prefix,
             self.txt_port.GetValue(),
-            #self.platform_index,
             self.device_index,
             self.txt_flags.GetValue())
         return cmd, os.path.dirname(self.external_path)
@@ -981,12 +987,23 @@ class MinerTab(wx.Panel):
         #  use universal_newlines to catch the \r output on Mhash/s lines
         try:
             logger.debug(_('Running command: ') + cmd)
-            self.miner = subprocess.Popen(cmd, cwd=cwd,
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.STDOUT,
-                                          universal_newlines=True,
-                                          creationflags=flags,
-                                          shell=(sys.platform != 'win32'))
+            # for cgminer: 
+            # We need only the STDOUT for meaningful messages.
+            if conf_func == self.configure_subprocess_cgminer:
+                self.miner = subprocess.Popen(cmd, cwd=cwd,
+                                              stdout=subprocess.PIPE,
+                                              stderr=None,
+                                              universal_newlines=True,
+                                              creationflags=flags,
+                                              shell=(sys.platform != 'win32'))
+            else:
+                self.miner = subprocess.Popen(cmd, cwd=cwd,
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.STDOUT,
+                                              universal_newlines=True,
+                                              creationflags=flags,
+                                              shell=(sys.platform != 'win32'))
+            
         except OSError:
             raise #TODO: the folder or exe could not exist
         self.miner_listener = listener_cls(self, self.miner)
