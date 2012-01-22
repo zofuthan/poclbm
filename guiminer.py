@@ -1211,6 +1211,7 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
+        elif host == "rr.btcmp.com": self.layout_btcmp()
         elif "btcguild.com" in host: self.layout_btcguild()
         elif host == "bitcoin-server.de": self.layout_bitcoinserver
         elif host == "pit.x8s.de": self.layout_x8s()
@@ -1288,6 +1289,10 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
                     ipa = info.get('ipa', False)
                     self.withdraw.Enable(ipa)
 
+                if self.server_config.get('host') == "rr.btcmp.com":
+                    ipa = info.get('can_payout', False)
+                    self.withdraw.Enable(ipa)
+
                 data = _("%s confirmed") % format_balance(confirmed)
                 if unconfirmed > 0:
                     data += _(", %s unconfirmed") % format_balance(unconfirmed)
@@ -1303,6 +1308,8 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
             self.withdraw_bitpenny()
         elif host == 'pit.deepbit.net':
             self.withdraw_deepbit()
+        elif host == 'rr.btcmp.com':
+            self.withdraw_btcmp()
 
     def requires_auth_token(self, host):
         """Return True if the specified host requires an auth token for balance update."""
@@ -1311,6 +1318,7 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
                                       "pit.deepbit.net",
                                       "pit.x8s.de",
                                       "mtred.com",
+                                      "rr.btcmp.com",
                                       "bitcoin-server.de"]
         if host in HOSTS_REQUIRING_AUTH_TOKEN: return True        
         if "btcguild" in host: return True      
@@ -1348,6 +1356,16 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
     #################################
     # Begin server specific HTTP code
 
+    def withdraw_btcmp(self):
+        """Launch a thread to withdraw from deepbit."""
+        self.require_auth_token()
+        if not self.balance_auth_token: # User refused to provide token
+            return
+        self.http_thread = threading.Thread(
+                target=self.request_payout_btcmp,
+                args=(self.balance_auth_token,))
+        self.http_thread.start()
+
     def withdraw_deepbit(self):
         """Launch a thread to withdraw from deepbit."""
         self.require_auth_token()
@@ -1362,6 +1380,23 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
         self.http_thread = threading.Thread(
             target=self.request_payout_bitpenny, args=(True,))
         self.http_thread.start() # TODO: look at aliasing of this variable
+
+    def request_payout_btcmp(self, balance_auth_token):
+        """Request payout from btcmp's server via HTTP POST."""        
+        response, data = http_request(
+            self.server_config['balance_host'],
+            "GET",
+            self.server_config["payout_url"] % balance_auth_token,
+            use_https=False
+        )
+        
+        if self.is_auth_token_rejected(response):
+            data = _("Auth token rejected by server.")
+        elif not data:
+            data = STR_CONNECTION_ERROR
+        else:
+            data = _("Withdraw OK")
+        wx.CallAfter(self.on_balance_received, data)
 
     def request_payout_deepbit(self, balance_auth_token):
         """Request payout from deepbit's server via HTTP POST."""
@@ -1635,6 +1670,22 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
         add_tooltip(self.txt_username,
             _("The e-mail address you registered with."))
         self.user_lbl.SetLabel(_("Email:"))
+
+    def layout_btcmp(self):
+        """Deepbit uses an email address for a username."""
+        self.set_widgets_visible([self.host_lbl, self.txt_host,
+                                  self.port_lbl, self.txt_port,
+                                  self.extra_info], False)
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
+        self.layout_user_and_pass(row=row + 1)
+        self.layout_device_and_flags(row=row + 2)
+        self.layout_affinity(row=row + 3)
+        self.layout_balance(row=row + 4)
+        self.layout_finish()
+        add_tooltip(self.txt_username,
+            _("Your worker name. Is something in the form of username.workername"))
+        self.user_lbl.SetLabel(_("Workername:"))
 
     def layout_x8s(self):
         """x8s has the same layout as slush for now."""
