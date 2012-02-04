@@ -1208,6 +1208,7 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
         # Call server specific code.
         host = new_server.get('host', "").lower()
         if host == "api2.bitcoin.cz" or host == "mtred.com": self.layout_slush()
+        if "eligius.st" in host: self.layout_eligius()
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
@@ -1340,6 +1341,11 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
             self.http_thread = threading.Thread(
             target=self.request_payout_bitpenny, args=(False,))
             self.http_thread.start()
+        elif 'eligius.st' in host:
+            self.http_thread = threading.Thread(
+                target=self.request_balance_eligius
+            )
+            self.http_thread.start()
 
         self.balance_refresh.Disable()
         self.balance_cooldown_seconds = 10
@@ -1402,6 +1408,23 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
             data = STR_CONNECTION_ERROR
         elif withdraw:
             data = _("Withdraw OK")
+        wx.CallAfter(self.on_balance_received, data)
+
+    def request_balance_eligius(self):
+        """Request our balance from Eligius
+        """
+        response, data = http_request(
+             self.server_config['balance_host'],
+             "POST",
+             self.server_config['balance_url'] % (self.txt_username.GetValue(),),
+        )
+        if not data:
+            data = STR_CONNECTION_ERROR
+        try:
+            data = json.loads(data)
+            data = data['expected'] / 1e8
+        except BaseException as e:
+            data = str(e)
         wx.CallAfter(self.on_balance_received, data)
 
     def on_balance_received(self, balance):
@@ -1594,6 +1617,33 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
             _("Your miner username (not your account username).\nExample: Kiv.GPU"))
         add_tooltip(self.txt_pass,
             _("Your miner password (not your account password)."))
+
+    def layout_eligius(self):
+        """Eligius doesn't require registration or a password.
+
+        The username is just their receiving address.
+        """
+        invisible = [self.txt_pass, self.txt_host, self.txt_port,
+                     self.withdraw,
+                     self.pass_lbl, self.host_lbl, self.port_lbl]
+        self.set_widgets_visible(invisible, False)
+        self.set_widgets_visible([self.extra_info], True)
+
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
+        self.inner_sizer.Add(self.user_lbl, (row + 1, 0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_username, (row + 1, 1), span=(1, 3), flag=wx.EXPAND)
+        self.layout_device_and_flags(row=row + 2)
+        self.layout_affinity(row=row + 3)
+        self.layout_balance(row=row + 4)
+        self.inner_sizer.Add(self.extra_info, (row + 5, 0), span=(1, 4), flag=wx.ALIGN_CENTER_HORIZONTAL)
+        self.layout_finish()
+
+        self.extra_info.SetLabel(_("No registration is required - just enter an address and press Start."))
+        self.txt_pass.SetValue('x')
+        self.user_lbl.SetLabel(_("Address:"))
+        add_tooltip(self.txt_username,
+            _("Your receiving address for Bitcoins.\nE.g.: 1JMfKKJqtkDPbRRsFSLjX1Cs2dqmjKiwj8"))
 
     def layout_btcguild(self):
         """BTC Guild has the same layout as slush for now."""
