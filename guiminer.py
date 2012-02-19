@@ -6,7 +6,7 @@ Currently supports:
 - jedi95's "Phoenix"
 - ufasoft's "bitcoin-miner"
 
-Copyright 2011 Chris MacLeod
+Copyright 2011-2012 Chris MacLeod
 This program is released under the GNU GPL. See LICENSE.txt for details.
 """
 
@@ -24,7 +24,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-11-22'
+__version__ = '2012-02-19'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
