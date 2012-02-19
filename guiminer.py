@@ -24,7 +24,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2011-08-24'
+__version__ = '2011-11-22'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
@@ -41,15 +41,16 @@ _ = wx.GetTranslation
 
 LANGUAGES = {
     "Chinese Simplified": wx.LANGUAGE_CHINESE_SIMPLIFIED,
+    "Dutch": wx.LANGUAGE_DUTCH,
     "English": wx.LANGUAGE_ENGLISH,
     "French": wx.LANGUAGE_FRENCH,
     "German": wx.LANGUAGE_GERMAN,
     "Hungarian": wx.LANGUAGE_HUNGARIAN,
     "Italian": wx.LANGUAGE_ITALIAN,
-    "Spanish": wx.LANGUAGE_SPANISH,
     "Russian": wx.LANGUAGE_RUSSIAN,
+    "Spanish": wx.LANGUAGE_SPANISH,
 }
-LANGUAGES_REVERSE = dict((v,k) for (k,v) in LANGUAGES.items())
+LANGUAGES_REVERSE = dict((v, k) for (k, v) in LANGUAGES.items())
 
 DONATION_ADDRESS = "1MDDh2h4cAZDafgc94mr9q95dhRYcJbNQo"
 locale = None
@@ -164,7 +165,7 @@ def get_opencl_devices():
     for i, platform in enumerate(platforms):
         devices = platform.get_devices()
         for j, device in enumerate(devices):
-            device_strings.append('[%d-%d] %s' %
+            device_strings.append('[%d-%d] %s' % 
                 (i, j, merge_whitespace(device.name)[:25]))
     if len(device_strings) == 0:
         raise IOError
@@ -180,7 +181,7 @@ def get_taskbar_icon():
     This works around Window's annoying behavior of ignoring the 16x16 image
     and using nearest neighbour downsampling on the 32x32 image instead."""
     ib = get_icon_bundle()
-    return ib.GetIcon((16,16))
+    return ib.GetIcon((16, 16))
 
 def mkdir_p(path):
     """If the directory 'path' doesn't exist, create it. Same as mkdir -p."""
@@ -197,9 +198,9 @@ def add_tooltip(widget, text):
 
 def format_khash(rate):
     """Format rate for display. A rate of 0 means just connected."""
-    if rate > 10**6:
+    if rate > 10 ** 6:
         return _("%.3f Ghash/s") % (rate / 1000000.)
-    if rate > 10**3:
+    if rate > 10 ** 3:
         return _("%.1f Mhash/s") % (rate / 1000.)
     elif rate == 0:
         return _("Connecting...")
@@ -255,7 +256,7 @@ def find_nth(haystack, needle, n):
     """Return the index of the nth occurrence of needle in haystack."""
     start = haystack.find(needle)
     while start >= 0 and n > 1:
-        start = haystack.find(needle, start+len(needle))
+        start = haystack.find(needle, start + len(needle))
         n -= 1
     return start
 
@@ -297,7 +298,7 @@ class ConsolePanel(wx.Panel):
         if lines_to_cut > 0:
             contents = self.text.GetValue()
             position = find_nth(contents, '\n', lines_to_cut)
-            self.text.ChangeValue(contents[position+1:])                        
+            self.text.ChangeValue(contents[position + 1:])                        
 
     def write(self, text):
         """Forward logging events to our TextCtrl."""
@@ -450,7 +451,7 @@ class MinerListenerThread(threading.Thread):
         (r"(\d+)\s*khash/s", lambda match:
             UpdateHashRateEvent(rate=int(match.group(1)))),
         (r"(\d+\.\d+)\s*MH/s", lambda match:
-            UpdateHashRateEvent(rate=float(match.group(1)) * 1000)),            
+            UpdateHashRateEvent(rate=float(match.group(1)) * 1000)),
         (r"(\d+\.\d+)\s*Mhash/s", lambda match:
             UpdateHashRateEvent(rate=float(match.group(1)) * 1000)),
         (r"(\d+)\s*Mhash/s", lambda match:
@@ -494,12 +495,25 @@ class PhoenixListenerThread(MinerListenerThread):
         (r"Result: .* rejected", lambda _:
             UpdateAcceptedEvent(accepted=False)),
         (r"(\d+)\.?(\d*) Khash/sec", lambda match:
-            UpdateHashRateEvent(rate=float(match.group(1)+'.'+match.group(2)))),
+            UpdateHashRateEvent(rate=float(match.group(1) + '.' + match.group(2)))),
         (r"(\d+)\.?(\d*) Mhash/sec", lambda match:
-            UpdateHashRateEvent(rate=float(match.group(1)+'.'+match.group(2)) * 1000)),
+            UpdateHashRateEvent(rate=float(match.group(1) + '.' + match.group(2)) * 1000)),
         (r"Currently on block",
             lambda _: None), # Just ignore lines like these
     ]
+    
+class CgListenerThread(MinerListenerThread):
+    LINES = [
+        (r"Accepted .* GPU \d+ thread \d+",
+            lambda _: UpdateAcceptedEvent(accepted=True)),
+        (r"Rejected .* GPU \d+ thread \d+",
+            lambda _: UpdateAcceptedEvent(accepted=False)),
+        (r"\(\d+s\):(\d+)\.?(\d*) .* Mh/s", lambda match:
+            UpdateHashRateEvent(rate=float(match.group(1) + '.' + match.group(2)) * 1000)),
+        (r"^GPU\s*\d+",
+            lambda _: None), # Just ignore lines like these
+    ]
+    
 
 class MinerTab(wx.Panel):
     """A tab in the GUI representing a miner instance.
@@ -792,13 +806,13 @@ class MinerTab(wx.Panel):
             text = format_khash(self.last_rate)
         self.summary_status.SetLabel(text)
 
-        self.summary_shares_accepted.SetLabel("%d (%d)" %
+        self.summary_shares_accepted.SetLabel("%d (%d)" % 
             (self.accepted_shares, len(self.accepted_times)))
 
         if self.is_solo:
             self.summary_shares_invalid.SetLabel("-")
         else:
-            self.summary_shares_invalid.SetLabel("%d (%d)" %
+            self.summary_shares_invalid.SetLabel("%d (%d)" % 
                 (self.invalid_shares, len(self.invalid_times)))
 
         self.summary_start.SetLabel(self.get_start_stop_state())
@@ -814,7 +828,7 @@ class MinerTab(wx.Panel):
         self.summary_status = wx.StaticText(summary_panel, -1, STR_STOPPED)
         self.summary_shares_accepted = wx.StaticText(summary_panel, -1, "0")
         self.summary_shares_invalid = wx.StaticText(summary_panel, -1, "0")
-        self.summary_start =  wx.Button(summary_panel, -1, self.get_start_stop_state(), style=wx.BU_EXACTFIT)
+        self.summary_start = wx.Button(summary_panel, -1, self.get_start_stop_state(), style=wx.BU_EXACTFIT)
         self.summary_start.Bind(wx.EVT_BUTTON, self.toggle_mining)
         self.summary_autostart = wx.CheckBox(summary_panel, -1)
         self.summary_autostart.Bind(wx.EVT_CHECKBOX, self.toggle_autostart)
@@ -913,6 +927,29 @@ class MinerTab(wx.Panel):
             self.txt_flags.GetValue())
         return cmd, os.path.dirname(self.external_path)
 
+    def configure_subprocess_cgminer(self):
+        """Set up the command line for cgminer."""
+        path = self.external_path
+        if path.endswith('.py'):
+            path = "python " + path
+
+        # Command line arguments for cgminer here:
+        # -u <username>
+        # -p <password>
+        # -o <http://server.ip:port>
+        # -d <device appear in pyopencl>
+        # -l <log message period in second>
+        # -T <disable curses interface and output to console (stdout)>
+        cmd = "%s -u %s -p %s -o http://%s:%s -d %s -l 1 -T %s" % (
+            path,
+            self.txt_username.GetValue(),
+            self.txt_pass.GetValue(),
+            self.host_without_http_prefix,
+            self.txt_port.GetValue(),
+            self.device_index,
+            self.txt_flags.GetValue())
+        return cmd, os.path.dirname(self.external_path)
+
     # End backend specific code
     ###########################
 
@@ -937,6 +974,9 @@ class MinerTab(wx.Panel):
         elif "phoenix" in self.external_path:
             conf_func = self.configure_subprocess_phoenix
             listener_cls = PhoenixListenerThread
+        elif "cgminer" in self.external_path:
+            conf_func = self.configure_subprocess_cgminer
+            listener_cls = CgListenerThread
 
         else:
             raise ValueError # TODO: handle unrecognized miner
@@ -947,12 +987,23 @@ class MinerTab(wx.Panel):
         #  use universal_newlines to catch the \r output on Mhash/s lines
         try:
             logger.debug(_('Running command: ') + cmd)
-            self.miner = subprocess.Popen(cmd, cwd=cwd,
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.STDOUT,
-                                          universal_newlines=True,
-                                          creationflags=flags,
-                                          shell=(sys.platform != 'win32'))
+            # for cgminer: 
+            # We need only the STDOUT for meaningful messages.
+            if conf_func == self.configure_subprocess_cgminer:
+                self.miner = subprocess.Popen(cmd, cwd=cwd,
+                                              stdout=subprocess.PIPE,
+                                              stderr=None,
+                                              universal_newlines=True,
+                                              creationflags=flags,
+                                              shell=(sys.platform != 'win32'))
+            else:
+                self.miner = subprocess.Popen(cmd, cwd=cwd,
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.STDOUT,
+                                              universal_newlines=True,
+                                              creationflags=flags,
+                                              shell=(sys.platform != 'win32'))
+            
         except OSError:
             raise #TODO: the folder or exe could not exist
         self.miner_listener = listener_cls(self, self.miner)
@@ -1116,7 +1167,9 @@ class MinerTab(wx.Panel):
         add_tooltip(self.txt_port, _("Server port. This is usually 8332."))
         add_tooltip(self.txt_username, _("The miner's username.\nMay be different than your account username.\nExample: Kiv.GPU"))
         add_tooltip(self.txt_pass, _("The miner's password.\nMay be different than your account password."))
-        add_tooltip(self.txt_flags, _("Extra flags to pass to the miner.\nFor Radeon HD 5xxx series use -v -w128 for best results.\nFor other cards consult the forum."))
+        add_tooltip(self.txt_flags, _("""Extra flags to pass to the miner.
+For poclbm use -v -w 128 for dedicated mining, append -f 60 for desktop usage.
+For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
         for chk in self.affinity_chks:
             add_tooltip(chk, _("CPU cores used for mining.\nUnchecking some cores can reduce high CPU usage in some systems."))
 
@@ -1155,9 +1208,11 @@ class MinerTab(wx.Panel):
         # Call server specific code.
         host = new_server.get('host', "").lower()
         if host == "api2.bitcoin.cz" or host == "mtred.com": self.layout_slush()
+        if "eligius.st" in host: self.layout_eligius()
         elif host == "bitpenny.dyndns.biz": self.layout_bitpenny()
         elif host == "pit.deepbit.net": self.layout_deepbit()
         elif host == "btcmine.com": self.layout_btcmine()
+        elif host == "rr.btcmp.com": self.layout_btcmp()
         elif "btcguild.com" in host: self.layout_btcguild()
         elif host == "bitcoin-server.de": self.layout_bitcoinserver
         elif host == "pit.x8s.de": self.layout_x8s()
@@ -1235,6 +1290,10 @@ class MinerTab(wx.Panel):
                     ipa = info.get('ipa', False)
                     self.withdraw.Enable(ipa)
 
+                if self.server_config.get('host') == "rr.btcmp.com":
+                    ipa = info.get('can_payout', False)
+                    self.withdraw.Enable(ipa)
+
                 data = _("%s confirmed") % format_balance(confirmed)
                 if unconfirmed > 0:
                     data += _(", %s unconfirmed") % format_balance(unconfirmed)
@@ -1250,6 +1309,8 @@ class MinerTab(wx.Panel):
             self.withdraw_bitpenny()
         elif host == 'pit.deepbit.net':
             self.withdraw_deepbit()
+        elif host == 'rr.btcmp.com':
+            self.withdraw_btcmp()
 
     def requires_auth_token(self, host):
         """Return True if the specified host requires an auth token for balance update."""
@@ -1258,6 +1319,7 @@ class MinerTab(wx.Panel):
                                       "pit.deepbit.net",
                                       "pit.x8s.de",
                                       "mtred.com",
+                                      "rr.btcmp.com",
                                       "bitcoin-server.de"]
         if host in HOSTS_REQUIRING_AUTH_TOKEN: return True        
         if "btcguild" in host: return True      
@@ -1287,6 +1349,11 @@ class MinerTab(wx.Panel):
             self.http_thread = threading.Thread(
             target=self.request_payout_bitpenny, args=(False,))
             self.http_thread.start()
+        elif 'eligius.st' in host:
+            self.http_thread = threading.Thread(
+                target=self.request_balance_eligius
+            )
+            self.http_thread.start()
 
         self.balance_refresh.Disable()
         self.balance_cooldown_seconds = 10
@@ -1294,6 +1361,16 @@ class MinerTab(wx.Panel):
 
     #################################
     # Begin server specific HTTP code
+
+    def withdraw_btcmp(self):
+        """Launch a thread to withdraw from deepbit."""
+        self.require_auth_token()
+        if not self.balance_auth_token: # User refused to provide token
+            return
+        self.http_thread = threading.Thread(
+                target=self.request_payout_btcmp,
+                args=(self.balance_auth_token,))
+        self.http_thread.start()
 
     def withdraw_deepbit(self):
         """Launch a thread to withdraw from deepbit."""
@@ -1309,6 +1386,23 @@ class MinerTab(wx.Panel):
         self.http_thread = threading.Thread(
             target=self.request_payout_bitpenny, args=(True,))
         self.http_thread.start() # TODO: look at aliasing of this variable
+
+    def request_payout_btcmp(self, balance_auth_token):
+        """Request payout from btcmp's server via HTTP POST."""        
+        response, data = http_request(
+            self.server_config['balance_host'],
+            "GET",
+            self.server_config["payout_url"] % balance_auth_token,
+            use_https=False
+        )
+        
+        if self.is_auth_token_rejected(response):
+            data = _("Auth token rejected by server.")
+        elif not data:
+            data = STR_CONNECTION_ERROR
+        else:
+            data = _("Withdraw OK")
+        wx.CallAfter(self.on_balance_received, data)
 
     def request_payout_deepbit(self, balance_auth_token):
         """Request payout from deepbit's server via HTTP POST."""
@@ -1349,6 +1443,23 @@ class MinerTab(wx.Panel):
             data = STR_CONNECTION_ERROR
         elif withdraw:
             data = _("Withdraw OK")
+        wx.CallAfter(self.on_balance_received, data)
+
+    def request_balance_eligius(self):
+        """Request our balance from Eligius
+        """
+        response, data = http_request(
+             self.server_config['balance_host'],
+             "POST",
+             self.server_config['balance_url'] % (self.txt_username.GetValue(),),
+        )
+        if not data:
+            data = STR_CONNECTION_ERROR
+        try:
+            data = json.loads(data)
+            data = data['expected'] / 1e8
+        except BaseException as e:
+            data = str(e)
         wx.CallAfter(self.on_balance_received, data)
 
     def on_balance_received(self, balance):
@@ -1404,31 +1515,31 @@ class MinerTab(wx.Panel):
         self.button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         row = 0
         if self.is_external_miner:
-            self.inner_sizer.Add(self.external_lbl, (row,0), flag=LBL_STYLE)
-            self.inner_sizer.Add(self.txt_external, (row,1), span=(1,3), flag=wx.EXPAND)
+            self.inner_sizer.Add(self.external_lbl, (row, 0), flag=LBL_STYLE)
+            self.inner_sizer.Add(self.txt_external, (row, 1), span=(1, 3), flag=wx.EXPAND)
             row += 1
         return row
 
     def layout_server_and_website(self, row):
         """Lay out the server and website widgets in the specified row."""
-        self.inner_sizer.Add(self.server_lbl, (row,0), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.server, (row,1), flag=wx.EXPAND)
-        self.inner_sizer.Add(self.website_lbl, (row,2), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.website, (row,3), flag=wx.ALIGN_CENTER_VERTICAL)
+        self.inner_sizer.Add(self.server_lbl, (row, 0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.server, (row, 1), flag=wx.EXPAND)
+        self.inner_sizer.Add(self.website_lbl, (row, 2), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.website, (row, 3), flag=wx.ALIGN_CENTER_VERTICAL)
 
     def layout_host_and_port(self, row):
         """Lay out the host and port widgets in the specified row."""
-        self.inner_sizer.Add(self.host_lbl, (row,0), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.txt_host, (row,1), flag=wx.EXPAND)
-        self.inner_sizer.Add(self.port_lbl, (row,2), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.txt_port, (row,3), flag=wx.EXPAND)
+        self.inner_sizer.Add(self.host_lbl, (row, 0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_host, (row, 1), flag=wx.EXPAND)
+        self.inner_sizer.Add(self.port_lbl, (row, 2), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_port, (row, 3), flag=wx.EXPAND)
 
     def layout_user_and_pass(self, row):
         """Lay out the user and pass widgets in the specified row."""
-        self.inner_sizer.Add(self.user_lbl, (row,0), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.txt_username, (row,1), flag=wx.EXPAND)
-        self.inner_sizer.Add(self.pass_lbl, (row,2), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.txt_pass, (row,3), flag=wx.EXPAND)
+        self.inner_sizer.Add(self.user_lbl, (row, 0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_username, (row, 1), flag=wx.EXPAND)
+        self.inner_sizer.Add(self.pass_lbl, (row, 2), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_pass, (row, 3), flag=wx.EXPAND)
 
     def layout_device_and_flags(self, row):
         """Lay out the device and flags widgets in the specified row.
@@ -1438,26 +1549,26 @@ class MinerTab(wx.Panel):
         device_visible = self.is_device_visible
         self.set_widgets_visible([self.device_lbl, self.device_listbox], device_visible)
         if device_visible:
-            self.inner_sizer.Add(self.device_lbl, (row,0), flag=LBL_STYLE)
-            self.inner_sizer.Add(self.device_listbox, (row,1), flag=wx.EXPAND)
+            self.inner_sizer.Add(self.device_lbl, (row, 0), flag=LBL_STYLE)
+            self.inner_sizer.Add(self.device_listbox, (row, 1), flag=wx.EXPAND)
         col = 2 * (device_visible)
-        self.inner_sizer.Add(self.flags_lbl, (row,col), flag=LBL_STYLE)
-        span = (1,1) if device_visible else (1,4)
-        self.inner_sizer.Add(self.txt_flags, (row,col+1), span=span, flag=wx.EXPAND)
+        self.inner_sizer.Add(self.flags_lbl, (row, col), flag=LBL_STYLE)
+        span = (1, 1) if device_visible else (1, 4)
+        self.inner_sizer.Add(self.txt_flags, (row, col + 1), span=span, flag=wx.EXPAND)
 
     def layout_affinity(self, row):
         """Lay out the affinity checkboxes in the specified row."""
-        self.inner_sizer.Add(self.affinity_lbl, (row,0))
+        self.inner_sizer.Add(self.affinity_lbl, (row, 0))
 
         affinity_sizer = wx.BoxSizer(wx.HORIZONTAL)
         for chk in self.affinity_chks:
             affinity_sizer.Add(chk)
-        self.inner_sizer.Add(affinity_sizer, (row,1))
+        self.inner_sizer.Add(affinity_sizer, (row, 1))
 
     def layout_balance(self, row):
         """Lay out the balance widgets in the specified row."""
-        self.inner_sizer.Add(self.balance_lbl, (row,0), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.balance_amt, (row,1))
+        self.inner_sizer.Add(self.balance_lbl, (row, 0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.balance_amt, (row, 1))
 
     def layout_finish(self):
         """Lay out the buttons and fit the sizer to the window."""
@@ -1486,7 +1597,7 @@ class MinerTab(wx.Panel):
         customs = ["other", "solo"]
         is_custom = self.server.GetStringSelection().lower() in customs
         if is_custom:
-            self.layout_host_and_port(row=row+1)
+            self.layout_host_and_port(row=row + 1)
         else:
             self.set_widgets_visible([self.host_lbl, self.txt_host,
                                       self.port_lbl, self.txt_port], False)
@@ -1510,12 +1621,12 @@ class MinerTab(wx.Panel):
 
         row = self.layout_init()
         self.layout_server_and_website(row=row)
-        self.inner_sizer.Add(self.user_lbl, (row+1,0), flag=LBL_STYLE)
-        self.inner_sizer.Add(self.txt_username, (row+1,1), span=(1,3), flag=wx.EXPAND)
-        self.layout_device_and_flags(row=row+2)
-        self.layout_affinity(row=row+3)
-        self.layout_balance(row=row+4)
-        self.inner_sizer.Add(self.extra_info,(row+5,0), span=(1,4), flag=wx.ALIGN_CENTER_HORIZONTAL)
+        self.inner_sizer.Add(self.user_lbl, (row + 1, 0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_username, (row + 1, 1), span=(1, 3), flag=wx.EXPAND)
+        self.layout_device_and_flags(row=row + 2)
+        self.layout_affinity(row=row + 3)
+        self.layout_balance(row=row + 4)
+        self.inner_sizer.Add(self.extra_info, (row + 5, 0), span=(1, 4), flag=wx.ALIGN_CENTER_HORIZONTAL)
         self.layout_finish()
 
         self.extra_info.SetLabel(_("No registration is required - just enter an address and press Start."))
@@ -1531,16 +1642,43 @@ class MinerTab(wx.Panel):
                                   self.withdraw, self.extra_info], False)
         row = self.layout_init()
         self.layout_server_and_website(row=row)
-        self.layout_user_and_pass(row=row+1)
-        self.layout_device_and_flags(row=row+2)
-        self.layout_affinity(row=row+3)
-        self.layout_balance(row=row+4)
+        self.layout_user_and_pass(row=row + 1)
+        self.layout_device_and_flags(row=row + 2)
+        self.layout_affinity(row=row + 3)
+        self.layout_balance(row=row + 4)
         self.layout_finish()
 
         add_tooltip(self.txt_username,
             _("Your miner username (not your account username).\nExample: Kiv.GPU"))
         add_tooltip(self.txt_pass,
             _("Your miner password (not your account password)."))
+
+    def layout_eligius(self):
+        """Eligius doesn't require registration or a password.
+
+        The username is just their receiving address.
+        """
+        invisible = [self.txt_pass, self.txt_host, self.txt_port,
+                     self.withdraw,
+                     self.pass_lbl, self.host_lbl, self.port_lbl]
+        self.set_widgets_visible(invisible, False)
+        self.set_widgets_visible([self.extra_info], True)
+
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
+        self.inner_sizer.Add(self.user_lbl, (row + 1, 0), flag=LBL_STYLE)
+        self.inner_sizer.Add(self.txt_username, (row + 1, 1), span=(1, 3), flag=wx.EXPAND)
+        self.layout_device_and_flags(row=row + 2)
+        self.layout_affinity(row=row + 3)
+        self.layout_balance(row=row + 4)
+        self.inner_sizer.Add(self.extra_info, (row + 5, 0), span=(1, 4), flag=wx.ALIGN_CENTER_HORIZONTAL)
+        self.layout_finish()
+
+        self.extra_info.SetLabel(_("No registration is required - just enter an address and press Start."))
+        self.txt_pass.SetValue('x')
+        self.user_lbl.SetLabel(_("Address:"))
+        add_tooltip(self.txt_username,
+            _("Your receiving address for Bitcoins.\nE.g.: 1JMfKKJqtkDPbRRsFSLjX1Cs2dqmjKiwj8"))
 
     def layout_btcguild(self):
         """BTC Guild has the same layout as slush for now."""
@@ -1556,10 +1694,10 @@ class MinerTab(wx.Panel):
                                   self.withdraw, self.extra_info], False)
         row = self.layout_init()
         self.layout_server_and_website(row=row)
-        self.layout_user_and_pass(row=row+1)
-        self.layout_device_and_flags(row=row+2)
-        self.layout_affinity(row=row+3)
-        self.layout_balance(row=row+4)
+        self.layout_user_and_pass(row=row + 1)
+        self.layout_device_and_flags(row=row + 2)
+        self.layout_affinity(row=row + 3)
+        self.layout_balance(row=row + 4)
         self.layout_finish()
 
         add_tooltip(self.txt_username,
@@ -1574,14 +1712,30 @@ class MinerTab(wx.Panel):
                                   self.extra_info], False)
         row = self.layout_init()
         self.layout_server_and_website(row=row)
-        self.layout_user_and_pass(row=row+1)
-        self.layout_device_and_flags(row=row+2)
-        self.layout_affinity(row=row+3)
-        self.layout_balance(row=row+4)
+        self.layout_user_and_pass(row=row + 1)
+        self.layout_device_and_flags(row=row + 2)
+        self.layout_affinity(row=row + 3)
+        self.layout_balance(row=row + 4)
         self.layout_finish()
         add_tooltip(self.txt_username,
             _("The e-mail address you registered with."))
         self.user_lbl.SetLabel(_("Email:"))
+
+    def layout_btcmp(self):
+        """Deepbit uses an email address for a username."""
+        self.set_widgets_visible([self.host_lbl, self.txt_host,
+                                  self.port_lbl, self.txt_port,
+                                  self.extra_info], False)
+        row = self.layout_init()
+        self.layout_server_and_website(row=row)
+        self.layout_user_and_pass(row=row + 1)
+        self.layout_device_and_flags(row=row + 2)
+        self.layout_affinity(row=row + 3)
+        self.layout_balance(row=row + 4)
+        self.layout_finish()
+        add_tooltip(self.txt_username,
+            _("Your worker name. Is something in the form of username.workername"))
+        self.user_lbl.SetLabel(_("Workername:"))
 
     def layout_x8s(self):
         """x8s has the same layout as slush for now."""
@@ -1623,12 +1777,13 @@ class GUIMiner(wx.Frame):
         self.do_show_opencl_warning = self.config_data.get('show_opencl_warning', True)
         self.console_max_lines = self.config_data.get('console_max_lines', 5000)
 
-        ID_NEW_EXTERNAL, ID_NEW_PHOENIX, ID_NEW_CUDA, ID_NEW_UFASOFT  = wx.NewId(), wx.NewId(), wx.NewId(), wx.NewId()
+        ID_NEW_EXTERNAL, ID_NEW_PHOENIX, ID_NEW_CGMINER, ID_NEW_CUDA, ID_NEW_UFASOFT = wx.NewId(), wx.NewId(), wx.NewId(), wx.NewId(), wx.NewId()
         self.menubar = wx.MenuBar()
         file_menu = wx.Menu()
         new_menu = wx.Menu()
         new_menu.Append(wx.ID_NEW, _("&New OpenCL miner..."), _("Create a new OpenCL miner (default for ATI cards)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_PHOENIX, _("New Phoenix miner..."), _("Create a new Phoenix miner (for some ATI cards)"), wx.ITEM_NORMAL)
+        new_menu.Append(ID_NEW_CGMINER, _("New CG miner..."), _("Create a new CGMiner (for some ATI cards)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_CUDA, _("New CUDA miner..."), _("Create a new CUDA miner (for NVIDIA cards)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_UFASOFT, _("New Ufasoft CPU miner..."), _("Create a new Ufasoft miner (for CPUs)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_EXTERNAL, _("New &other miner..."), _("Create a new custom miner (requires external program)"), wx.ITEM_NORMAL)
@@ -1700,6 +1855,7 @@ class GUIMiner(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.new_phoenix_profile, id=ID_NEW_PHOENIX)
+        self.Bind(wx.EVT_MENU, self.new_cgminer_profile, id=ID_NEW_CGMINER)
         self.Bind(wx.EVT_MENU, self.new_ufasoft_profile, id=ID_NEW_UFASOFT)
         self.Bind(wx.EVT_MENU, self.new_cuda_profile, id=ID_NEW_CUDA)
         self.Bind(wx.EVT_MENU, self.new_external_profile, id=ID_NEW_EXTERNAL)
@@ -1813,6 +1969,11 @@ class GUIMiner(wx.Frame):
     def new_phoenix_profile(self, event):
         """Create a new miner using the Phoenix OpenCL miner backend."""
         path = os.path.join(get_module_path(), 'phoenix.exe')
+        self.name_new_profile(extra_profile_data=dict(external_path=path))
+
+    def new_cgminer_profile(self, event):
+        """Create a new miner using the Cgminer OpenCL miner backend."""
+        path = os.path.join(get_module_path(), 'cgminer.exe')
         self.name_new_profile(extra_profile_data=dict(external_path=path))
 
     def new_ufasoft_profile(self, event):
@@ -2162,7 +2323,7 @@ class ChangeLanguageDialog(wx.Dialog):
 
         vbox.Add(self.language_choices, 0, wx.ALL, 10)
         buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
-        vbox.Add(buttons, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
+        vbox.Add(buttons, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         self.SetSizerAndFit(vbox)
 
     def get_value(self):
@@ -2211,9 +2372,9 @@ To remember this token for the future, save your miner settings.""")
 
         vbox.AddMany([
             (self.instructions, 0, wx.ALL, 10),
-            (self.website, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10),
-            (self.txt_token, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 10),
-            (buttons, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 10)
+            (self.website, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10),
+            (self.txt_token, 0, wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL, 10),
+            (buttons, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
         ])
         self.SetSizerAndFit(vbox)
 
@@ -2265,7 +2426,7 @@ class OpenCLWarningDialog(wx.Dialog):
         self.no_show_chk = wx.CheckBox(self, -1)
         hbox.Add(self.no_show_chk)
         self.no_show_txt = wx.StaticText(self, -1, _("Don't show this message again"))
-        hbox.Add((5,0))
+        hbox.Add((5, 0))
         hbox.Add(self.no_show_txt)
         vbox.Add(hbox, 0, wx.ALL, 10)
         buttons = self.CreateButtonSizer(wx.OK)
