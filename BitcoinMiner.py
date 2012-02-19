@@ -40,10 +40,10 @@ class BitcoinMiner():
 		Thread(target=self.mining_thread).start()
 		self.transport.loop()
 
-	def stop(self):
+	def stop(self, message = None):
+		if message: print '\n%s' % message
 		self.transport.stop()
 		self.should_stop = True
-
 
 	def say_status(self, rate, estimated_rate):
 		rate = Decimal(rate) / 1000
@@ -161,7 +161,21 @@ class BitcoinMiner():
 		self.context = cl.Context([self.device], None, None)
 		if (self.device.extensions.find('cl_amd_media_ops') != -1):
 			self.defines += ' -DBITALIGN'
-			self.defines += ' -DBFI_INT'
+			if self.device.name.strip('\r\n \x00\t') in ['Cedar',
+									'Redwood',
+									'Juniper',
+									'Cypress',
+									'Hemlock',
+									'Caicos',
+									'Turks',
+									'Barts',
+									'Cayman',
+									'Antilles',
+									'Wrestler',
+									'Zacate',
+									'WinterPark',
+									'BeaverCreek']:
+				self.defines += ' -DBFI_INT'
 
 		kernel_file = open('phatk.cl', 'r')
 		kernel = kernel_file.read()
@@ -174,7 +188,7 @@ class BitcoinMiner():
 			self.miner = cl.Program(self.context, [self.device], [binary.read()]).build(self.defines)
 		except (IOError, cl.LogicError):
 			self.miner = cl.Program(self.context, kernel).build(self.defines)
-			if (self.defines.find('-DBITALIGN') != -1):
+			if (self.defines.find('-DBFI_INT') != -1):
 				patchedBinary = patch(self.miner.binaries[0])
 				self.miner = cl.Program(self.context, [self.device], [patchedBinary]).build(self.defines)
 			binaryW = open(cache_name, 'wb')

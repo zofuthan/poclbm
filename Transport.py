@@ -2,6 +2,7 @@ from Queue import Queue
 from log import *
 from sha256 import *
 from time import time
+from util import if_else
 import log
 
 class Transport(object):
@@ -26,29 +27,55 @@ class Transport(object):
 
 		self.sent = {}
 
+		if self.config.proxy:
+			self.config.proxy = self.parse_server(self.config.proxy, False)
+
 		self.servers = []
 		for server in self.config.servers:
 			try:
-				temp = server.split('://', 1)
-				if len(temp) == 1:
-					proto = ''; temp = temp[0]
-				else: proto = temp[0]; temp = temp[1]
-				user, temp = temp.split(':', 1)
-				pwd, host = temp.split('@')
-				if host.find('#') != -1:
-					host, name = host.split('#')
-				else: name = host
-				self.servers.append((proto, user, pwd, host, name))
+				self.servers.append(self.parse_server(server))
 			except ValueError:
 				say_line("Ignored invalid server entry: '%s'", server)
 				continue
+
+	def parse_server(self, server, mailAsUser=True):
+		temp = server.split('://', 1)
+		if len(temp) == 1:
+			proto = ''; temp = temp[0]
+		else: proto = temp[0]; temp = temp[1]
+		if mailAsUser:
+			user, temp = temp.split(':', 1)
+			pwd, host = temp.split('@')
+		else:
+			temp = temp.split('@', 1)
+			if len(temp) == 1:
+				user = ''
+				pwd = ''
+				host = temp[0]
+			else:
+				if temp[0].find(':') <> -1:
+					user, pwd = temp[0].split(':')
+				else:
+					user = temp[0]
+					pwd = ''
+				host = temp[1]
+
+		if host.find('#') != -1:
+			host, name = host.split('#')
+		else: name = host
+
+		return (proto, user, pwd, host, name)
+
+	def loop(self):
 		if not self.servers:
-			self.failure('At least one server is required')
+			print '\nAt least one server is required'
+			return
 		else:
 			self.set_server(self.servers[0])
 			self.user_servers = list(self.servers)
+		self.loop_internal()
 
-	def loop(self):
+	def loop_internal(self):
 		raise NotImplementedError
 
 	def stop(self):
@@ -62,10 +89,7 @@ class Transport(object):
 
 	def set_difficulty(self, difficulty):
 		self.difficulty = difficulty
-		bits = hex(difficulty)
-		bits = bits[2:len(bits) - 1]
-		bits += ('0' * (8 - len(bits)))
-		bits = ''.join(list(chunks(bits, 2))[::-1])
+		bits = '%08x' % difficulty.byteswap()
 		true_target = '%064x' % (int(bits[2:], 16) * 2 ** (8 * (int(bits[:2], 16) - 3)),)
 		true_target = ''.join(list(chunks(true_target, 2))[::-1])
 		self.true_target = np.array(unpack('IIIIIIII', true_target.decode('hex')), dtype=np.uint32)
@@ -93,7 +117,7 @@ class Transport(object):
 
 	def report(self, nonce, accepted):
 		is_block, hash6, hash5 = self.sent[nonce]
-		self.miner.share_found(if_else(is_block, hash6+hash5, hash6), accepted, is_block)
+		self.miner.share_found(if_else(is_block, hash6 + hash5, hash6), accepted, is_block)
 		del self.sent[nonce]
 
 	def set_server(self, server):
@@ -101,7 +125,7 @@ class Transport(object):
 		proto, user, pwd, host, name = server
 		self.proto = proto
 		self.host = host
-		#self.say_line('Setting server %s (%s @ %s)', (name, user, host))
+		#say_line('Setting server %s (%s @ %s)', (name, user, host))
 		say_line('Setting server (%s @ %s)', (user, name))
 		log.server = name + ' '
 
