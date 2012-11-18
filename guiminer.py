@@ -9,8 +9,8 @@ Currently supports:
 Copyright 2011-2012 Chris MacLeod
 This program is released under the GNU GPL. See LICENSE.txt for details.
 """
-
 import sys, os, subprocess, errno, re, threading, logging, time, httplib, urllib
+print sys.path
 import wx
 import json
 import collections
@@ -1799,10 +1799,11 @@ class GUIMiner(wx.Frame):
         view_menu.Append(ID_CONSOLE, _("Show console"), _("Show console logs"), wx.ITEM_NORMAL)
         self.menubar.Append(view_menu, _("&View"))
 
-        ID_SOLO, ID_PATHS, ID_LAUNCH = wx.NewId(), wx.NewId(), wx.NewId()
+        ID_SOLO, ID_PATHS, ID_BLOCKCHAIN_PATH, ID_LAUNCH = wx.NewId(), wx.NewId(), wx.NewId(), wx.NewId()
         solo_menu = wx.Menu()
         solo_menu.Append(ID_SOLO, _("&Create solo password..."), _("Configure a user/pass for solo mining"), wx.ITEM_NORMAL)
         solo_menu.Append(ID_PATHS, _("&Set Bitcoin client path..."), _("Set the location of the official Bitcoin client"), wx.ITEM_NORMAL)
+        solo_menu.Append(ID_BLOCKCHAIN_PATH, _("&Set Bitcoin data directory..."), _("Set the location of the bitcoin data directory containing the blockchain and wallet"), wx.ITEM_NORMAL)
         solo_menu.Append(ID_LAUNCH, _("&Launch Bitcoin client as server"), _("Launch the official Bitcoin client as a server for solo mining"), wx.ITEM_NORMAL)
         self.menubar.Append(solo_menu, _("&Solo utilities"))
 
@@ -1830,10 +1831,16 @@ class GUIMiner(wx.Frame):
         self.statusbar = self.CreateStatusBar(2, 0)
 
         try:
-            self.bitcoin_executable = os.path.join(os.getenv("PROGRAMFILES"), "Bitcoin", "bitcoin.exe")
+            self.bitcoin_executable = os.path.join(os.getenv("PROGRAMFILES"), "Bitcoin", "bitcoin-qt.exe")
         except:
             self.bitcoin_executable = "" # TODO: where would Bitcoin probably be on Linux/Mac?
 
+        try:
+            self.blockchain_directory = os.path.join(os.getenv("APPDATA"), "Bitcoin")
+        except:
+            self.blockchain_directory = ""
+          
+        
         try:
             self.tbicon = GUIMinerTaskBarIcon(self)
         except:
@@ -1863,6 +1870,7 @@ class GUIMiner(wx.Frame):
         self.Bind(wx.EVT_MENU, self.load_config, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.on_menu_exit, id=wx.ID_EXIT)
         self.Bind(wx.EVT_MENU, self.set_official_client_path, id=ID_PATHS)
+        self.Bind(wx.EVT_MENU, self.set_blockchain_directory, id=ID_BLOCKCHAIN_PATH)
         self.Bind(wx.EVT_MENU, self.show_console, id=ID_CONSOLE)
         self.Bind(wx.EVT_MENU, self.show_summary, id=ID_SUMMARY)
         self.Bind(wx.EVT_MENU, self.show_about_dialog, id=wx.ID_ABOUT)
@@ -2034,6 +2042,7 @@ class GUIMiner(wx.Frame):
                            show_summary=self.is_summary_visible(),
                            profiles=profile_data,
                            bitcoin_executable=self.bitcoin_executable,
+                           blockchain_directory=self.blockchain_directory,
                            show_opencl_warning=self.do_show_opencl_warning,
                            start_minimized=self.start_minimized_chk.IsChecked(),
                            console_max_lines=self.console_max_lines,
@@ -2075,6 +2084,10 @@ class GUIMiner(wx.Frame):
         executable = config_data.get('bitcoin_executable', None)
         if executable is not None:
             self.bitcoin_executable = executable
+            
+        blockchain_directory = config_data.get('blockchain_directory', None)
+        if blockchain_directory is not None:
+            self.blockchain_directory = blockchain_directory
 
         # Shut down any existing miners before they get clobbered
         if(any(p.is_mining for p in self.profile_panels)):
@@ -2111,10 +2124,10 @@ class GUIMiner(wx.Frame):
 
     def set_official_client_path(self, event):
         """Set the path to the official Bitcoin client."""
-        wildcard = "bitcoin.exe" if sys.platform == 'win32' else '*.*'
+        wildcard = "*.exe" if sys.platform == 'win32' else '*.*'
         dialog = wx.FileDialog(self,
                                _("Select path to Bitcoin.exe"),
-                               defaultFile="bitcoin.exe",
+                               defaultFile="bitcoin-qt.exe",
                                wildcard=wildcard,
                                style=wx.OPEN)
         if dialog.ShowModal() == wx.ID_OK:
@@ -2122,6 +2135,19 @@ class GUIMiner(wx.Frame):
             if os.path.exists(path):
                 self.bitcoin_executable = path
         dialog.Destroy()
+        
+    def set_blockchain_directory(self, event):
+        """Set the path to the blockchain data directory."""
+        defaultPath = os.path.join(os.getenv("APPDATA"), "Bitcoin")
+        dialog = wx.DirDialog(self,
+                              _("Select path to blockchain"),
+                              defaultPath=defaultPath,
+                              style=wx.DD_DIR_MUST_EXIST)
+        if dialog.ShowModal() == wx.ID_OK:
+            path = os.path.join(dialog.GetDirectory(), dialog.GetFilename())
+            if os.path.exists(path):
+                self.blockchain_directory = path
+        dialog.Destroy()   
 
     def show_about_dialog(self, event):
         """Show the 'about' dialog."""
@@ -2177,8 +2203,12 @@ class GUIMiner(wx.Frame):
 
         This allows poclbm to connect to it for mining solo.
         """
+        if self.blockchain_directory and os.path.exists(self.blockchain_directory):
+            datadir = " -datadir=%s" % self.blockchain_directory
+        else:
+            datadir = ""
         try:
-            subprocess.Popen(self.bitcoin_executable + " -server")
+            subprocess.Popen(self.bitcoin_executable + " -server" + datadir)
         except OSError:
             self.message(
                 _("Couldn't find Bitcoin at %s. Is your path set correctly?") % self.bitcoin_executable,
