@@ -2144,7 +2144,7 @@ class GUIMiner(wx.Frame):
                               defaultPath=defaultPath,
                               style=wx.DD_DIR_MUST_EXIST)
         if dialog.ShowModal() == wx.ID_OK:
-            path = os.path.join(dialog.GetDirectory(), dialog.GetFilename())
+            path = dialog.GetPath()
             if os.path.exists(path):
                 self.blockchain_directory = path
         dialog.Destroy()   
