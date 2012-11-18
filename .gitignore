@@ -1,4 +1,13 @@
+/build
+/dist
+/package
+/test
 *.elf
 *.pyc
 .project
 .pydevproject
+*.sh
+*.sh~
+*.bat
+*.bak
+*.dll
