@@ -448,7 +448,7 @@ class MinerListenerThread(threading.Thread):
             lambda _: None), # Just ignore lines like these
         (r"accepted|\"result\":\s*true",
             lambda _: UpdateAcceptedEvent(accepted=True)),
-        (r"invalid|stale", lambda _:
+        (r"invalid|stale|rejected", lambda _:
             UpdateAcceptedEvent(accepted=False)),
         (r"(\d+)\s*khash/s", lambda match:
             UpdateHashRateEvent(rate=int(match.group(1)))),
@@ -871,7 +871,7 @@ class MinerTab(wx.Panel):
                 executable = "poclbm.exe"
             else:
                 executable = "python poclbm.py"
-        cmd = "%s %s:%s@%s:%s --device=%d --platform=%d --verbose %s" % (
+        cmd = "%s %s:%s@%s:%s --device=%d --platform=%d --verbose -r1 %s" % (
                 executable,
                 self.txt_username.GetValue(),
                 self.txt_pass.GetValue(),
