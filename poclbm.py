@@ -58,7 +58,7 @@ parser.add_option_group(group)
 log.verbose = options.verbose
 log.quiet = options.quiet
 
-options.rate = if_else(options.verbose, max(options.rate, 60), max(options.rate, 0.1))
+options.rate = if_else(options.verbose, options.rate, max(options.rate, 0.1))
 
 options.version = VERSION
 
