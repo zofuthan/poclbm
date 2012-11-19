@@ -1329,7 +1329,10 @@ For cgminer use -I 8 or -I 9. Without any params for desktop usage."""))
     
     def requires_https(self, host):
         """Return True if the specified host requires HTTPs for balance update."""
-        return host == "mtred.com"
+        HOSTS = ["mtred.com", "api2.bitcoin.cz"]
+        if host in HOSTS: return True
+        if "btcguild" in host: return True
+        return False
     
     def on_balance_refresh(self, event=None):
         """Refresh the miner's balance from the server."""
