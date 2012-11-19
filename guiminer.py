@@ -3,7 +3,6 @@
 Currently supports:
 - m0mchil's "poclbm"
 - puddinpop's "rpcminer"
-- jedi95's "Phoenix"
 - ufasoft's "bitcoin-miner"
 
 Copyright 2011-2012 Chris MacLeod
@@ -24,7 +23,7 @@ from wx.lib.agw import flatnotebook as fnb
 from wx.lib.agw import hyperlink
 from wx.lib.newevent import NewEvent
 
-__version__ = '2012-02-19'
+__version__ = '2012-11-18'
 
 def get_module_path():
     """Return the folder containing this script (or its .exe)."""
