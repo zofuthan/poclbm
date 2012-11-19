@@ -126,8 +126,8 @@ SUPPORTED_BACKENDS = [
     "rpcminer-cpu.exe",
     "rpcminer-cuda.exe",
     "rpcminer-opencl.exe",
-    "phoenix.py",
-    "phoenix.exe",
+#    "phoenix.py",
+#    "phoenix.exe",
     "bitcoin-miner.exe"
 ]
 
@@ -1782,7 +1782,7 @@ class GUIMiner(wx.Frame):
         file_menu = wx.Menu()
         new_menu = wx.Menu()
         new_menu.Append(wx.ID_NEW, _("&New OpenCL miner..."), _("Create a new OpenCL miner (default for ATI cards)"), wx.ITEM_NORMAL)
-        new_menu.Append(ID_NEW_PHOENIX, _("New Phoenix miner..."), _("Create a new Phoenix miner (for some ATI cards)"), wx.ITEM_NORMAL)
+        #new_menu.Append(ID_NEW_PHOENIX, _("New Phoenix miner..."), _("Create a new Phoenix miner (for some ATI cards)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_CGMINER, _("New CG miner..."), _("Create a new CGMiner (for some ATI cards)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_CUDA, _("New CUDA miner..."), _("Create a new CUDA miner (for NVIDIA cards)"), wx.ITEM_NORMAL)
         new_menu.Append(ID_NEW_UFASOFT, _("New Ufasoft CPU miner..."), _("Create a new Ufasoft miner (for CPUs)"), wx.ITEM_NORMAL)
@@ -1861,7 +1861,7 @@ class GUIMiner(wx.Frame):
                 self.do_show_opencl_warning = not dialog.is_box_checked()
 
         self.Bind(wx.EVT_MENU, self.name_new_profile, id=wx.ID_NEW)
-        self.Bind(wx.EVT_MENU, self.new_phoenix_profile, id=ID_NEW_PHOENIX)
+        #self.Bind(wx.EVT_MENU, self.new_phoenix_profile, id=ID_NEW_PHOENIX)
         self.Bind(wx.EVT_MENU, self.new_cgminer_profile, id=ID_NEW_CGMINER)
         self.Bind(wx.EVT_MENU, self.new_ufasoft_profile, id=ID_NEW_UFASOFT)
         self.Bind(wx.EVT_MENU, self.new_cuda_profile, id=ID_NEW_CUDA)

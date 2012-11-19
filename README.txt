@@ -5,7 +5,6 @@ by Chris 'Kiv' MacLeod
 based on:
 - "poclbm" by m0mchil
 - 'rpcminer' by puddinpop
-- "phoenix" by jedi95
 - bitcoin-miner by ufasoft
 
 What is it?
@@ -55,8 +54,7 @@ supports OpenCL, try the GPU Caps Viewer:
     
 For AMD/ATI cards, to get a version of OpenCL you need the Stream SDK which is
 available here:
-
-    http://developer.amd.com/gpu/AMDAPPSDK/downloads/pages/AMDAPPSDKDownloadArchive.aspx
+    http://developer.amd.com/tools/heterogeneous-computing/amd-accelerated-parallel-processing-app-sdk/
     
 For NVIDIA cards, you can also install OpenCL and mine that way, or you can
 install CUDA and use rpcminer-CUDA which may provide slightly higher performance

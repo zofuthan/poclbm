@@ -6,7 +6,7 @@ setup(windows=[
          'icon_resources': [(0, "logo.ico")]
         }
       ],
-      console=['phoenix.py', 'poclbm.py', 'po_to_mo.py'],
+      console=['poclbm.py', 'po_to_mo.py'],
       # OpenCL.dll is vendor specific
       options=dict(py2exe=dict(
           includes="minerutil, twisted.web.resource, QueueReader",
