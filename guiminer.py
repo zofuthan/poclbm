@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 """GUIMiner - graphical frontend to Bitcoin miners.
 
 Currently supports:
