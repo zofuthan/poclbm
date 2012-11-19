@@ -43,6 +43,7 @@ LANGUAGES = {
     "Chinese Simplified": wx.LANGUAGE_CHINESE_SIMPLIFIED,
     "Dutch": wx.LANGUAGE_DUTCH,
     "English": wx.LANGUAGE_ENGLISH,
+    "Esperanto": wx.LANGUAGE_ESPERANTO,
     "French": wx.LANGUAGE_FRENCH,
     "German": wx.LANGUAGE_GERMAN,
     "Hungarian": wx.LANGUAGE_HUNGARIAN,
