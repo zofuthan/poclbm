@@ -352,8 +352,7 @@ msgstr "Retirada de Saldo OK"
 
 #: guiminer.py:1486
 msgid "No registration is required - just enter an address and press Start."
-msgstr ""
-msgid "Registrar-se não é obrigatório - apenas entre com um endereço e pressione Iniciar."
+msgstr "Registrar-se não é obrigatório - apenas entre com um endereço e pressione Iniciar."
 
 #: guiminer.py:1488
 msgid "Address:"
