@@ -511,7 +511,7 @@ class CgListenerThread(MinerListenerThread):
             lambda _: UpdateAcceptedEvent(accepted=True)),
         (r"Rejected .* GPU \d+ thread \d+",
             lambda _: UpdateAcceptedEvent(accepted=False)),
-        (r"\(\d+s\):(\d+)\.?(\d*) .* Mh/s", lambda match:
+        (r"\(avg\):(\d+)\.?(\d*)Mh/s", lambda match:
             UpdateHashRateEvent(rate=float(match.group(1) + '.' + match.group(2)) * 1000)),
         (r"^GPU\s*\d+",
             lambda _: None), # Just ignore lines like these
