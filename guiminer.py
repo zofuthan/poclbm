@@ -2210,7 +2210,7 @@ class GUIMiner(wx.Frame):
         This allows poclbm to connect to it for mining solo.
         """
         if self.blockchain_directory and os.path.exists(self.blockchain_directory):
-            datadir = " -datadir=%s" % self.blockchain_directory
+            datadir = " -datadir=\"%s\"" % self.blockchain_directory
         else:
             datadir = ""
         try:
